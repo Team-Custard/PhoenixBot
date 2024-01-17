@@ -1,0 +1,33 @@
+{
+  "prefix": ["=","sylv!"],
+  "ownerid": "763631377152999435",
+  "modonly": false,
+  "replit": false,
+  "emojis": {
+    "success": "<:yes:1107905539951833109>",
+    "error": "<:err:1107905572633841674>"
+  },
+  "modules":{
+    "general":true,
+    "moderation":true,
+    "utility":true
+  },
+  "channels": {
+    "welcome": "",
+    "leave": "",
+    "modlog": "",
+    "messagelog": "",
+    "voicelog": "",
+    "joinlog": "",
+    "rolelog": ""
+  },
+  "roles": {
+    "autoroles": [""],
+    "modrole": "",
+    "adminrole": ""
+  },
+  "moderation":{
+    "purgedmessages":0,
+    "reasonrequired":false
+  }
+}
