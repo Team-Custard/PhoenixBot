@@ -6,28 +6,22 @@ class PingCommand extends Command {
   constructor(context, options) {
     super(context, {
       ...options,
-      name: 'ping',
-      aliases: ['latency'],
-      description: 'Fetches the bot ping',
+      name: 'icon',
+      aliases: ['servericon'],
+      description: 'Send the server icon as an attachment.',
       detailedDescription: {
-        usage: 'ping',
-        examples: ['ping'],
+        usage: 'icon',
+        examples: ['icon'],
         args: ['No args included.']
       },
       cooldownDelay: 3_000,
-      requiredClientPermissions: [PermissionFlagsBits.SendMessages],
+      requiredClientPermissions: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles],
       preconditions: ['modonly']
     });
   }
 
   async messageRun(message) {
-    const msg = await send(message, ':ping_pong: Pinging...');
-
-    const content = `Bot Latency ${Math.round(this.container.client.ws.ping)}ms.\nAPI Latency ${
-      msg.createdTimestamp - message.createdTimestamp
-    }ms.`;
-
-    return msg.edit(content);
+    await send(message, { files: [message.guild.iconURL({ size: 2048, dynamic: true })] });
   }
 }
 module.exports = {

@@ -18,7 +18,8 @@ class PingCommand extends Command {
         args: ['[option] : The option for the command. Can only be add, remove, set, view, or clear.', '[prefix] : The prefix to modify in the server.']
       },
       cooldownDelay: 10_000,
-      requiredClientPermissions: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks]
+      requiredClientPermissions: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks],
+      preconditions: ['modonly']
       // requiredUserPermissions: [PermissionFlagsBits.ManageGuild]
     });
   }

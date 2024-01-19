@@ -7,12 +7,12 @@ class PingCommand extends Command {
   constructor(context, options) {
     super(context, {
       ...options,
-      name: 'reload',
-      aliases: ['refresh'],
-      description: 'Reloads the command store. This command can only be ran by the bot developer only',
+      name: 'shutdown',
+      aliases: ['kys','logoff','poweroff'],
+      description: 'Turns the bot off. This command can only be ran by the bot developer only',
       detailedDescription: {
-        usage: 'reload',
-        examples: ['reload'],
+        usage: 'shutdown',
+        examples: ['shutdown'],
         args: ['No args included.']
       },
       cooldownDelay: 3_000,
@@ -22,10 +22,11 @@ class PingCommand extends Command {
   }
 
   async messageRun(message) {
-    await send(message, 'Refreshing the bot\'s stores.');
-    this.container.client.stores.get('listeners').loadAll();
-    this.container.client.stores.get('preconditions').loadAll();
-    this.container.client.stores.get('commands').loadAll();
+    await send(message, 'Goodbye.');
+    this.container.logger.info('Shutdown request recieved. Shutting the bot down.');
+    await require('../../Tools/Database').disconnect();
+    await this.container.client.destroy();
+    process.exit();
   }
 }
 module.exports = {

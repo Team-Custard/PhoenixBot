@@ -10,6 +10,7 @@ class MessageCommandDenied extends Listener {
         });
       }
     run(error, { message }) {
+        if (Reflect.get(Object(error.context), 'silent')) return;
         switch (error.identifier) {
             case Identifiers.PreconditionUserPermissionsNoPermissions: {
                 message.channel.send(`${emojis.error} You are missing permissions to use command.`);

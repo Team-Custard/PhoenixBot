@@ -15,7 +15,8 @@ class AboutCommand extends Command {
         args: ['No args included.']
       },
       cooldownDelay: 3_000,
-      requiredClientPermissions: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks]
+      requiredClientPermissions: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks],
+      preconditions: ['modonly']
     });
   }
 

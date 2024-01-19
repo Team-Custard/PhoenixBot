@@ -1,6 +1,6 @@
 const { isGuildBasedChannel } = require('@sapphire/discord.js-utilities');
 const { container, SapphireClient } = require('@sapphire/framework');
-const { GatewayIntentBits } = require('discord.js');
+const { GatewayIntentBits, PermissionFlagsBits } = require('discord.js');
 const database = require("../Tools/SettingsSchema");
 const settings = require('../settings.json');
 const { fetch } = require('../Tools/Database');

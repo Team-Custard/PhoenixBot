@@ -1,11 +1,11 @@
 {
   "prefix": ["=","sylv!"],
-  "ownerid": "763631377152999435",
+  "ownerid": "",
   "modonly": false,
   "replit": false,
   "emojis": {
-    "success": "<:yes:1107905539951833109>",
-    "error": "<:err:1107905572633841674>"
+    "success": "✅",
+    "error": "❌"
   },
   "modules":{
     "general":true,
