@@ -26,6 +26,7 @@
     "ms": "^2.1.3",
     "mysql2": "^3.6.5",
     "node-fetch": "^3.2.6",
+    "timezones-list": "^3.0.3",
     "youtube-ext": "^1.1.16",
     "youtube-search": "^1.1.6"
   },

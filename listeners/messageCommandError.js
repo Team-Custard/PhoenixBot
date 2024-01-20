@@ -11,8 +11,12 @@ class MessageCommandError extends Listener {
       }
     run(error, { message }) {
         switch (error.identifier) {
+            case Identifiers.ArgsUnavailable: {
+                message.channel.send(`${emojis.error} Arguments are unavailable.`);
+                break;
+            }
             case Identifiers.ArgsMissing: {
-                message.channel.send(`${emojis.error} Command is missing arguments.`);
+                message.channel.send(`${emojis.error} Command is missing arguments. Use help command for usage.`);
                 break;
             }
             default: {

@@ -22,6 +22,7 @@ class PingCommand extends Command {
   }
 
   async messageRun(message) {
+    this.container.logger.info('Bot commands is being refreshed.');
     await send(message, 'Refreshing the bot\'s stores.');
     this.container.client.stores.get('listeners').loadAll();
     this.container.client.stores.get('preconditions').loadAll();

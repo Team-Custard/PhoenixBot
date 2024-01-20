@@ -17,14 +17,11 @@ require('./Tools/Database').connect();
 
 
 // Creates the bot and registers the prefixes and bot settings.
-const { GatewayIntentBits } = require('discord.js');
 const client = new PossumClient();
 
 // Enables the bot to fetch to message edits.
 // Useful if you made a mistake and don't wanna retype the command.
 require('@sapphire/plugin-editable-commands/register');
-
-
 
 // Begin logging into the bot once everything has been setup.
 // It is best practice to have the bot login as the last thing here.

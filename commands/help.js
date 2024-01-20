@@ -51,8 +51,8 @@ class PingCommand extends Command {
       const cmd = this.container.client.stores.get('commands').find(i => i.name === option);
       if (cmd == null) return send(message, { content: `${emojis.error} No such command was found.` });
       const embed = new EmbedBuilder()
-      .setTitle(cmd.name)
-      .setDescription(`Category ${cmd.fullCategory}\n${cmd.detailedDescription.usage}\n${cmd.description}`)
+      .setTitle(`${cmd.name} (${cmd.aliases.join(', ')})`)
+      .setDescription(`Category: ${cmd.fullCategory}\nUsage: ${cmd.detailedDescription.usage}\n${cmd.description}`)
       .addFields([
         { name: 'Args', value: cmd.detailedDescription.args.join('\n') },
         { name: 'Examples', value: cmd.detailedDescription.examples.join('\n') }
