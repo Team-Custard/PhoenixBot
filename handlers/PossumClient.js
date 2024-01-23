@@ -5,7 +5,7 @@ const database = require("../Tools/SettingsSchema");
 const settings = require('../settings.json');
 const { fetch } = require('../Tools/Database');
 const { send } = require('@sapphire/plugin-editable-commands');
-const { emojis } = require('../settings.json');
+const { emojis, restricted, whitelisted } = require('../settings.json');
 
 class PossumClient extends SapphireClient {
     constructor() {
@@ -34,6 +34,15 @@ class PossumClient extends SapphireClient {
    */
   fetchPrefix = async (message, senderrormsg) => {
     if (isGuildBasedChannel(message.channel)) {
+      // Check if the server even meets requirements
+      if (restricted > 0 && (message.guild.memberCount < restricted && whitelisted.indexOf(message.guild.id) == -1)) {
+        let owner = await message.guild.fetchOwner();
+        await owner.send(`${emojis.error} I'm sorry. Your server **${message.guild.name}** does not meet the minimum requirements for the Phoenix bot. You need 250 members to be able to use this bot. In most cases you want to consider using other bots. If you really want Phoenix in your server you could also try [self-hosting the bot yourself](https://github.com/SylveonDev/PhoenixBot). Thank you for your interest in Phoenix.`)
+        .catch(() => {});
+        message.guild.leave();
+        return ["nononononono"]
+      }
+
       // Oh my hot roblox :flushed:
       try {
 
