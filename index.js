@@ -4,7 +4,7 @@ console.log("SylveonBot v1.0.0");
 // This is very important to run the bot as no token means no bot.
 require("dotenv").config();
 
-const { PossumClient } = require('./handlers/PossumClient');
+const { PhoenixClient } = require('./handlers/PhoenixClient');
 const { container } = require('@sapphire/framework');
 
 // Loads the bot's settings in the json file.
@@ -17,7 +17,7 @@ require('./Tools/Database').connect();
 
 
 // Creates the bot and registers the prefixes and bot settings.
-const client = new PossumClient();
+const client = new PhoenixClient();
 
 // Enables the bot to fetch to message edits.
 // Useful if you made a mistake and don't wanna retype the command.

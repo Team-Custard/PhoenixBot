@@ -13,7 +13,7 @@ class PossumClient extends SapphireClient {
         caseInsensitiveCommands: true,
         caseInsensitivePrefixes: true,
         defaultPrefix: settings.prefix,
-        intents: [GatewayIntentBits.MessageContent, GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+        intents: [GatewayIntentBits.MessageContent, GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.DirectMessages],
         //loadDefaultErrorListeners: true,
         loadMessageCommandListeners: true
       });

@@ -1,4 +1,4 @@
-const { Command, CommandStore, ListenerStore, PreconditionStore } = require('@sapphire/framework');
+const { Command, CommandStore, ListenerStore, PreconditionStore, InteractionHandlerStore } = require('@sapphire/framework');
 const { PermissionFlagsBits } = require('discord.js');
 const { send } = require('@sapphire/plugin-editable-commands');
 const { ownerid, emojis } = require('../../settings.json');
@@ -27,6 +27,7 @@ class PingCommand extends Command {
     this.container.client.stores.get('listeners').loadAll();
     this.container.client.stores.get('preconditions').loadAll();
     this.container.client.stores.get('commands').loadAll();
+    this.container.client.stores.get('interaction-handlers').loadAll();
   }
 }
 module.exports = {
