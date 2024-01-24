@@ -22,8 +22,10 @@ class PingCommand extends Command {
   }
 
   async messageRun(message, args) {
-    const repeat = await args.rest('string');
-    await send(message, { content: `${repeat} (Sent by ${message.author})` });
+    const unfilteredrepeat = await args.rest('string');
+    // Coming soon.
+    // const repeat = await require('../../Tools/parseText').parse(unfilteredrepeat, message.member, message.guild);
+    await send(message, { content: `${unfilteredrepeat} (Sent by ${message.author})` });
     await message.delete();
   }
 }

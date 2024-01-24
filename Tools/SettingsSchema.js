@@ -13,22 +13,12 @@ const settingsSchema = new Schema({
         music: { type: Boolean, required: false, default: false },
         logging: { type: Boolean, required: false, default: false }
     },
-    channels: {
-        welcome: Number,
-        leave: Number,
-        modlog: Number,
-        messagelog: Number,
-        voicelog: Number,
-        joinlog: Number,
-        rolelog: Number
+    welcomer: {
+      welcomechannel: String,
+      welcometext: String,
+      goodbyechannel: String,
+      goodbyetext: String
     },
-    roles: {
-        afterOnboarding: { type: Boolean, required: false, default: false },
-        autoroles: [Number],
-        modrole: Number,
-        adminrole: Number,
-        muterole: Number
-      },
     moderation: {
         useTimeouts: { type: Boolean, required: false, default: true },
         dmOffender: { type: Boolean, required: false, default: true },

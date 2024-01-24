@@ -32,6 +32,7 @@ class ParseExampleInteractionHandler extends InteractionHandler {
 
     const serverdb = await database.findById(interaction.guild.id).exec();
 
+    if (serverdb.verification.channel == "") return interaction.reply({ content: `Verification is currently disabled.`, ephemeral: true });
     if (interaction.member.roles.cache.has(serverdb.verification.role)) return interaction.reply({ content: `You're already verified.`, ephemeral: true });
     await interaction.reply({ content: `Verification prompt started. Check your dms.`, ephemeral: true });
 

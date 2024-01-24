@@ -29,6 +29,20 @@ class PingCommand extends Command {
     const option = await args.pick('string').catch(() => "view");
 
     switch (option) {
+        case 'disable': {
+          try {
+            const serverdb = await database.findById(message.guild.id).exec();
+            serverdb.verification.channel = "";
+            serverdb.verification.role = "";
+            await serverdb.save();
+            await send(message, `${emojis.success} Verification disabled.`);
+          }
+          catch (err) {
+            console.warn('Database error', err);
+            await send(message, { content : `${emojis.error} There was a database error.` });
+          }
+          break;
+        }
         case 'setup': {
           try {
             const serverdb = await database.findById(message.guild.id).exec();
@@ -64,7 +78,7 @@ class PingCommand extends Command {
         case 'message': {
           const serverdb = await database.findById(message.guild.id).exec();
           const verif = serverdb.verification;
-          if (verif.channel !== "") return send(message, `${emojis.error} Verification isn't setup. Run \`verification setup\` to run the setup prompt.`);
+          if (verif.channel == "") return send(message, `${emojis.error} Verification isn't setup. Run \`verification setup\` to setup.`);
           const verifybutton = new ButtonBuilder()
           .setCustomId('verify')
           .setLabel('Verify')
@@ -81,10 +95,10 @@ class PingCommand extends Command {
         default: {
             const serverdb = await database.findById(message.guild.id).exec();
             const verif = serverdb.verification;
-            if (verif.channel !== "") return send(message, `${emojis.error} Verification isn't setup. Run \`verification setup\` to run the setup prompt.`);
+            if (verif.channel == "") return send(message, `${emojis.error} Verification isn't setup. Run \`verification setup\` to run the setup prompt.`);
             const embed = new EmbedBuilder()
             .setAuthor({ iconURL: message.guild.iconURL(), name: `Verification settings` })
-            .setDescription(`Channel: <#${verif.channel}>\nAdd roles: ${verif.addRoles.map(r => `<@&${r}>`)}\nRemove roles: ${verif.removeRoles.map(r => `<@&${r}>`)}`)
+            .setDescription(`Channel: <#${verif.channel}>\nVerified role: ${verif.addRoles.map(r => `<@&${r}>`)}`)
             .setColor(Colors.Orange);
             await send(message, { embeds: [embed] });
         }

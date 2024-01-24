@@ -7,7 +7,7 @@ const { fetch } = require('../Tools/Database');
 const { send } = require('@sapphire/plugin-editable-commands');
 const { emojis, restricted, whitelisted } = require('../settings.json');
 
-class PossumClient extends SapphireClient {
+class PhoenixClient extends SapphireClient {
     constructor() {
       super({
         caseInsensitiveCommands: true,
@@ -69,5 +69,5 @@ class PossumClient extends SapphireClient {
   };
 }
 module.exports = {
-  PossumClient
+  PhoenixClient
 };
