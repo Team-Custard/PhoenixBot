@@ -11,11 +11,9 @@ class GuildMemberAdd extends Listener {
       }
     async run(member) {
       const serverdb = await database.findById(member.guild.id).exec();
-      if (serverdb) {
-        if (serverdb.welcomer.welcomechannel) {
+      if (serverdb.welcomer.welcomechannel != undefined) {
             const channel = await member.guild.channels.fetch(serverdb.welcomer.welcomechannel);
             channel.send(`${member} : ${serverdb.welcomer.welcometext}`);
-        }
       }
     }
 }

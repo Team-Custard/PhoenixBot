@@ -13,6 +13,15 @@ const settingsSchema = new Schema({
         music: { type: Boolean, required: false, default: false },
         logging: { type: Boolean, required: false, default: false }
     },
+    rolesMenu: [{
+      id: String,
+      name: String,
+      menutype: String,
+      roles: [{
+        emoji: String,
+        role: String
+      }]
+    }],
     welcomer: {
       welcomechannel: String,
       welcometext: String,

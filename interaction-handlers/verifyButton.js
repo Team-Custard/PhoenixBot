@@ -32,7 +32,7 @@ class ParseExampleInteractionHandler extends InteractionHandler {
 
     const serverdb = await database.findById(interaction.guild.id).exec();
 
-    if (serverdb.verification.channel == "") return interaction.reply({ content: `Verification is currently disabled.`, ephemeral: true });
+    if (serverdb.verification.channel == "" || serverdb.verification.channel == undefined) return interaction.reply({ content: `Verification is currently disabled.`, ephemeral: true });
     if (interaction.member.roles.cache.has(serverdb.verification.role)) return interaction.reply({ content: `You're already verified.`, ephemeral: true });
     await interaction.reply({ content: `Verification prompt started. Check your dms.`, ephemeral: true });
 
@@ -71,14 +71,26 @@ class ParseExampleInteractionHandler extends InteractionHandler {
             return prompt.edit({ embeds: [errorembed] });
         }
         const role = await interaction.guild.roles.fetch(serverdb.verification.role);
-        interaction.member.roles.add(role, `Verification`);
-        const errorembed = new EmbedBuilder()
-        .setAuthor({ iconURL: interaction.guild.iconURL(), name: `Verification` })
-        .setDescription(`Verification successful. Welcome to ${interaction.guild.name}.`)
-        .setFooter({ text: `Prompt succeeded.` })
-        .setColor(Colors.Green);
-        currentlyVerifying.splice(currentlyVerifying.indexOf(interaction.member.id, 1));
-        return prompt.edit({ embeds: [errorembed] });
+        interaction.member.roles.add(role, `(${this.container.client.user.tag}) Verification succeeded.`)
+        .then(() => {
+          const errorembed = new EmbedBuilder()
+          .setAuthor({ iconURL: interaction.guild.iconURL(), name: `Verification` })
+          .setDescription(`Verification successful. Welcome to ${interaction.guild.name}.`)
+          .setFooter({ text: `Prompt succeeded.` })
+          .setColor(Colors.Green);
+          currentlyVerifying.splice(currentlyVerifying.indexOf(interaction.member.id, 1));
+          return prompt.edit({ embeds: [errorembed] });
+        })
+        .catch((err)=> {
+            const errorembed = new EmbedBuilder()
+            .setAuthor({ iconURL: interaction.guild.iconURL(), name: `Verification` })
+            .setDescription(`There was an error while giving you the verified role.\n\`\`\`${err}\`\`\`\nBring this issue to the server admin attention.`)
+            .setFooter({ text: `Prompt expired.` })
+            .setColor(Colors.Red);
+            currentlyVerifying.splice(currentlyVerifying.indexOf(interaction.member.id, 1));
+            return prompt.edit({ embeds: [errorembed] });
+        });
+        
     }).catch((e) => console.log(e.message));
   }
 
@@ -87,7 +99,7 @@ class ParseExampleInteractionHandler extends InteractionHandler {
     // handler to run.
     if (!interaction.customId == 'verifyButton') return this.none();
 
-    return this.run(interaction);
+    return this.some();
   }
 }
 

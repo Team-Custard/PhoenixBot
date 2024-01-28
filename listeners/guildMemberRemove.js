@@ -11,11 +11,9 @@ class GuildMemberRemove extends Listener {
       }
     async run(member) {
       const serverdb = await database.findById(member.guild.id).exec();
-      if (serverdb) {
-        if (serverdb.welcomer.goodbyechannel) {
+      if (serverdb.welcomer.goodbyechannel != undefined) {
             const channel = await member.guild.channels.fetch(serverdb.welcomer.goodbyechannel);
             channel.send(`${member} : ${serverdb.welcomer.goodbyetext}`);
-        }
       }
     }
 }

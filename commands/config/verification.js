@@ -78,7 +78,7 @@ class PingCommand extends Command {
         case 'message': {
           const serverdb = await database.findById(message.guild.id).exec();
           const verif = serverdb.verification;
-          if (verif.channel == "") return send(message, `${emojis.error} Verification isn't setup. Run \`verification setup\` to setup.`);
+          if (verif.channel == "" || verif.channel == undefined) return send(message, `${emojis.error} Verification isn't setup. Run \`verification setup\` to setup.`);
           const verifybutton = new ButtonBuilder()
           .setCustomId('verify')
           .setLabel('Verify')
@@ -95,10 +95,10 @@ class PingCommand extends Command {
         default: {
             const serverdb = await database.findById(message.guild.id).exec();
             const verif = serverdb.verification;
-            if (verif.channel == "") return send(message, `${emojis.error} Verification isn't setup. Run \`verification setup\` to run the setup prompt.`);
+            if (verif.channel == "" || verif.channel == undefined) return send(message, `${emojis.error} Verification isn't setup. Run \`verification setup\` to run the setup prompt.`);
             const embed = new EmbedBuilder()
             .setAuthor({ iconURL: message.guild.iconURL(), name: `Verification settings` })
-            .setDescription(`Channel: <#${verif.channel}>\nVerified role: ${verif.addRoles.map(r => `<@&${r}>`)}`)
+            .setDescription(`Channel: <#${verif.channel}>\nVerified role: <@&${verif.role}>`)
             .setColor(Colors.Orange);
             await send(message, { embeds: [embed] });
         }

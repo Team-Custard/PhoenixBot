@@ -46,7 +46,7 @@ class PingCommand extends Command {
         case 'test': {
             try {
               const serverdb = await database.findById(message.guild.id).exec();
-              if (serverdb.welcomer.welcomertext == "") return send(message, `${emojis.error} Goodbyes isn't setup. Run \`welcomer setup\` to setup.`);
+              if (serverdb.welcomer.goodbyetext == "" || serverdb.welcomer.goodbyetext == undefined) return send(message, `${emojis.error} Goodbyes isn't setup. Run \`welcomer setup\` to setup.`);
               const welcomertext = serverdb.welcomer.goodbyetext;
               const welcomerchannel = await message.guild.channels.fetch(serverdb.welcomer.goodbyechannel);
 
@@ -82,7 +82,7 @@ class PingCommand extends Command {
         default: {
             const serverdb = await database.findById(message.guild.id).exec();
             const verif = serverdb.welcomer;
-            if (verif.channel == "") return send(message, `${emojis.error} Goodbyes isn't setup. Run \`welcomer setup\` to setup.`);
+            if (verif.channel == "" || verif.channel == undefined) return send(message, `${emojis.error} Goodbyes isn't setup. Run \`welcomer setup\` to setup.`);
             const embed = new EmbedBuilder()
             .setAuthor({ iconURL: message.guild.iconURL(), name: `Goodbyes settings` })
             .setDescription(`Channel: <#${verif.goodbyechannel}>\nText: ${verif.goodbyetext}`)
