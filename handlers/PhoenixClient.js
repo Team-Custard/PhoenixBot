@@ -33,6 +33,8 @@ class PhoenixClient extends SapphireClient {
    * @param senderrormsg Sends an error message to the server if enabled.
    */
   fetchPrefix = async (message, senderrormsg) => {
+    // Return if message is blank
+    if (message.content == "" || message.content == null || message.content == undefined) return null;
     if (isGuildBasedChannel(message.channel)) {
       // Check if the server even meets requirements
       if (restricted > 0 && (message.guild.memberCount < restricted && whitelisted.indexOf(message.guild.id) == -1)) {

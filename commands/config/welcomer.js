@@ -82,7 +82,7 @@ class PingCommand extends Command {
         default: {
             const serverdb = await database.findById(message.guild.id).exec();
             const verif = serverdb.welcomer;
-            if (verif.channel == "" || verif.channel == undefined) return send(message, `${emojis.error} Welcomer isn't setup. Run \`welcomer setup\` to setup.`);
+            if (verif.welcomechannel == "" || verif.welcomechannel == undefined) return send(message, `${emojis.error} Welcomer isn't setup. Run \`welcomer setup\` to setup.`);
             const embed = new EmbedBuilder()
             .setAuthor({ iconURL: message.guild.iconURL(), name: `Welcomer settings` })
             .setDescription(`Channel: <#${verif.welcomechannel}>\nText: ${verif.welcometext}`)
