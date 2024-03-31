@@ -1,0 +1,26 @@
+{
+  "name": "phoenixbot",
+  "version": "1.0.0",
+  "description": "This is a discord bot by SylveonDev.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node .",
+    "lint": "eslint . --fix",
+    "dev": "nodemon ."
+  },
+  "keywords": [],
+  "author": "SylveonDev",
+  "license": "MIT",
+  "dependencies": {
+    "@sapphire/framework": "^5.0.10",
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.5",
+    "languagedetect": "^2.0.0",
+    "node-fetch": "^2.7.0",
+    "translate": "^1.4.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "nodemon": "^3.1.0"
+  }
+}
