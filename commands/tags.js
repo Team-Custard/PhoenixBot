@@ -1,4 +1,4 @@
-const { isMessageInstance } = require('@sapphire/discord.js-utilities');
+// const { isMessageInstance } = require('@sapphire/discord.js-utilities');
 const { Command } = require('@sapphire/framework');
 
 class PingCommand extends Command {
