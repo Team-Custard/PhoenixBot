@@ -6,18 +6,32 @@
   "scripts": {
     "start": "node .",
     "lint": "eslint . --fix",
-    "dev": "nodemon ."
+    "dev": "nodemon .",
+    "update": "git pull"
   },
-  "keywords": [],
+  "keywords": ["PhoenixBot", "discord-bot", "utility"],
   "author": "SylveonDev",
   "license": "MIT",
+  "homepage": "https://phoenixbot.epicgamer.org",
+  "repository": {
+    "type": "github",
+    "url": "https://github.com/Team-Custard/PhoenixBot"
+  },
+  "engines": {
+    "node": "^18.0.0"
+  },
   "dependencies": {
+    "@discordjs/rest": "^2.2.0",
     "@sapphire/framework": "^5.0.10",
+    "discord-api-types": "^0.37.79",
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.5",
+    "ejs": "^3.1.9",
+    "express": "^4.19.2",
     "languagedetect": "^2.0.0",
     "node-fetch": "^2.7.0",
-    "translate": "^1.4.1"
+    "translate": "^1.4.1",
+    "undici": "^6.12.0"
   },
   "devDependencies": {
     "eslint": "^8.57.0",

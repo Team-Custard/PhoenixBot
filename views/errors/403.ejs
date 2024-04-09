@@ -1,0 +1,13 @@
+<%- include('../partials/header'); %>
+<div class="container text-center">
+    <h1>403 - Forbidden</h1>
+    <p>You do not have access to the page you requested.<br>You may have to login to be able to access it.<br>Click go back to go to the previous page or go home to go to the homepage.</p>
+    <button class="btn btn-secondary" onclick="history_back()">Go back</button>
+    <script>
+        function history_back() {
+            window.history.back();
+        } 
+    </script>
+    <a class="btn btn-secondary" href="/">Go home</a>
+</div>
+<%- include('../partials/footer'); %>

@@ -1,4 +1,18 @@
 {
+    "process":{
+        "noIntro": false,
+        "botclient": true,
+        "dashboard": true,
+        "botmode": "prod"
+    },
+    "dashboard": {
+        "fullredirecturl": "http://phoenixbot.epicgamer.org/dash/login",
+        "redirecturl": "http%3A%2F%2Fphoenixbot.epicgamer.org%2Fdash%2Flogin",
+        "clientid": "1171286616967479377",
+        "serverport": 8080,
+        "devmode": "off"
+    },
+
     "translator":{
         "targetLang": "en"
     }

@@ -1,8 +1,20 @@
-const { SapphireClient } = require('@sapphire/framework');
-const { GatewayIntentBits } = require('discord.js');
-
+const settings = require('./config.json');
 require('dotenv').config();
 
-const client = new SapphireClient({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
+if (settings.process.noIntro == false) {
+    console.log();
+    console.log(require("fs").readFileSync(__dirname + '/tools/phoenixAscii.txt').toString());
+    console.log();
+    console.log();
+    console.log('--------------------------------');
+    console.log('Version: %s\nCreated by: Team Custard', require('./package.json').version);
+    console.log('--------------------------------');
+    console.log(`Starting the following services:\n${(settings.process.botclient == true ? 'Bot client\n' : ''), (settings.process.dashboard == true ? 'Web dashboard\n' : '')}`);
+}
 
-client.login(process.env["TOKEN"]);
+if (settings.process.botclient == true) {
+    require('./bot');
+}
+if (settings.process.dashboard == true) {
+    require('./server');
+}

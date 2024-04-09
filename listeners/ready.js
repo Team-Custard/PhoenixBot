@@ -10,8 +10,8 @@ class ReadyListener extends Listener {
   }
   run(client) {
     const { username, id } = client.user;
-    this.container.logger.info(`Successfully logged in as ${username} (${id})`);
-    client.user.setActivity({ name: "with gay people" });
+    this.container.logger.info(`Bot client successfully started as ${username} (${id})`);
+    client.user.setActivity({ name: "/help || phoenixbot.epicgamer.org" });
   }
 }
 module.exports = {

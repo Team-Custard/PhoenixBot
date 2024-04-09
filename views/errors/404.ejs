@@ -1,0 +1,14 @@
+<%- include('../partials/header'); %>
+<div class="container text-center">
+    <h1>404 - Not found</h1>
+    <p>Nuu someone ate the page 😔</p>
+    <p>The page you requested was not found on our server.<br>It may have been deleted or moved somewhere else.<br>Click go back to go to the previous page or go home to go to the homepage.</p>
+    <button class="btn btn-secondary" onclick="history_back()">Go back</button>
+    <script>
+        function history_back() {
+            window.history.back();
+        } 
+    </script>
+    <a class="btn btn-secondary" href="/">Go home</a>
+</div>
+<%- include('../partials/footer'); %>
