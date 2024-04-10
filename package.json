@@ -17,9 +17,6 @@
     "type": "github",
     "url": "https://github.com/Team-Custard/PhoenixBot"
   },
-  "engines": {
-    "node": "^18.0.0"
-  },
   "dependencies": {
     "@discordjs/rest": "^2.2.0",
     "@sapphire/framework": "^5.0.10",

@@ -79,8 +79,10 @@ router.get('/dash/end', async function(req, res) {
 		});
 
         for (let i = 0, j = tempStorage.length; i < j; i++) {
-            if (tempStorage[i].hostname == req.ip) {
-                tempStorage.splice(i, 1);
+            if (tempStorage[i]) {
+                if (tempStorage.hostname == req.ip) {
+                    tempStorage.splice(i, 1);
+                }
             }
         }
 
