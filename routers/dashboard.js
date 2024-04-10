@@ -19,7 +19,7 @@ router.get('/dash/login', async function(req, res) {
 					client_secret: process.env["CLIENTSECRET"],
 					code,
 					grant_type: 'authorization_code',
-					redirect_uri: `${settings.dashboard.fullredirecturl}`,
+					redirect_uri: `${settings.dashboard.devmode == true ? 'http://localhost:8080/dash/login' : settings.dashboard.fullredirecturl}`,
 					scope: 'guilds+identify',
 				}).toString(),
 				headers: {
@@ -95,7 +95,7 @@ router.get('/dash/end', async function(req, res) {
 });
 
 router.get('/dash/redirect', function(req, res) {
-    res.redirect(`https://discord.com/oauth2/authorize?client_id=${settings.dashboard.clientid}&response_type=code&redirect_uri=${settings.dashboard.redirecturl}&scope=guilds+identify`);
+    res.redirect(`https://discord.com/oauth2/authorize?client_id=${settings.dashboard.clientid}&response_type=code&redirect_uri=${settings.dashboard.devmode ? 'http://localhost:8080/dash/login' : settings.dashboard.fullredirecturl}&scope=guilds+identify`);
 });
 
 router.get('/dash', async function(req, res) {
@@ -109,10 +109,17 @@ router.get('/dash', async function(req, res) {
             authorization: `${foundHost.tokenType} ${foundHost.accessToken}`,
         },
     });
+    const guildResult = await request('https://discord.com/api/users/@me/guilds', {
+        headers: {
+            authorization: `${foundHost.tokenType} ${foundHost.accessToken}`,
+        },
+    });
 
     const userinfo = await userResult.body.json();
+    const guilds = await guildResult.body.json();
 
-    res.render('pages/dash', { title:"Dashboard", username: userinfo.username, usericon: `https://cdn.discordapp.com/avatars/${userinfo.id}/${userinfo.avatar}.png?size=128` });
+    console.log(guilds);
+    res.render('pages/dash', { title:"Dashboard", username: userinfo.username, usericon: `https://cdn.discordapp.com/avatars/${userinfo.id}/${userinfo.avatar}.png?size=128`, guilds });
 });
 
 router.get('/dash/error', function(req, res) {

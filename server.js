@@ -13,7 +13,7 @@ app.use(require('./routers/mainpage'));
 app.use(require('./routers/dashboard'));
 
 app.use(function(req, res, next) {
-    if (settings.dashboard.devmode == 'on' && !req.secure) {
+    if (settings.dashboard.devmode == 'off' && !req.secure) {
         return res.redirect("https://" + req.headers.host + res.url);
     }
 

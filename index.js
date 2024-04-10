@@ -9,7 +9,7 @@ if (settings.process.noIntro == false) {
     console.log('--------------------------------');
     console.log('Version: %s\nCreated by: Team Custard', require('./package.json').version);
     console.log('--------------------------------');
-    console.log(`Starting the following services:\n${(settings.process.botclient == true ? 'Bot client\n' : ''), (settings.process.dashboard == true ? 'Web dashboard\n' : '')}`);
+    console.log(`Starting the following services:\n${(settings.process.botclient == true ? 'Bot client\n' : '')}${(settings.process.dashboard == true ? 'Web dashboard\n' : '')}`);
 }
 
 if (settings.process.botclient == true) {
