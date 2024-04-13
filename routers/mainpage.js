@@ -8,6 +8,9 @@ router.get('/', function(req, res) {
 router.get('/server', function(req, res) {
     res.redirect('https://discord.gg/JC3WAcxFq6');
 });
+router.get('/commands', function(req, res) {
+    res.render('pages/commands', { title:"Commands" });
+});
 router.get('/sexy', function(req, res) {
     res.status(403);
     if (req.accepts('html')) {

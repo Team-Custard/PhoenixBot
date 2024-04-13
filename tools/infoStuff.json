@@ -5,6 +5,21 @@
         "creator": "PhoenixBot"
     },
     {
+        "name": "addemoji",
+        "description": "Phoenix now supports adding emojis from other servers. You may do so by using the /addemoji command. With the command you have three options available; emoji, url, and image. To grab the emoji from another server, use emoji. Note if you don't have Nitro you need to type the emoji name out exactly how it's named or it won't work. You can use image urls and pure images right from your image gallery as well. We hope you enjoy adding emojis easier with this command.",
+        "creator": "PhoenixBot"
+    },
+    {
+        "name": "sourcecode",
+        "description": "Phoenix is open source, you may find the source code [here](https://github.com/Team-Custard/PhoenixBot). Contributions are highly appreciated and we encourage you take a look. Thank you for understanding.",
+        "creator": "PhoenixBot"
+    },
+    {
+        "name": "teamcustard",
+        "description": "Team Custard is the team name behind Phoenix. You can access their github page [here](https://github.com/Team-Custard). Future projects we work on will be open source on Github as well.",
+        "creator": "PhoenixBot"
+    },
+    {
         "name": "invite",
         "description": "You can invite Phoenix by clicking the add app button, and clicking either try it now or add to server. Clicking add to server will allow full functionality of the bot while the former adds the translation feature to your account.",
         "creator": "PhoenixBot"
@@ -13,5 +28,10 @@
         "name": "breezip",
         "description": "Don't download Breezip you can't uninstall it.",
         "creator": "Norton Antivirus"
+    },
+    {
+        "name": "abby",
+        "description": "Hi daughter. I'm happy to see your bot coming along nice, just wanted to say hi.",
+        "creator": "Mother"
     }
 ]

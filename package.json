@@ -9,7 +9,11 @@
     "dev": "nodemon .",
     "update": "git pull"
   },
-  "keywords": ["PhoenixBot", "discord-bot", "utility"],
+  "keywords": [
+    "PhoenixBot",
+    "discord-bot",
+    "utility"
+  ],
   "author": "SylveonDev",
   "license": "MIT",
   "homepage": "https://phoenixbot.epicgamer.org",
@@ -20,15 +24,20 @@
   "dependencies": {
     "@discordjs/rest": "^2.2.0",
     "@sapphire/framework": "^5.0.10",
+    "@sapphire/plugin-subcommands": "^6.0.3",
+    "bent": "^7.3.12",
     "discord-api-types": "^0.37.79",
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.9",
     "express": "^4.19.2",
     "languagedetect": "^2.0.0",
+    "mongoose": "^8.3.1",
     "node-fetch": "^2.7.0",
+    "sequelize": "^6.37.2",
     "translate": "^1.4.1",
-    "undici": "^6.12.0"
+    "undici": "^6.12.0",
+    "youtube-search": "^1.1.6"
   },
   "devDependencies": {
     "eslint": "^8.57.0",

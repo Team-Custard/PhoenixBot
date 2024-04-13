@@ -1,5 +1,5 @@
 const { Command } = require('@sapphire/framework');
-const { ApplicationCommandType, messageLink, REST, Routes } = require('discord.js');
+const { REST, Routes } = require('discord.js');
 
 class UserCommand extends Command {
   constructor(context, options) {

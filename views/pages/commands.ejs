@@ -1,0 +1,33 @@
+<%- include('../partials/header'); %>
+<h1>Commands</h1>
+<p>PhoenixBot currently has the following commands. You may interact with the commands by using the slash command associated with it or the prefix command.</a></p>
+<h2>Guild commands</h2>
+<div class="accordion" id="accordionGuildCommands">
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#commandA" aria-expanded="false" aria-controls="collapseTwo">
+          /ping
+        </button>
+      </h2>
+      <div id="commandA" class="accordion-collapse collapse" data-bs-parent="#accordionGuildCommands">
+        <div class="accordion-body">
+          <strong>Ping latency command</strong><br><code>/ping</code><br>This command returns the latency between discord. The number will be higher if the bot is running slower than usual.
+        </div>
+      </div>
+    </div>
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#commandB" aria-expanded="false" aria-controls="collapseTwo">
+            /display_info
+          </button>
+        </h2>
+        <div id="commandB" class="accordion-collapse collapse" data-bs-parent="#accordionGuildCommands">
+          <div class="accordion-body">
+            <strong>Display userinfo command</strong><br><code>/display_info (User)</code><br>This command returns the information of a user. It displays useful information like roles, and boost status.
+          </div>
+        </div>
+      </div>
+</div>
+<h2>User commands</h2>
+
+<%- include('../partials/footer'); %>
