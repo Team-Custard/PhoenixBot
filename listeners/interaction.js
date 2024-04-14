@@ -10,6 +10,7 @@ class ReadyListener extends Listener {
     });
   }
   async run(interaction) {
+    // Global user commands must be used here for the time being.
     if (interaction.isMessageContextMenuCommand() && interaction.commandName == "Translate message") {
         // console.log(interaction.targetMessage);
         await interaction.deferReply({ ephemeral: true });

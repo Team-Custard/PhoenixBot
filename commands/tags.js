@@ -88,7 +88,7 @@ class PingCommand extends Subcommand {
       if (db.tags[i].name == tagName) db.tags.splice(i, 1);
     }
 
-    serverSettings.findByIdAndUpdate(interaction.guild.id, { tags: db.tags }, serverSettings.upsert)
+    db.save()
     .then(() => { interaction.followUp(`:white_check_mark: Successfully removed tag \`${tagName}\`.`); })
     .catch((err) => { interaction.followUp(`:x: ${err}`); });
   }

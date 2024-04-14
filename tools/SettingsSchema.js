@@ -7,7 +7,12 @@ const settingsSchema = new Schema({
         name: String,
         description: String,
         creator: String
-    }]
+    }],
+    verification: {
+      role: String,
+      messageText: String,
+      verifiedText: String
+    }
   });
 
 const settings = model('settings', settingsSchema);
