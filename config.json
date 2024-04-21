@@ -3,13 +3,13 @@
         "noIntro": false,
         "botclient": true,
         "dashboard": true,
-        "botmode": "dev"
+        "botmode": "prod"
     },
     "dashboard": {
         "fullredirecturl": "http://phoenixbot.epicgamer.org",
         "clientid": "1171286616967479377",
         "serverport": 8080,
-        "devmode": true
+        "devmode": false
     },
 
     "translator":{
