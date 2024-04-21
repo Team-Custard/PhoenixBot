@@ -12,6 +12,8 @@ if (settings.process.noIntro == false) {
     console.log(`Starting the following services:\n${(settings.process.botclient == true ? 'Bot client\n' : '')}${(settings.process.dashboard == true ? 'Web dashboard\n' : '')}`);
 }
 
+require('./tools/database').connect();
+
 if (settings.process.botclient == true) {
     require('./bot');
 }

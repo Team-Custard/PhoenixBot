@@ -34,7 +34,7 @@ class MenuHandler extends InteractionHandler {
       const modal = new ModalBuilder()
       .setCustomId('verifyModal-' + code.toUpperCase())
       .setTitle('Verification');
-      
+
       const inputRow = new ActionRowBuilder().addComponents(new TextInputBuilder()
       .setCustomId('verifyField').setPlaceholder(code.toUpperCase()).setMinLength(10).setMaxLength(10).setRequired(true).setStyle(TextInputStyle.Short).setLabel(`Enter code "${code}" to verify`));
       modal.addComponents(inputRow);

@@ -12,6 +12,11 @@ const settingsSchema = new Schema({
       role: String,
       messageText: String,
       verifiedText: String
+    },
+    vanity: {
+      url: String,
+      description: String,
+      invite: String
     }
   });
 

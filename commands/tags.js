@@ -81,7 +81,7 @@ class PingCommand extends Subcommand {
     const tagName = await interaction.options.getString('name');
 
     const tag = db.tags.find(t => t.name == tagName);
-    
+
     if (!tag) return interaction.followUp(':x: Tag does not exist.');
 
     for (let i = 0; i < db.tags.length; i++) {

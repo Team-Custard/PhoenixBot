@@ -10,7 +10,7 @@ app.use(express.static(__dirname + '/static'));
 if (settings.dashboard.devmode == "on") {app.enable('trust proxy');}
 
 app.use(require('./routers/mainpage'));
-app.use(require('./routers/dashboard'));
+// app.use(require('./routers/dashboard'));
 
 app.use(function(req, res, next) {
     if (settings.dashboard.devmode == 'off' && !req.secure) {

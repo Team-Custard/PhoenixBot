@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require("mongoose").set('debug', true);
 const settings = require("./SettingsSchema");
 
 const connect = async () => {

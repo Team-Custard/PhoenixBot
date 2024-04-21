@@ -3,10 +3,15 @@
 <div class="text-center">
     <img src="<%= usericon %>" width="128px" style="border-radius: 100%;" />
     <h1>Hello <%= username %></h1>
-    <p>Not you? <a href="/dash/end">Logout</a> of the dashboard and log back in.<br>Click on one of your servers below.</br></p>
+    <p>Not you? <a href="/dash/end">Logout</a> of the dashboard and log back in.<br>To edit your UserDB configuration, click UserDB at the top. To manage your server, click on one of your servers below.</br></p>
     <br><br>
     <h3>Your servers</h3>
     <div></div>
     <p>This dashboard is unfinished so not everything works yet. Check back later to test it out!</p>
+</div>
+<div class="container bg-secondary">
+<% guilds.forEach((server, index) => { %>
+<a href="/dash/servers/<%= server.id %>"><img src="https://cdn.discordapp.com/icons/<%= server.id %>/<%= server.icon %>.png?size=128" style="padding: 0.5%; margin: 1%; background-color: black; border-radius: 100%;"/></a>
+<% }) %>
 </div>
 <%- include('../partials/footer'); %>
