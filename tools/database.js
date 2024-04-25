@@ -1,5 +1,12 @@
 const mongoose = require("mongoose").set('debug', true);
 const settings = require("./SettingsSchema");
+const { applySpeedGooseCacheLayer } = require('speedgoose');
+
+applySpeedGooseCacheLayer(mongoose, {
+  redisUri: process.env["redisurl"]
+})
+.then(() => console.log(`Success in connecting to redis.`))
+.catch((err) => console.error(`Error in connecting to redis.`, err));
 
 const connect = async () => {
   try {

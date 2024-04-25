@@ -49,7 +49,7 @@ class PingCommand extends Subcommand {
 
   async chatInputAdd(interaction) {
     await interaction.deferReply();
-    const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).exec();
+    const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).cacheQuery();
 
     const tagName = await interaction.options.getString('name');
     const tagDesc = await interaction.options.getString('description');
@@ -77,7 +77,7 @@ class PingCommand extends Subcommand {
 
   async chatInputRemove(interaction) {
     await interaction.deferReply();
-    const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).exec();
+    const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).cacheQuery();
     const tagName = await interaction.options.getString('name');
 
     const tag = db.tags.find(t => t.name == tagName);
@@ -95,7 +95,7 @@ class PingCommand extends Subcommand {
 
   async chatInputList(interaction) {
     await interaction.deferReply();
-    const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).exec();
+    const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).cacheQuery();
 
     const indexes = require('../tools/infoStuff.json');
 
@@ -111,7 +111,7 @@ class PingCommand extends Subcommand {
     await interaction.deferReply();
     const tagName = await interaction.options.getString('name');
 
-    const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).exec();
+    const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).cacheQuery();
 
     const indexes = require('../tools/infoStuff.json');
 

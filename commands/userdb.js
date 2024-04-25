@@ -1,8 +1,10 @@
 const { Subcommand } = require('@sapphire/plugin-subcommands');
 const { BucketScope } = require('@sapphire/framework');
 const UserDB = require('../tools/UserDB');
+const config = require('../config.json');
 const { afkCache } = require('../listeners/messageCreate');
-const { ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle, EmbedBuilder, Colors } = require('discord.js');
+
+const { REST, Routes, ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle, EmbedBuilder, Colors } = require('discord.js');
 
 // Create the Modal here so the set command works better.
 const modal = new ModalBuilder()
@@ -30,7 +32,7 @@ const modal = new ModalBuilder()
         const inputRowG = new ActionRowBuilder()
         .addComponents(new TextInputBuilder()
         .setCustomId('serverField').setPlaceholder('JC3WAcxFq6').setMaxLength(12).setRequired(false).setStyle(TextInputStyle.Short).setLabel(`Your server invite (optional)`)); */
-        
+
         modal.addComponents(inputRowA, inputRowB, inputRowC, inputRowD, inputRowE);
 
 class PingCommand extends Subcommand {
@@ -71,6 +73,7 @@ class PingCommand extends Subcommand {
     }
 
     registerApplicationCommands(registry) {
+      if (config.userdb.global) {
         registry.registerChatInputCommand((builder) =>
           builder.setName('userdb').setDescription('UserDB commands')
           .addSubcommand((command) => command.setName('timefor').setDescription('Displays what time it is for a user.')
@@ -84,6 +87,24 @@ class PingCommand extends Subcommand {
           .addUserOption(option => option.setName('user').setDescription('The member to fetch').setRequired(true)))
           .addSubcommand((command) => command.setName('clear').setDescription('Clears all your UserDB settings'))
           .setDMPermission(false));
+
+          const rest = new REST().setToken(this.container.client.token);
+          rest.get(Routes.applicationCommands(this.container.client.id)).then(res => {
+            // console.log(res);
+            if (!res.find(r => r.name == "Time for user")) {
+              console.log('Registering timefor command');
+              rest.post(Routes.applicationCommands(this.container.client.id), {
+                body: {
+                  name: 'Time for user',
+                  type: 2,
+                  integration_types: [1],
+                  contexts: [0, 1, 2]
+                }
+              }).then(() => {console.log('User command timefor message registered successfully.');})
+              .catch((err) => console.log('User command timefor message failed. It probably already exists.', err));
+            }
+          });
+        }
       }
 
       async chatInputSet(interaction) {
@@ -96,9 +117,9 @@ class PingCommand extends Subcommand {
 
         if (!member) member = interaction.member;
 
-        const usersettings = await UserDB.findById(member.user.id, UserDB.upsert).exec();
-        if (!usersettings) interaction.followUp(`:x: **${member.user.username}** does not have a timezone set.`);
-        if (!usersettings.timezone) interaction.followUp(`:x: **${member.user.username}** does not have a timezone set.`);
+        const usersettings = await UserDB.findById(member.user.id, UserDB.upsert).cacheQuery();
+        if (!usersettings) return interaction.followUp(`:x: **${member.user.username}** does not have a timezone set.`);
+        if (!usersettings.timezone) return interaction.followUp(`:x: **${member.user.username}** does not have a timezone set.`);
 
         const date = new Date();
         const strTime = date.toLocaleTimeString('en-US', { timeZone: usersettings.timezone });
@@ -112,10 +133,10 @@ class PingCommand extends Subcommand {
 
         if (!member) member = interaction.member;
 
-        const usersettings = await UserDB.findById(member.user.id, UserDB.upsert).exec();
-        
-        if (!usersettings) interaction.followUp(`:x: **${member.user.username}** does not have pronouns set through UserDB.`);
-        if (!usersettings.pronouns) interaction.followUp(`:x: **${member.user.username}** does not have pronouns set through UserDB.`);
+        const usersettings = await UserDB.findById(member.user.id, UserDB.upsert).cacheQuery();
+
+        if (!usersettings) return interaction.followUp(`:x: **${member.user.username}** does not have pronouns set through UserDB.`);
+        if (!usersettings.pronouns) return interaction.followUp(`:x: **${member.user.username}** does not have pronouns set through UserDB.`);
 
         await interaction.followUp(`**${member.user.username}**'s pronouns are **${usersettings.pronouns}**.`);
       }
@@ -124,7 +145,7 @@ class PingCommand extends Subcommand {
         const member = await interaction.options.getMember('user');
         if (member.user.bot) return interaction.reply(':x: Bots can\'t be added to UserDB.');
         await interaction.deferReply();
-        const usersettings = await UserDB.findById(member.user.id, UserDB.upsert).exec();
+        const usersettings = await UserDB.findById(member.user.id, UserDB.upsert).cacheQuery();
         let embed;
         if (usersettings) {
             embed = new EmbedBuilder()
@@ -149,7 +170,7 @@ class PingCommand extends Subcommand {
 
       async chatInputAfk(interaction) {
         await interaction.deferReply();
-        let usersettings = await UserDB.findById(interaction.member.id, UserDB.upsert).exec();
+        let usersettings = await UserDB.findById(interaction.member.id, UserDB.upsert).cacheQuery();
         if (!usersettings) usersettings = new UserDB({ _id: interaction.member.id });
         const reason = await interaction.options.getString('reason');
 

@@ -44,7 +44,7 @@ class PingCommand extends Subcommand {
 
   async chatInputDisplay(interaction) {
     await interaction.deferReply();
-    const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).exec();
+    const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).cacheQuery();
 
     const embed = new EmbedBuilder()
     .setAuthor({ name: interaction.guild.name + ' Verification', iconURL: interaction.guild.iconURL({ dynamic: true }) })
@@ -63,7 +63,7 @@ class PingCommand extends Subcommand {
 
   async chatInputSet(interaction) {
     await interaction.deferReply();
-    const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).exec();
+    const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).cacheQuery();
 
     const role = await interaction.options.getRole('verified_role');
     const messagetext = await interaction.options.getString('message_text', false);
@@ -80,7 +80,7 @@ class PingCommand extends Subcommand {
 
   async chatInputClear(interaction) {
     await interaction.deferReply();
-    const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).exec();
+    const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).cacheQuery();
 
     db.verification.role = '';
     db.verification.messageText = '';

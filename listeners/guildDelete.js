@@ -10,7 +10,7 @@ class GuildDelete extends Listener {
         });
       }
     async run(guild) {
-      await database.findByIdAndDelete(guild.id).exec()
+      await database.findByIdAndDelete(guild.id).cacheQuery()
       .then(() => console.log(`Deleted database for ${guild.id}`))
       .catch((err) => console.error(`Error deleting database for ${guild.id}`, err));
     }

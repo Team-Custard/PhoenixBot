@@ -147,7 +147,7 @@ router.get('/dash/servers/:server', async function(req, res) {
     if (chosenguild) {
         const permissions = require("discord-perms-array")(chosenguild.permissions);
         if (permissions.includes('ADMINISTRATOR')) {
-            const db = await serverSettings.findById(chosenguild.id).exec();
+            const db = await serverSettings.findById(chosenguild.id).cacheQuery();
             if (!db) return res.redirect(`https://discord.com/oauth2/authorize?client_id=${settings.dashboard.clientid}&permissions=52224&response_type=code&redirect_uri=${settings.dashboard.devmode ? 'http://localhost:8080' : settings.dashboard.fullredirecturl}/dash&scope=bot+applications.commands`);
             
             let invitebanner;

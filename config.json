@@ -14,5 +14,9 @@
 
     "translator":{
         "targetLang": "en"
+    },
+    "userdb":{
+        "global": true,
+        "afkEnabled": true
     }
 }

@@ -1,4 +1,6 @@
 const { Schema, model } = require('mongoose');
+const { SpeedGooseCacheAutoCleaner } = require('speedgoose');
+const config = require('../config.json');
 
 const settingsSchema = new Schema({
     _id: { type: String, required: true },
@@ -15,9 +17,10 @@ const settingsSchema = new Schema({
         since: String,
         status: String
     }
-  });
+  }).plugin(SpeedGooseCacheAutoCleaner);
 
 const settings = model('userdb', settingsSchema);
-
-module.exports = settings;
-exports.upsert = { upsert: true, setDefaultsOnInsert: true };
+if (config.userdb.global) {
+    module.exports = settings;
+    exports.upsert = { upsert: true, setDefaultsOnInsert: true };
+}

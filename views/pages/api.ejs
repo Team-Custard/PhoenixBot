@@ -1,0 +1,113 @@
+<%- include('../partials/header'); %>
+<style>
+    .warning {
+        background-color: orange;
+        padding: 1%;
+        font-size: large;
+    }
+    .testbox {
+        margin: 5%;
+        border: 4px black solid;
+    }
+
+    #easteregg {
+        background-image: url("https://i.redd.it/op2l4s5co2c71.jpg");
+    }
+
+    #easteregg, #eastereggA, #eastereggB, #eastereggC, #eastereggD, #eastereggZ {
+        display: none;
+    }
+
+    #get {
+        background-color: lime;
+        border-radius: 10%;
+    }
+    #post {
+        background-color: yellow;
+        border-radius: 10%;
+    }
+    #delete {
+        background-color: red;
+        border-radius: 10%;
+    }
+</style>
+
+<script>
+    let clicks = 0;
+    function easteregg() {
+        clicks++;
+        document.getElementById("easteregg").style = "display: block;";
+        document.getElementsByClassName("clicknumberer")[0].textContent = clicks + ' clicks';
+        if (clicks == 250) document.getElementById("eastereggA").style = "display: block;";
+        if (clicks == 500) document.getElementById("eastereggB").style = "display: block;";
+        if (clicks == 1000) document.getElementById("eastereggC").style = "display: block;";
+        if (clicks == 9999) document.getElementById("eastereggZ").style = "display: block;";
+    }
+    function testApi(urlpartial) {
+        var id = document.getElementById("idfield").value;
+        window.location = `/api/${urlpartial}/${id}`;
+    }
+</script>
+
+<div class="container">
+    <h1>The api</h1>
+    <p>The api allows you to utilize some of PhoenixBot's features in your own service. Below is the documentation for the api.</p>
+    <p class="warning rounded-3"><span>&#9888;</span> These settings can only be set in a server with PhoenixBot. You cannot set it with the api at this time.</p>
+    <h2>UserDB</h2>
+    <p>Displays some useful info about yourself like your current time and pronouns.</p>
+    <p>When using the api, replace [id] with the user's id. Don't include brackets in the url either.</p>
+    <h3><span id="get">GET</span> /api/profile/[id]</h3>
+    <p>Returns the whole profile of a user.</p>
+    <h3><span id="get">GET</span> /api/pronouns/[id]</h3>
+    <p>Returns the pronouns of a user.</p>
+    <h3><span id="get">GET</span> /api/timefor/[id]</h3>
+    <p>Sends a user's current time.</p>
+    <h3><span id="get">GET</span> /api/socials/[id]</h3>
+    <p>Returns the social media handles of a user.</p>
+    <h2>VanityDB</h2>
+    <p>Have an awesome custom vanity url for <button class="btn" style="background-color: white; border: 0% black none;" onclick="easteregg()">your</button> server. This database is not released yet and currently does nothing.</p>
+    <br>
+    <div class="rounded testbox text-center" id="easteregg">
+        <h1>"Your" clicker</span></h1>
+        <p class="clicknumberer"></p>
+        <h3>Achivements:</h3>
+        <div id="eastereggZ">
+            <br><br><b>The Fridays group chat</b>
+            <br><img style="border-radius: 100%; border: 4px black solid;" src="https://cdn.discordapp.com/avatars/997535047513018478/0e9f6dc9bd77da214c8f4371a8e15f2f.png?size=56"> : Hi guys, how are you guys feeling today?
+            <br><img style="border-radius: 100%; border: 4px black solid;" src="https://cdn.discordapp.com/avatars/763631377152999435/d43615360079ed891cad8ced1b200170.png?size=56"> : <img src="https://cdn.discordapp.com/emojis/1223812767325356206.gif?size=56&quality=lossless">
+            <br><img style="border-radius: 100%; border: 4px black solid;" src="https://cdn.discordapp.com/avatars/763631377152999435/d43615360079ed891cad8ced1b200170.png?size=56"> : Pretty swell! Thanks for asking.
+            <br><img style="border-radius: 100%; border: 4px black solid;" src="https://cdn.discordapp.com/avatars/1136953082090115082/6e352fc785c51222bccabd1eb80115d9.png?size=56"> : Yea I'm doing good too. How about you?
+            <br><img style="border-radius: 100%; border: 4px black solid;" src="https://cdn.discordapp.com/avatars/997535047513018478/0e9f6dc9bd77da214c8f4371a8e15f2f.png?size=56"> : That's great to hear! I'm glad you guys are doing great :D<br>I'm doing good, just watching Bluey right now.
+            <br><img style="border-radius: 100%; border: 4px black solid;" src="https://cdn.discordapp.com/avatars/763631377152999435/d43615360079ed891cad8ced1b200170.png?size=56"> : Awesome! That show is pretty great tbh
+            <br><img style="border-radius: 100%; border: 4px black solid;" src="https://cdn.discordapp.com/avatars/916691810506645585/932ed06767b291eb913a82127c079795.png?size=56"> : Hey babe! <img src="https://cdn.discordapp.com/emojis/1133195225817424063.png?size=56&quality=lossless">
+            <br><img style="border-radius: 100%; border: 4px black solid;" src="https://cdn.discordapp.com/avatars/763631377152999435/d43615360079ed891cad8ced1b200170.png?size=56"> : Heyyy <img src="https://cdn.discordapp.com/emojis/1133195225817424063.png?size=56&quality=lossless">
+        </div>
+        <div id="eastereggA">
+            <h1>250 clicks!</h1>
+            <p>That's awesome!</p>
+            <img src="https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/3ce1bb39-5d74-42e4-a0a1-6f9e18aa5400/d5wtcym-1c0108b0-ace1-4ceb-9fbb-d33b3fe70ef9.gif?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzNjZTFiYjM5LTVkNzQtNDJlNC1hMGExLTZmOWUxOGFhNTQwMFwvZDV3dGN5bS0xYzAxMDhiMC1hY2UxLTRjZWItOWZiYi1kMzNiM2ZlNzBlZjkuZ2lmIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.etYNRyhAiMumfdgoGxmIFZ6vAE3Hdme9_aRq4oEKd6E">
+        </div>
+        <div id="eastereggB">
+            <h1>500 clicks!</h1>
+            <p>Hehe, wow, 500? That's really impressive :3</p>
+            <img src="https://i.kym-cdn.com/photos/images/original/001/161/961/2d4.gif">
+        </div>
+        <div id="eastereggC">
+            <h1>1000 clicks!</h1>
+            <p>Yayyyy 1000 clicks ^w^</p>
+            <img src="https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/e30144e7-15c8-4872-9f32-0ebef76551c1/df6lu24-0114b5cc-9d3e-4eea-8d18-f92818946bb3.gif?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcL2UzMDE0NGU3LTE1YzgtNDg3Mi05ZjMyLTBlYmVmNzY1NTFjMVwvZGY2bHUyNC0wMTE0YjVjYy05ZDNlLTRlZWEtOGQxOC1mOTI4MTg5NDZiYjMuZ2lmIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.Cu36pICsmFUR12zqwN_to3l7JSgKNjwPcK-MKD7Xirg" width="50%">
+        </div>
+    </div>
+    <br>
+    <div class="rounded testbox text-center">
+        <h1>Api tester!</h1>
+        <span>User id: <input id="idfield"></span> 
+        <br><br>
+        <button class="btn btn-secondary" onclick="testApi('profile')">UserDB Profile</button>
+        <button class="btn btn-secondary" onclick="testApi('timefor')">UserDB Timefor</button>
+        <button class="btn btn-secondary" onclick="testApi('pronouns')">UserDB Pronouns</button>
+        <button class="btn btn-secondary" onclick="testApi('socials')">UserDB Socials</button>
+        <br> 
+    </div>
+</div>
+<%- include('../partials/footer'); %>

@@ -1,4 +1,5 @@
 const { Schema, model } = require('mongoose');
+const { SpeedGooseCacheAutoCleaner } = require('speedgoose');
 
 const settingsSchema = new Schema({
     _id: { type: String, required: true },
@@ -18,7 +19,7 @@ const settingsSchema = new Schema({
       description: String,
       invite: String
     }
-  });
+  }).plugin(SpeedGooseCacheAutoCleaner);
 
 const settings = model('settings', settingsSchema);
 

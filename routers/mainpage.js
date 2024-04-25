@@ -24,7 +24,7 @@ router.get('/sexy', function(req, res) {
     res.type('txt').send('Forbidden');
 });
 
-router.get('/', function(req, res) {
+router.get('/invite', function(req, res) {
     res.redirect('https://discord.com/oauth2/authorize?client_id=1171286616967479377');
 });
 

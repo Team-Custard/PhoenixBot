@@ -18,7 +18,7 @@ class MenuHandler extends InteractionHandler {
     async run(interaction) {
         await interaction.deferReply({ ephemeral: false });
 
-        let usersettings = await UserDB.findById(interaction.member.id, UserDB.upsert).exec();
+        let usersettings = await UserDB.findById(interaction.member.id, UserDB.upsert).cacheQuery();
         if (!usersettings) usersettings = new UserDB({ _id: interaction.member.id });
 
         const tzText = await interaction.fields.getTextInputValue('timezoneField');

@@ -1,5 +1,6 @@
 const { Listener } = require('@sapphire/framework');
 const { messageLink } = require('discord.js');
+const UserDB = require('../tools/UserDB');
 
 class ReadyListener extends Listener {
   constructor(context, options) {
@@ -11,6 +12,7 @@ class ReadyListener extends Listener {
   }
   async run(interaction) {
     // Global user commands must be used here for the time being.
+    console.log(interaction.commandName);
     if (interaction.isMessageContextMenuCommand() && interaction.commandName == "Translate message") {
         // console.log(interaction.targetMessage);
         await interaction.deferReply({ ephemeral: true });
@@ -41,6 +43,21 @@ class ReadyListener extends Listener {
             interaction.followUp({ content: `[${message.author.tag} said:](${msgLink}) ${data[0][0][0]}` });
 
         }).catch((err) => interaction.followUp(`:x: ${err}`));
+    }
+
+    if (interaction.isUserContextMenuCommand() && interaction.commandName == "Time for user") {
+        await interaction.followUp({ ephemeral: true });
+
+        const member = interaction.targetUser;
+
+        const usersettings = await UserDB.findById(member.id, UserDB.upsert).cacheQuery();
+        if (!usersettings) return interaction.followUp(`:x: **${member.username}** does not have a timezone set.`);
+        if (!usersettings.timezone) return interaction.followUp(`:x: **${member.username}** does not have a timezone set.`);
+
+        const date = new Date();
+        const strTime = date.toLocaleTimeString('en-US', { timeZone: usersettings.timezone });
+        const strDate = date.toLocaleDateString('en-US', { timeZone: usersettings.timezone });
+        await interaction.followUp(`**${member.username}**'s time is **${strTime}** (${strDate}).`);
     }
   }
 }
