@@ -12,7 +12,7 @@ class ReadyListener extends Listener {
   }
   async run(interaction) {
     // Global user commands must be used here for the time being.
-    console.log(interaction.commandName);
+    // console.log(interaction);
     if (interaction.isMessageContextMenuCommand() && interaction.commandName == "Translate message") {
         // console.log(interaction.targetMessage);
         await interaction.deferReply({ ephemeral: true });
@@ -46,7 +46,7 @@ class ReadyListener extends Listener {
     }
 
     if (interaction.isUserContextMenuCommand() && interaction.commandName == "Time for user") {
-        await interaction.followUp({ ephemeral: true });
+        await interaction.deferReply({ ephemeral: true });
 
         const member = interaction.targetUser;
 

@@ -20,7 +20,7 @@ class MenuHandler extends InteractionHandler {
       const code = (interaction.customId.slice().trim().split('-'))[1];
 
       const codeText = await interaction.fields.getTextInputValue('verifyField');
-      if (codeText.toUpperCase() == code) {
+      if (codeText.toLowerCase() == code.toLowerCase()) {
         const db = await ServerSettings.findById(interaction.guild.id, ServerSettings.upsert);
 
         if (!db.verification.role) return interaction.followUp(`:x: Verification was not setup yet. Please bring this to your server's admin's attention.`);

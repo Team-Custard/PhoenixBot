@@ -23,13 +23,13 @@ class MenuHandler extends InteractionHandler {
     }
 
     parse(interaction) {
-      if (!interaction.customId == 'verify') return this.none();
+      if (interaction.customId !== 'verify') return this.none();
 
       return this.some();
     }
 
     async run(interaction) {
-      const code = await makeid(10);
+      const code = makeid(10);
 
       const modal = new ModalBuilder()
       .setCustomId('verifyModal-' + code.toUpperCase())
@@ -39,7 +39,7 @@ class MenuHandler extends InteractionHandler {
       .setCustomId('verifyField').setPlaceholder(code.toUpperCase()).setMinLength(10).setMaxLength(10).setRequired(true).setStyle(TextInputStyle.Short).setLabel(`Enter code "${code}" to verify`));
       modal.addComponents(inputRow);
 
-      interaction.showModal(modal);
+      await interaction.showModal(modal);
     }
 }
 
