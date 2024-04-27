@@ -23,10 +23,10 @@
   },
   "dependencies": {
     "@discordjs/rest": "^2.2.0",
+    "@napi-rs/canvas": "^0.1.52",
     "@sapphire/framework": "^5.0.10",
     "@sapphire/plugin-subcommands": "^6.0.3",
     "bent": "^7.3.12",
-    "canvas": "^2.11.2",
     "discord-api-types": "^0.37.79",
     "discord-perms-array": "^1.0.4",
     "discord.js": "^14.14.1",
