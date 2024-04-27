@@ -37,6 +37,10 @@ class PingCommand extends Subcommand {
         {
           name: 'phoenixav',
           chatInputRun: 'chatInputPhoenixAV'
+        },
+        {
+          name: 'avatar',
+          chatInputRun: 'chatInputAvatar'
         }
       ],
       cooldownDelay: 60_000,
@@ -57,14 +61,29 @@ class PingCommand extends Subcommand {
       .addStringOption((option) => option.setName('query').setDescription('The query to look up').setRequired(true)))
       .addSubcommand((command) => command.setName('phoenixav').setDescription('Turns you into Pheonix')
       .addUserOption((option) => option.setName('user').setDescription('The user').setRequired(false)))
+      .addSubcommand((command) => command.setName('avatar').setDescription('Displays a member\'s avatar')
+      .addUserOption((option) => option.setName('user').setDescription('The user').setRequired(false))
+      .addBooleanOption((option) => option.setName('server').setDescription('Displays the user\'s server avatar if enabled').setRequired(false)))
       .setDMPermission(false));
+  }
+
+  async chatInputAvatar(interaction) {
+    let member = await interaction.options.getMember('user');
+    if (!member) member = interaction.member;
+    const guildav = await interaction.options.getBoolean('server');
+
+    const avatar = (guildav == true ? member.avatarURL({ dynamic: true, size: 1024 }) : member.user.avatarURL({ dynamic: true, size: 1024 }));
+
+    await interaction.reply({
+      files: [avatar]
+    });
   }
 
   async chatInputPhoenixAV(interaction) {
     await interaction.deferReply();
 
     let user = await interaction.options.getUser('user');
-    if (!user) user = interaction.author;
+    if (!user) user = interaction.user;
 
     console.log('Creating image 1');
     const { createCanvas, loadImage } = require('@napi-rs/canvas');
@@ -72,13 +91,13 @@ class PingCommand extends Subcommand {
     const ctx = canvas.getContext('2d');
 
     console.log('Creating image 2');
-    /* await loadImage(user.avatarURL({ extension: 'png', size: 1024 }))
+    await loadImage(user.avatarURL({ format: 'png', size: 1024 }))
     .then(async (img) => {
       ctx.drawImage(img, 0, 0, canvas.height, canvas.width);
     })
     .catch((err) => {
       return interaction.followUp(`:x: ${err}`);
-    }); */
+    });
 
     console.log('Creating image 3');
     await loadImage(__dirname + '/../static/phoenixtrans.png')
@@ -90,9 +109,9 @@ class PingCommand extends Subcommand {
     });
 
     console.log('Creating image 4');
-    const attachment = new AttachmentBuilder(canvas.encode('png'), { name: `phoenixav.png` });
+    const attachment = new AttachmentBuilder(await canvas.encode('png'), { name: `phoenixav.png` });
     await interaction.followUp({
-      attachments: [attachment]
+      files: [attachment]
     });
   }
 
