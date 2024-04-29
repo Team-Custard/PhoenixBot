@@ -46,7 +46,20 @@ class PingCommand extends Subcommand {
   }
 
   async chatInputSet(interaction) {
+    await interaction.deferReply();
+    const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).cacheQuery();
+
+    const channel = await interaction.options.getChannel('channel');
+    let messagetext = await interaction.options.getString('text');
     
+    if (!messagetext) messagetext = `Welcome to the server {{mention}}!`;
+
+    db.welcomer.channel = channel.id;
+    db.welcomer.message = messagetext;
+
+    db.save()
+    .then(() => { interaction.followUp(`:white_check_mark: Successfully setup welcomer.`); })
+    .catch((err) => { interaction.followUp(`:x: ${err}`); });
   }
 
   async chatInputClear(interaction) {
