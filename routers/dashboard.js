@@ -149,14 +149,14 @@ router.get('/dash/servers/:server', async function(req, res) {
         if (permissions.includes('ADMINISTRATOR')) {
             const db = await serverSettings.findById(chosenguild.id).cacheQuery();
             if (!db) return res.redirect(`https://discord.com/oauth2/authorize?client_id=${settings.dashboard.clientid}&permissions=52224&response_type=code&redirect_uri=${settings.dashboard.devmode ? 'http://localhost:8080' : settings.dashboard.fullredirecturl}/dash&scope=bot+applications.commands`);
-            
+
             let invitebanner;
             if (require('../config.json').process.botclient) {
                 const fetchedguild = await require('../bot').client.guilds.fetch(chosenguild.id);
                 invitebanner = fetchedguild.splashURL({ size: 4096, extension: 'png' });
 
             }
-            
+
             res.render('pages/serverconf', { title: 'Server config', config: db, server: chosenguild, background: invitebanner });
         }
         else {

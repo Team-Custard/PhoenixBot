@@ -2,8 +2,8 @@
     "process":{
         "noIntro": false,
         "botclient": true,
-        "dashboard": true,
-        "botmode": "prod"
+        "dashboard": false,
+        "botmode": "dev"
     },
     "dashboard": {
         "fullredirecturl": "http://phoenixbot.epicgamer.org",

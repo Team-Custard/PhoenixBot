@@ -14,6 +14,14 @@ const settingsSchema = new Schema({
       messageText: String,
       verifiedText: String
     },
+    welcomer: {
+      channel: String,
+      message: String
+    },
+    goodbyes: {
+      channel: String,
+      message: String
+    },
     vanity: {
       url: String,
       description: String,
