@@ -2,10 +2,9 @@ const { Message, GuildMember } = require('discord.js');
 /**
  * Parses text with placeholders
  * @param {String} text The text to be parsed by the parser.
- * @param {Message} message The message object to be used for part of the parser.
- * @param {GuildMember} member The member object to turn to mention.
+ * @param {GuildMember} member The member object used by the parser.
  */
-exports.parse = async (text, message, member) => {
+exports.parse = async (text, member) => {
     const parsed = await text.replace(/\{\{(.*?)\}\}/g, function(match, token) {
         switch (token) {
             case 'mention':{
@@ -18,10 +17,10 @@ exports.parse = async (text, message, member) => {
                 return `${member.user.id}`;
             }
             case 'membercount':{
-                return `${message.guild.memberCount}`;
+                return `${member.guild.memberCount}`;
             }
             case 'servername':{
-                return `${message.guild.name}`;
+                return `${member.guild.name}`;
             }
             default:{
                 return match;

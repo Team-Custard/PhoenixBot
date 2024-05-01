@@ -13,7 +13,24 @@ class ReadyListener extends Listener {
     });
   }
   async run(message) {
-    if (config.userdb.global && config.userdb.afkEnabled) {
+    // Only SylveonDev can use these lines. Testing specific shit
+    if (message.guild && message.content.toLowerCase() == "test welcomer please" && message.author.id == "763631377152999435") {
+      message.reply(`Yes mother Abby, I will obey. <3`);
+      this.container.client.emit('guildMemberAdd', message.member);
+      this.container.client.emit('guildMemberRemove', message.member);
+    }
+    if (message.guild && message.content.toLowerCase() == "thanks phoenix" && message.author.id == "763631377152999435") {
+      message.reply(`You're welcome, mother.`);
+    }
+    if (message.guild && message.content.toLowerCase() == "not good phoenix" && message.author.id == "763631377152999435") {
+      message.reply(`Awww I'm sorry... :sob:`);
+    }
+    if (message.guild && message.content.toLowerCase() == "shut down phoenix" && message.author.id == "763631377152999435") {
+      await message.reply(`Awww already?:( Okayyy mother`);
+      process.exit(0);
+    }
+
+    if (config.userdb.global && config.userdb.afkEnabled && message.guild) {
       if (afkCache.indexOf(message.member.id) != -1) {
           const usersettings = await UserDB.findById(message.member.id, UserDB.upsert).cacheQuery();
 

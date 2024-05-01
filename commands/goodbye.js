@@ -7,7 +7,7 @@ class PingCommand extends Subcommand {
   constructor(context, options) {
     super(context, {
       ...options,
-      name: 'welcomer',
+      name: 'goodbye',
       subcommands: [
         {
           name: 'test',
@@ -31,12 +31,12 @@ class PingCommand extends Subcommand {
   registerApplicationCommands(registry) {
     registry.idHints = ['1227016558778519622'];
     registry.registerChatInputCommand((builder) =>
-      builder.setName('welcomer').setDescription('Commands to settings up welcomer')
-      .addSubcommand((command) => command.setName('test').setDescription('Tests the welcomer'))
-      .addSubcommand((command) => command.setName('setup').setDescription('Configures welcomer settings')
-      .addChannelOption(option => option.setName('channel').setDescription('The welcomer channel').setRequired(true))
-      .addStringOption(option => option.setName('text').setDescription('The welcomer message to use').setRequired(false)))
-      .addSubcommand((command) => command.setName('clear').setDescription('Clears welcomer settings'))
+      builder.setName('goodbye').setDescription('Commands to settings up goodbyes')
+      .addSubcommand((command) => command.setName('test').setDescription('Tests the goodbye'))
+      .addSubcommand((command) => command.setName('setup').setDescription('Configures goodbye settings')
+      .addChannelOption(option => option.setName('channel').setDescription('The goodbye channel').setRequired(true))
+      .addStringOption(option => option.setName('text').setDescription('The goodbye message to use').setRequired(false)))
+      .addSubcommand((command) => command.setName('clear').setDescription('Clears goodbye settings'))
       .setDMPermission(false)
       .setDefaultMemberPermissions(32));
   }
@@ -45,9 +45,9 @@ class PingCommand extends Subcommand {
     await interaction.deferReply();
     const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).cacheQuery();
 
-    if (!db.welcomer.channel) return interaction.followUp(`:x: Welcomer is not setup.`);
+    if (!db.goodbyes.channel) return interaction.followUp(`:x: Goodbyes is not setup.`);
 
-    interaction.followUp(`Welcomer messages are being sent to <#${db.welcomer.channel}>\nMessage: ${await require('../tools/textParser').parse(db.welcomer.message, interaction.member)}`);
+    interaction.followUp(`Goodbye messages are being sent to <#${db.goodbyes.channel}>\nMessage: ${await require('../tools/textParser').parse(db.goodbyes.message, interaction.member)}`);
   }
 
   async chatInputSet(interaction) {
@@ -57,13 +57,13 @@ class PingCommand extends Subcommand {
     const channel = await interaction.options.getChannel('channel');
     let messagetext = await interaction.options.getString('text');
 
-    if (!messagetext) messagetext = `Welcome to the server {{mention}}!`;
+    if (!messagetext) messagetext = `{{username}} has left the server.`;
 
-    db.welcomer.channel = channel.id;
-    db.welcomer.message = messagetext;
+    db.goodbyes.channel = channel.id;
+    db.goodbyes.message = messagetext;
 
     db.save()
-    .then(() => { interaction.followUp(`:white_check_mark: Successfully setup welcomer.`); })
+    .then(() => { interaction.followUp(`:white_check_mark: Successfully setup goodbye.`); })
     .catch((err) => { interaction.followUp(`:x: ${err}`); });
   }
 
@@ -71,11 +71,11 @@ class PingCommand extends Subcommand {
     await interaction.deferReply();
     const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).cacheQuery();
 
-    db.welcomer.channel = '';
-    db.welcomer.message = '';
+    db.goodbyes.channel = '';
+    db.goodbyes.message = '';
 
     db.save()
-    .then(() => { interaction.followUp(`:white_check_mark: Successfully cleared welcomer settings.`); })
+    .then(() => { interaction.followUp(`:white_check_mark: Successfully cleared goodbye settings.`); })
     .catch((err) => { interaction.followUp(`:x: ${err}`); });
   }
 }
