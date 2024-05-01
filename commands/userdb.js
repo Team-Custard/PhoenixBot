@@ -150,7 +150,7 @@ class PingCommand extends Subcommand {
         if (usersettings) {
             embed = new EmbedBuilder()
             .setTitle(member.user.username)
-            .setDescription(`**ID:** ${member.user.id}\n**UserDB registered:** Yes\n\n__**UserDB info:**__\n**Timezone:** ${(usersettings.timezone ? usersettings.timezone : 'Unset')}\n**Pronouns:** ${(usersettings.pronouns ? usersettings.pronouns : 'Unset')}\n**Description:** ${(usersettings.description ? usersettings.description : 'Unset')}\n\n__**Socials:**__\n**Youtube:** ${(usersettings.socials.youtube ? `[${usersettings.socials.youtube}](https://youtube.com/${usersettings.socials.youtube})` : 'Unset')}\n**Twitter:** ${(usersettings.socials.twitter ? `[${usersettings.socials.twitter}](https://twitter.com/${usersettings.socials.twitter})` : 'Unset')}`)
+            .setDescription(`**ID:** ${member.user.id}\n**UserDB registered:** :white_check_mark: Yes\n\n__**UserDB info:**__\n**Timezone:** ${(usersettings.timezone ? usersettings.timezone : 'Unset')}\n**Pronouns:** ${(usersettings.pronouns ? usersettings.pronouns : 'Unset')}\n**Description:** ${(usersettings.description ? usersettings.description : 'Unset')}\n\n__**Socials:**__\n**Youtube:** ${(usersettings.socials.youtube ? `[${usersettings.socials.youtube}](https://youtube.com/${usersettings.socials.youtube})` : 'Unset')}\n**Twitter:** ${(usersettings.socials.twitter ? `[${usersettings.socials.twitter}](https://twitter.com/${usersettings.socials.twitter})` : 'Unset')}`)
             .setColor(Colors.Orange)
             .setThumbnail(member.user.displayAvatarURL({ dynamic:true }))
             .setTimestamp(new Date());
@@ -158,7 +158,7 @@ class PingCommand extends Subcommand {
         else {
             embed = new EmbedBuilder()
             .setTitle(member.user.username)
-            .setDescription(`**ID:** ${member.user.id}\n**UserDB registered:** No`)
+            .setDescription(`**ID:** ${member.user.id}\n**UserDB registered:** :x: No, use </userdb set:${interaction.commandId}>.`)
             .setColor(Colors.Orange)
             .setThumbnail(member.user.displayAvatarURL({ dynamic:true }))
 

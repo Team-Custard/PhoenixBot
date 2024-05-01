@@ -1,6 +1,6 @@
-const { Listener, Identifiers } = require('@sapphire/framework');
+const { Listener } = require('@sapphire/framework');
 
-class MessageCommandError extends Listener {
+class chatInputCommandDenied extends Listener {
     constructor(context, options) {
         super(context, {
           ...options,
@@ -18,5 +18,5 @@ class MessageCommandError extends Listener {
     }
 }
 module.exports = {
-  MessageCommandError
+  chatInputCommandDenied
 };

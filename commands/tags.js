@@ -122,7 +122,7 @@ class PingCommand extends Subcommand {
     else {
       const btag = indexes.find(t => t.name == tagName);
       if (btag) {
-        interaction.followUp(`:information_source: **${btag.name}**:\n${btag.description}\n(Tag by ${btag.creator})`);
+        interaction.followUp(`:information_source: **${btag.name}**:\n${await require('../tools/textParser').parse(btag.description, interaction.member)}\n(Tag by ${btag.creator})`);
       }
       else {
         interaction.followUp(':x: Tag not found.');

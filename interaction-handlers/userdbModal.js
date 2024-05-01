@@ -10,7 +10,7 @@ class MenuHandler extends InteractionHandler {
     }
 
     parse(interaction) {
-      if (!interaction.customId == 'userdbModal') return this.none();
+      if (interaction.customId !== 'userdbModal') return this.none();
 
       return this.some();
     }
@@ -21,11 +21,11 @@ class MenuHandler extends InteractionHandler {
         let usersettings = await UserDB.findById(interaction.member.id, UserDB.upsert).cacheQuery();
         if (!usersettings) usersettings = new UserDB({ _id: interaction.member.id });
 
-        const tzText = await interaction.fields.getTextInputValue('timezoneField');
-        const pronounText = await interaction.fields.getTextInputValue('pronounField');
-        const descText = await interaction.fields.getTextInputValue('descriptionField');
-        const ytText = await interaction.fields.getTextInputValue('youtubeField');
-        const twtText = await interaction.fields.getTextInputValue('twitterField');
+        const tzText = await interaction.fields.getTextInputValue('timezoneField', false);
+        const pronounText = await interaction.fields.getTextInputValue('pronounField', false);
+        const descText = await interaction.fields.getTextInputValue('descriptionField', false);
+        const ytText = await interaction.fields.getTextInputValue('youtubeField', false);
+        const twtText = await interaction.fields.getTextInputValue('twitterField', false);
 
         if (tzText) {
             if (!require('../tools/timezones.json').includes(tzText)) return interaction.followUp(`:x: timezone: Incorrect timezone specified. Make sure you enter your timezone in the tz format (<https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>)`);
