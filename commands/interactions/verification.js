@@ -1,6 +1,6 @@
 const { Subcommand } = require('@sapphire/plugin-subcommands');
 const { BucketScope } = require('@sapphire/framework');
-const serverSettings = require('../tools/SettingsSchema');
+const serverSettings = require('../../tools/SettingsSchema');
 const { EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 class PingCommand extends Subcommand {

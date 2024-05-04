@@ -1,8 +1,21 @@
 const { Command } = require('@sapphire/framework');
+const { PermissionFlagsBits } = require('discord.js');
 
 class PingCommand extends Command {
   constructor(context, options) {
-    super(context, { ...options });
+    super(context, {
+      ...options,
+      name: 'addemoji',
+        aliases: ['steal', 'snag'],
+        description: 'Adds an emoji from another server, attachment, or url.',
+        detailedDescription: {
+          usage: 'addemoji <emoji> [name]',
+          examples: ['ping'],
+          args: ['No args needed.']
+        },
+        cooldownDelay: 3_000,
+        requiredClientPermissions: [PermissionFlagsBits.SendMessages]
+    });
   }
 
   registerApplicationCommands(registry) {

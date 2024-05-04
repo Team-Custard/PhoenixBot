@@ -1,0 +1,20 @@
+<%- include('../../partials/header'); %>
+<style>
+    #timezoneField {
+        background-color: #aaaaaa;
+    }
+</style>
+<div class="container text-center">
+<h2>Your timezone is:</h2>
+<h1 class="rounded-3" id="timezoneField">Attempting to fetch...</h1>
+<br>
+<p>Your timezone is listed above. You can use <u>/userdb set</u> to set your timezone on UserDB.<br />This will allow members to use the timefor command or the api to check what time it is for you.</p>
+<p>Timezone was fetched using the built in <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl">Intl namespace</a>. Learn more by clicking the link (Will lead to Mozilla's website)</p>
+</div>
+<script>
+  //var jstz = require('jstz');
+  var timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  document.getElementById("timezoneField").innerText = timezone;
+  console.log('Detected timezone: ' + timezone + ' (Based on Intl constructer)');
+</script>
+<%- include('../../partials/footer'); %>

@@ -5,6 +5,9 @@ const router = express.Router();
 router.get('/', function(req, res) {
     res.render('pages/home', { title:"Home" });
 });
+router.get('/userdb/tzhelp', function(req, res) {
+    res.render('pages/userdb/timezone', { title:"Your timezone" });
+});
 router.get('/server', function(req, res) {
     res.redirect('https://discord.gg/JC3WAcxFq6');
 });

@@ -1,7 +1,6 @@
 const { Subcommand } = require('@sapphire/plugin-subcommands');
 const { BucketScope } = require('@sapphire/framework');
-const serverSettings = require('../tools/SettingsSchema');
-const { EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const serverSettings = require('../../tools/SettingsSchema');
 
 class PingCommand extends Subcommand {
   constructor(context, options) {
@@ -47,7 +46,7 @@ class PingCommand extends Subcommand {
 
     if (!db.welcomer.channel) return interaction.followUp(`:x: Welcomer is not setup.`);
 
-    interaction.followUp(`Welcomer messages are being sent to <#${db.welcomer.channel}>\nMessage: ${await require('../tools/textParser').parse(db.welcomer.message, interaction.member)}`);
+    interaction.followUp(`Welcomer messages are being sent to <#${db.welcomer.channel}>\nMessage: ${await require('../../tools/textParser').parse(db.welcomer.message, interaction.member)}`);
   }
 
   async chatInputSet(interaction) {

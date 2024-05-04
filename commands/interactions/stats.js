@@ -1,7 +1,7 @@
 // const { isMessageInstance } = require('@sapphire/discord.js-utilities');
 const { BucketScope } = require('@sapphire/framework');
 const { Subcommand } = require('@sapphire/plugin-subcommands');
-const serverSettings = require('../tools/SettingsSchema');
+const serverSettings = require('../../tools/SettingsSchema');
 const { EmbedBuilder, Colors } = require('discord.js');
 const os = require('os');
 
