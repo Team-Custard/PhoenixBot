@@ -1,4 +1,4 @@
-const { Listener } = require('@sapphire/framework');
+const { Listener, Events } = require('@sapphire/framework');
 const UserDB = require('../tools/UserDB');
 const config = require('../config.json');
 
@@ -9,7 +9,8 @@ class ReadyListener extends Listener {
     super(context, {
       ...options,
       once: false,
-      event: 'messageCreate'
+      name: 'messageCreateAfkCheck',
+      event: Events.MessageCreate
     });
   }
   async run(message) {
@@ -31,6 +32,7 @@ class ReadyListener extends Listener {
     }
 
     if (config.userdb.global && config.userdb.afkEnabled && message.guild) {
+      if (!message.member.id || message.author.bot) return;
       if (afkCache.indexOf(message.member.id) != -1) {
           const usersettings = await UserDB.findById(message.member.id, UserDB.upsert).cacheQuery();
 

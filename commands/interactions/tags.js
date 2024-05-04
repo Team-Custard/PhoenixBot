@@ -1,7 +1,7 @@
 // const { isMessageInstance } = require('@sapphire/discord.js-utilities');
 const { BucketScope } = require('@sapphire/framework');
 const { Subcommand } = require('@sapphire/plugin-subcommands');
-const serverSettings = require('../tools/SettingsSchema');
+const serverSettings = require('../../tools/SettingsSchema');
 
 class PingCommand extends Subcommand {
   constructor(context, options) {
@@ -54,7 +54,7 @@ class PingCommand extends Subcommand {
     const tagName = await interaction.options.getString('name');
     const tagDesc = await interaction.options.getString('description');
 
-    const indexes = require('../tools/infoStuff.json');
+    const indexes = require('../../tools/infoStuff.json');
 
     const tag = db.tags.find(t => t.name == tagName);
     const btag = indexes.find(t => t.name == tagName);
@@ -97,7 +97,7 @@ class PingCommand extends Subcommand {
     await interaction.deferReply();
     const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).cacheQuery();
 
-    const indexes = require('../tools/infoStuff.json');
+    const indexes = require('../../tools/infoStuff.json');
 
     let srvTags = db.tags;
     if (srvTags == null) {
@@ -113,7 +113,7 @@ class PingCommand extends Subcommand {
 
     const db = await serverSettings.findById(interaction.guild.id, serverSettings.upsert).cacheQuery();
 
-    const indexes = require('../tools/infoStuff.json');
+    const indexes = require('../../tools/infoStuff.json');
 
     const tag = db.tags.find(t => t.name == tagName);
     if (tag) {
@@ -122,7 +122,7 @@ class PingCommand extends Subcommand {
     else {
       const btag = indexes.find(t => t.name == tagName);
       if (btag) {
-        interaction.followUp(`:information_source: **${btag.name}**:\n${await require('../tools/textParser').parse(btag.description, interaction.member)}\n(Tag by ${btag.creator})`);
+        interaction.followUp(`:information_source: **${btag.name}**:\n${await require('../../tools/textParser').parse(btag.description, interaction.member)}\n(Tag by ${btag.creator})`);
       }
       else {
         interaction.followUp(':x: Tag not found.');

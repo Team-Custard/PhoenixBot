@@ -1,7 +1,6 @@
 const { Subcommand } = require('@sapphire/plugin-subcommands');
 const { BucketScope } = require('@sapphire/framework');
-const serverSettings = require('../tools/SettingsSchema');
-const { EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const serverSettings = require('../../tools/SettingsSchema');
 
 class PingCommand extends Subcommand {
   constructor(context, options) {
@@ -47,7 +46,7 @@ class PingCommand extends Subcommand {
 
     if (!db.goodbyes.channel) return interaction.followUp(`:x: Goodbyes is not setup.`);
 
-    interaction.followUp(`Goodbye messages are being sent to <#${db.goodbyes.channel}>\nMessage: ${await require('../tools/textParser').parse(db.goodbyes.message, interaction.member)}`);
+    interaction.followUp(`Goodbye messages are being sent to <#${db.goodbyes.channel}>\nMessage: ${await require('../../tools/textParser').parse(db.goodbyes.message, interaction.member)}`);
   }
 
   async chatInputSet(interaction) {

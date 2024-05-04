@@ -28,7 +28,7 @@ class MenuHandler extends InteractionHandler {
         const twtText = await interaction.fields.getTextInputValue('twitterField', false);
 
         if (tzText) {
-            if (!require('../tools/timezones.json').includes(tzText)) return interaction.followUp(`:x: timezone: Incorrect timezone specified. Make sure you enter your timezone in the tz format (<https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>)`);
+            if (!require('../tools/timezones.json').includes(tzText)) return interaction.followUp(`:x: timezone: Incorrect timezone specified. Make sure you enter your timezone in the [tz format](<https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>).\nIf you'd like, you can have Phoenix automatically detect it at https://phoenixbot.epicgamer.org/userdb/tzhelp`);
 
             usersettings.timezone = tzText;
         }
