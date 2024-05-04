@@ -4,7 +4,7 @@
         "noIntro": false,
         "botclient": true,
         "dashboard": true,
-        "botmode": "prod"
+        "botmode": "dev"
     },
     "dashboard": {
         "fullredirecturl": "http://phoenixbot.epicgamer.org",

@@ -121,9 +121,10 @@ class PingCommand extends Subcommand {
         if (!usersettings) return interaction.followUp(`:x: **${member.user.username}** does not have a timezone set.`);
         if (!usersettings.timezone) return interaction.followUp(`:x: **${member.user.username}** does not have a timezone set.`);
 
+        const moment = require('moment-timezone');
         const date = new Date();
-        const strTime = date.toLocaleTimeString('en-US', { timeZone: usersettings.timezone });
-        const strDate = date.toLocaleDateString('en-US', { timeZone: usersettings.timezone });
+        const strTime = moment(date).tz(usersettings.timezone).format('hh:mm:ss');
+        const strDate = moment(date).tz(usersettings.timezone).format('MM-DD-YYYY');
         await interaction.followUp(`**${member.user.username}**'s time is **${strTime}** (${strDate}).`);
       }
 
