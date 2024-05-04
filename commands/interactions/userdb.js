@@ -1,8 +1,8 @@
 const { Subcommand } = require('@sapphire/plugin-subcommands');
 const { BucketScope } = require('@sapphire/framework');
-const UserDB = require('../tools/UserDB');
-const config = require('../config.json');
-const { afkCache } = require('../listeners/messageCreate');
+const UserDB = require('../../tools/UserDB');
+const config = require('../../config.json');
+const { afkCache } = require('../../listeners/messageCreate');
 
 const { REST, Routes, ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle, EmbedBuilder, Colors } = require('discord.js');
 

@@ -1,12 +1,6 @@
-const { SapphireClient } = require('@sapphire/framework');
-const { GatewayIntentBits } = require('discord.js');
+const { PhoenixClient } = require('./tools/PhoenixClient');
 
-const client = new SapphireClient({
-    intents: [GatewayIntentBits.MessageContent, GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.DirectMessages],
-    loadDefaultErrorListeners: true,
-    loadSubcommandErrorListeners: true
-});
-
+const client = new PhoenixClient();
 
 client.login(require('./config.json').process.botmode == "dev" ? process.env["DEVTOKEN"] : process.env["TOKEN"]);
 
