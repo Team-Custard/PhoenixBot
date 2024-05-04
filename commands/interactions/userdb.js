@@ -13,7 +13,7 @@ const modal = new ModalBuilder()
 
         const inputRowA = new ActionRowBuilder()
         .addComponents(new TextInputBuilder()
-        .setCustomId('timezoneField').setPlaceholder('America/New_York').setMaxLength(24).setRequired(false).setStyle(TextInputStyle.Short).setLabel(`Your timezone (optional)`));
+        .setCustomId('timezoneField').setPlaceholder('America/New_York').setMaxLength(36).setRequired(false).setStyle(TextInputStyle.Short).setLabel(`Your timezone (optional)`));
         const inputRowB = new ActionRowBuilder()
         .addComponents(new TextInputBuilder()
         .setCustomId('pronounField').setPlaceholder('they/them').setMaxLength(12).setRequired(false).setStyle(TextInputStyle.Short).setLabel(`Your pronouns (optional)`));
