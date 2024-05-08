@@ -100,7 +100,7 @@ class PingCommand extends Subcommand {
     });
 
     console.log('Creating image 3');
-    await loadImage(__dirname + '/../static/phoenixtrans.png')
+    await loadImage('https://phoenixbot.epicgamer.org/phoenixtrans.png')
     .then(async (img) => {
       ctx.drawImage(img, 0, 0, canvas.height, canvas.width);
     })
