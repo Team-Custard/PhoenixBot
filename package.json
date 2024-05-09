@@ -29,7 +29,7 @@
     "bent": "^7.3.12",
     "discord-api-types": "^0.37.79",
     "discord-perms-array": "^1.0.4",
-    "discord.js": "^14.14.1",
+    "discord.js": "^14.15.2",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.9",
     "express": "^4.19.2",
