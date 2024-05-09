@@ -102,6 +102,19 @@ class PingCommand extends Subcommand {
                 }
               }).then(() => {console.log('User command timefor message registered successfully.');})
               .catch((err) => console.log('User command timefor message failed. It probably already exists.', err));
+          }
+            if (!res.find(r => r.name == "setup_userdb")) {
+              console.log('Registering set command');
+              rest.post(Routes.applicationCommands(this.container.client.id), {
+                body: {
+                  name: 'setup_userdb',
+                  description: 'User installed version of userdb set',
+                  type: 1,
+                  integration_types: [1],
+                  contexts: [0, 1, 2]
+                }
+              }).then(() => {console.log('User command set message registered successfully.');})
+              .catch((err) => console.log('User command set message failed. It probably already exists.', err));
             }
           });
         }
@@ -195,5 +208,6 @@ class PingCommand extends Subcommand {
       }
 }
 module.exports = {
-    PingCommand
+    PingCommand,
+    modal
 };

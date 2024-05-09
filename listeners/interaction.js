@@ -59,6 +59,11 @@ class ReadyListener extends Listener {
         const strDate = date.toLocaleDateString('en-US', { timeZone: usersettings.timezone });
         await interaction.followUp(`**${member.username}**'s time is **${strTime}** (${strDate}).`);
     }
+
+    if (interaction.isChatInputCommand() && interaction.commandName == "setup_userdb") {
+      const { modal } = require('../commands/interactions/userdb');
+      interaction.showModal(modal);
+  }
   }
 }
 module.exports = {

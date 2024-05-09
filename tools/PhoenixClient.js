@@ -10,7 +10,11 @@ class PhoenixClient extends SapphireClient {
         caseInsensitiveCommands: true,
         caseInsensitivePrefixes: true,
         defaultPrefix: settings.prefix,
-        intents: [GatewayIntentBits.MessageContent, GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.DirectMessages, GatewayIntentBits.GuildMembers],
+        intents: [GatewayIntentBits.MessageContent,
+          GatewayIntentBits.Guilds,
+          GatewayIntentBits.GuildMessages,
+          GatewayIntentBits.DirectMessages,
+          GatewayIntentBits.GuildMembers],
         loadDefaultErrorListeners: true,
         loadMessageCommandListeners: true
       });

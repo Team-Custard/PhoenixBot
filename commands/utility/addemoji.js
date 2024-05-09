@@ -9,12 +9,13 @@ class PingCommand extends Command {
         aliases: ['steal', 'snag'],
         description: 'Adds an emoji from another server, attachment, or url.',
         detailedDescription: {
-          usage: 'addemoji <emoji> [name]',
-          examples: ['ping'],
-          args: ['No args needed.']
+          usage: 'addemoji <name> [emoji]',
+          examples: ['addemoji spongebob <:Spongebob:1199706626182086717>'],
+          args: ['name: The name of the emoji to use.', 'emoji: The emoji, or url']
         },
         cooldownDelay: 3_000,
-        requiredClientPermissions: [PermissionFlagsBits.SendMessages]
+        requiredClientPermissions: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.CreateGuildExpressions],
+        requiredUserPermissions: [PermissionFlagsBits.CreateGuildExpressions]
     });
   }
 
@@ -81,6 +82,54 @@ class PingCommand extends Command {
         }
     }
  else {return interaction.followUp(':x: No emojis specified.');}
+  }
+
+  async messageRun(message, args) {
+    const emojiname = await args.pick('string');
+    const emojiref = await args.pick('string').catch(() => undefined);
+
+    if (emojiref) {
+      if (emojiref.startsWith('http://') || emojiref.startsWith('https://')) {
+        message.guild.emojis.create({ attachment: emojiref, name: emojiname })
+        .then((e) => message.reply(`${e} : successfully added as \`${e.name}\`.`))
+        .catch((err) => message.reply(`:x: ${err}`));
+      }
+      else {
+        const hasEmoteRegex = /<a?:.+:\d+>/gm;
+        const emoteRegex = /<:.+:(\d+)>/gm;
+        const animatedEmoteRegex = /<a:.+:(\d+)>/gm;
+        let emoji;
+        if (emojiref.match(hasEmoteRegex)) {
+            if ((emoji = emoteRegex.exec(emojiref))) {
+                console.log(emoji[1]);
+                const fetchedEmoji = `https://cdn.discordapp.com/emojis/${emoji[1]}.png`;
+                if (!emoji[1]) return message.reply(':x: Unable to resolve emoji.');
+                await message.guild.emojis.create({ attachment: fetchedEmoji, name: emojiname })
+                .then((e) => message.reply(`${e} : successfully added as \`${e.name}\`.`))
+                .catch((err) => message.reply(`:x: ${err}`));
+            }
+            else if ((emoji = animatedEmoteRegex.exec(emojiref))) {
+                console.log(emoji[1]);
+                const fetchedEmoji = `https://cdn.discordapp.com/emojis/${emoji[1]}.gif`;
+                if (!emoji[1]) return message.reply(':x: Unable to resolve emoji.');
+                await message.guild.emojis.create({ attachment: fetchedEmoji, name: emojiname })
+                .then((e) => message.reply(`${e} : successfully added as \`${e.name}\`.`))
+                .catch((err) => message.reply(`:x: ${err}`));
+            }
+            else {
+                message.reply(":x: Couldn't find a valid emoji to paste.");
+            }
+        }
+        else if (message.attachments.first()) {
+            await message.guild.emojis.create({ attachment: message.attachments.first().url, name: emojiname })
+           .then((e) => message.reply(`${e} : successfully added as \`${e.name}\`.`))
+           .catch((err) => message.reply(`:x: ${err}`));
+        }
+        else {
+          message.reply(":x: Couldn't find a valid emoji to paste.");
+        }
+      }
+    }
   }
 }
 module.exports = {

@@ -1,9 +1,21 @@
 const { Command } = require('@sapphire/framework');
-const { REST, Routes } = require('discord.js');
+const { REST, Routes, PermissionFlagsBits } = require('discord.js');
 
 class UserCommand extends Command {
   constructor(context, options) {
-    super(context, { ...options });
+    super(context, {
+      ...options,
+      name: 'translate',
+        aliases: [],
+        description: 'Translates text to your current language',
+        detailedDescription: {
+          usage: 'translate <text>',
+          examples: ['translate Hola'],
+          args: ['text: The text to translate']
+        },
+        cooldownDelay: 3_000,
+        requiredClientPermissions: [PermissionFlagsBits.SendMessages]
+     });
   }
 
 
@@ -79,8 +91,27 @@ class UserCommand extends Command {
     await fetch(translateurl).then(async (response) => {
         const data = await response.json();
 
-        interaction.followUp({ content: `Translated to your language: ${data[0][0][0]}\n\nYou can now translate people's messages from any server. Use \`/info translate\` to learn more.` });
+        interaction.followUp({ content: `Translation result: ${data[0][0][0]}` });
     }).catch((err) => interaction.followUp(`:x: ${err}`));
+  }
+
+  async messageRun(message, args) {
+    const text = await args.rest('string');
+
+    const detectLang = new (require('languagedetect'));
+    detectLang.setLanguageType('iso2');
+    const sourceLang = await detectLang.detect(text, 1);
+    const targetLang = "en";
+    console.log(targetLang);
+
+    if (sourceLang.length == 0) return message.reply(':x: Couldn\'t detect a language.');
+    const translateurl = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=" + sourceLang[0][0] + "&tl=" + targetLang + "&dt=t&q=" + encodeURI(text);
+
+    const fetch = require('node-fetch');
+    await fetch(translateurl).then(async (response) => {
+        const data = await response.json();
+        message.reply({ content: `Translation result: ${data[0][0][0]}\n\nTo translate to your currently set language, use the **translate** slash command or context menu.` });
+    }).catch((err) => message.reply(`:x: ${err}`));
   }
 }
 module.exports = {

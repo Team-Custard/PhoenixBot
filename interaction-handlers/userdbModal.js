@@ -16,7 +16,7 @@ class MenuHandler extends InteractionHandler {
     }
 
     async run(interaction) {
-        await interaction.deferReply({ ephemeral: false });
+        await interaction.deferReply({ ephemeral: true });
 
         let usersettings = await UserDB.findById(interaction.member.id, UserDB.upsert).cacheQuery();
         if (!usersettings) usersettings = new UserDB({ _id: interaction.member.id });
@@ -51,7 +51,7 @@ class MenuHandler extends InteractionHandler {
 
         usersettings.save()
         .then(() => {
-            interaction.followUp({ content: `:white_check_mark: Successfully setup UserDB.`, ephemeral: false });
+            interaction.followUp({ content: `:white_check_mark: Successfully setup UserDB.`, ephemeral: true });
         }).catch((err) => {interaction.followUp(`:x: ${err}`);});
     }
 }
