@@ -10,12 +10,16 @@ class chatInputCommandError extends Listener {
       }
     run(error, { interaction }) {
         console.error(`Error occured while running ${interaction.commandName}`, error);
-            if (interaction.deferred) {
-                interaction.followUp({ content: `:x: ${error}`, ephemeral: true });
-            }
-            else {
-                interaction.reply({ content: `:x: ${error}`, ephemeral: true });
-            }
+        if (interaction.deferred || interaction.replied) {
+          return interaction.editReply({
+            content: `:x: ${error}`
+          });
+        }
+    
+        return interaction.reply({
+          content: `:x: ${error}`,
+          ephemeral: true
+        });
     }
 }
 module.exports = {

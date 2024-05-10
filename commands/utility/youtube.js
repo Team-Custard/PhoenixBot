@@ -7,14 +7,24 @@ class PingCommand extends Subcommand {
     super(context, {
       ...options,
       name: 'youtube',
+      aliases: ['yt'],
+      description: 'Searches Youtube for a video or channel.',
+      detailedDescription: {
+        usage: 'youtube [subcommand] <query>',
+        examples: ['youtube Whistle Flo Rida', 'youtube How to make a burger HowToBasic', 'youtube channel SylveonDev'],
+        args: ['subcommand: Can be video/channel. Defaults to video.', 'query: The search query to find.']
+      },
       subcommands: [
         {
           name: 'video',
-          chatInputRun: 'chatInputVideo'
+          chatInputRun: 'chatInputVideo',
+          messageRun: 'messageVideo',
+          default: true
         },
         {
           name: 'channel',
-          chatInputRun: 'chatInputChannel'
+          chatInputRun: 'chatInputChannel',
+          messageRun: 'messageChannel'
         }
       ],
       cooldownDelay: 60_000,
@@ -64,6 +74,36 @@ class PingCommand extends Subcommand {
         if (err) return interaction.followUp(`:x: Not found.`);
         interaction.followUp(`${results[0].link}`);
     });
+  }
+
+  async messageVideo(message, args) {
+    const query = await args.rest('string');
+
+    const opts = {
+        maxResults: 1,
+        key: process.env.youtubekey,
+        type: 'video'
+    };
+
+    search(query, opts, function(err, results) {
+        if (err) return message.reply(`:x: Not found.`);
+        message.reply(`${results[0].link}`);
+    });
+  }
+
+  async messageChannel(message, args) {
+    const query = await args.rest('string');
+
+    const opts = {
+        maxResults: 1,
+        key: process.env.youtubekey,
+        type: 'channel'
+    };
+
+    search(query, opts, function(err, results) {
+      if (err) return message.reply(`:x: Not found.`);
+      message.reply(`${results[0].link}`);
+  });
   }
 }
 module.exports = {
