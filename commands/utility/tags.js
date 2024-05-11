@@ -154,7 +154,7 @@ class PingCommand extends Subcommand {
 
     const tag = db.tags.find(t => t.name == tagName);
     if (tag) {
-      interaction.followUp(`:information_source: **${tag.name}**:\n${tag.description}\n(Tag by ${tag.creator})`);
+      interaction.followUp(`:information_source: **${tag.name}**:\n${await require('../../tools/textParser').parse(tag.description, interaction.member)}\n(Tag by ${tag.creator})`);
     }
     else {
       const btag = indexes.find(t => t.name == tagName);
@@ -247,7 +247,7 @@ class PingCommand extends Subcommand {
 
     const tag = db.tags.find(t => t.name == tagName);
     if (tag) {
-      message.reply(`:information_source: **${tag.name}**:\n${tag.description}\n(Tag by ${tag.creator})`);
+      message.reply(`:information_source: **${tag.name}**:\n${await require('../../tools/textParser').parse(tag.description, interaction.member)}\n(Tag by ${tag.creator})`);
     }
     else {
       const btag = indexes.find(t => t.name == tagName);

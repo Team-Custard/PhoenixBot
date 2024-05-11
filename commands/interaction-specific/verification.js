@@ -48,7 +48,7 @@ class PingCommand extends Subcommand {
 
     const embed = new EmbedBuilder()
     .setAuthor({ name: interaction.guild.name + ' Verification', iconURL: interaction.guild.iconURL({ dynamic: true }) })
-    .setDescription(db.verification.messageText ? db.verification.messageText : 'This server uses PhoenixBot for verification. To verify, click the verification button below.')
+    .setDescription(db.verification.messageText ? await require('../../tools/textParser').parse(db.verification.messageText, interaction.member) : 'This server uses PhoenixBot for verification. To verify, click the verification button below.')
     .setTimestamp(new Date())
     .setColor(Colors.Orange);
 

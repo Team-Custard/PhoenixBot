@@ -9,9 +9,10 @@ router.get('/api/timefor/:id', async function(req, res) {
         if (!usersettings) return res.send({ status: 400, message: 'User have not setup UserDB.' });
         if (!usersettings.timezone) return res.send({ status: 400, message: 'User does not have timezone setup.' });
 
+        const moment = require('moment-timezone');
         const date = new Date();
-        const strTime = date.toLocaleTimeString('en-US', { timeZone: usersettings.timezone });
-        const strDate = date.toLocaleDateString('en-US', { timeZone: usersettings.timezone });
+        const strTime = moment(date).tz(usersettings.timezone).format('hh:mm:ss');
+        const strDate = moment(date).tz(usersettings.timezone).format('MM-DD-YYYY');
         await res.send({ status: 200, id: member, time: strTime, date: strDate });
 });
 

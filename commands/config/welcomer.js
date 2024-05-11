@@ -1,29 +1,43 @@
 const { Subcommand } = require('@sapphire/plugin-subcommands');
 const { BucketScope } = require('@sapphire/framework');
 const serverSettings = require('../../tools/SettingsSchema');
+const { PermissionFlagsBits } = require('discord.js');
 
 class PingCommand extends Subcommand {
   constructor(context, options) {
     super(context, {
       ...options,
       name: 'welcomer',
+      aliases: [],
+      description: 'Configures welcomer settings.',
+      detailedDescription: {
+        usage: 'welcomer [subcommand] <channel> [text]',
+        examples: ['welcomer 1199497550143701042 Welcome to the server {{mention}}!'],
+        args: ['subcommand: ', 'channel: The channel to use', 'text: The text to set']
+      },
       subcommands: [
         {
           name: 'test',
-          chatInputRun: 'chatInputDisplay'
+          chatInputRun: 'chatInputDisplay',
+          messageRun: 'messageDisplay',
+          default: true
         },
         {
           name: 'setup',
-          chatInputRun: 'chatInputSet'
+          chatInputRun: 'chatInputSet',
+          messageRun: 'messageSet'
         },
         {
           name: 'clear',
-          chatInputRun: 'chatInputClear'
+          chatInputRun: 'chatInputClear',
+          messageRun: 'messageClear'
         }
       ],
       cooldownDelay: 60_000,
       cooldownLimit: 6,
-      cooldownScope: BucketScope.Guild
+      cooldownScope: BucketScope.Guild,
+      requiredClientPermissions: [PermissionFlagsBits.SendMessages],
+      requiredUserPermissions: [PermissionFlagsBits.ManageGuild]
     });
   }
 
@@ -76,6 +90,41 @@ class PingCommand extends Subcommand {
     db.save()
     .then(() => { interaction.followUp(`:white_check_mark: Successfully cleared welcomer settings.`); })
     .catch((err) => { interaction.followUp(`:x: ${err}`); });
+  }
+
+  async messageDisplay(message) {
+    const db = await serverSettings.findById(message.guild.id, serverSettings.upsert).cacheQuery();
+
+    if (!db.welcomer.channel) return message.reply(`:x: welcomer is not setup.`);
+
+    message.reply(`Welcomer messages are being sent to <#${db.welcomer.channel}>\nMessage: ${await require('../../tools/textParser').parse(db.goodbyes.message, message.member)}`);
+  }
+
+  async messageSet(message, args) {
+    const db = await serverSettings.findById(message.guild.id, serverSettings.upsert).cacheQuery();
+
+    const channel = await args.pick('channel');
+    let messagetext = await args.rest('string').catch(() => undefined);
+
+    if (!messagetext) messagetext = `Welcome to the server {{mention}}!`;
+
+    db.welcomer.channel = channel.id;
+    db.welcomer.message = messagetext;
+
+    db.save()
+    .then(() => { message.reply(`:white_check_mark: Successfully setup welcomer.`); })
+    .catch((err) => { message.reply(`:x: ${err}`); });
+  }
+
+  async messageClear(message) {
+    const db = await serverSettings.findById(message.guild.id, serverSettings.upsert).cacheQuery();
+
+    db.welcomer.channel = '';
+    db.welcomer.message = '';
+
+    db.save()
+    .then(() => { message.reply(`:white_check_mark: Successfully cleared welcomer settings.`); })
+    .catch((err) => { message.reply(`:x: ${err}`); });
   }
 }
 module.exports = {
