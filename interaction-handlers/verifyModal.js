@@ -28,7 +28,7 @@ class MenuHandler extends InteractionHandler {
         .catch(() => undefined);
         if (!role) return interaction.followUp(`:x: I couldn't find the verified role anymore as the role appears to have been deleted. You need to use the verification setup command again. Please bring this to your server's admin's attention.`);
         interaction.member.roles.add(role, `Verification`)
-        .then(() => {return interaction.followUp(db.verification.verifiedText ? `:white_check_mark: ${await require('../tools/textParser').parse(db.verification.verifiedText, interaction.member)}` : `:white_check_mark: You have been verified. Enjoy this server,`);})
+        .then(async () => {return interaction.followUp(db.verification.verifiedText ? `:white_check_mark: ${await require('../tools/textParser').parse(db.verification.verifiedText, interaction.member)}` : `:white_check_mark: You have been verified. Enjoy this server,`);})
         .catch((err) => {console.error(err); return interaction.followUp(`:x: I couldn't give you the verified role, most likely I don't have permission to hand out roles or the role is above my topmost role. Please bring this to your server's admin's attention.`);});
       }
       else {
