@@ -1,4 +1,3 @@
-const { Message, GuildMember } = require('discord.js');
 /**
  * Parses text with placeholders
  * @param {String} text The text to be parsed by the parser.

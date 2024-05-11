@@ -15,7 +15,7 @@ class chatInputCommandError extends Listener {
             content: `:x: ${error}`
           });
         }
-    
+
         return interaction.reply({
           content: `:x: ${error}`,
           ephemeral: true

@@ -12,7 +12,7 @@ class PingCommand extends Subcommand {
       subcommands: [
         {
           name: 'cat',
-          chatInputRun: 'chatInputCat'
+          chatInputRun: 'chatInputCat',
         },
         {
           name: 'dog',
@@ -29,10 +29,6 @@ class PingCommand extends Subcommand {
         {
           name: 'wolfram',
           chatInputRun: 'chatInputWolfram'
-        },
-        {
-          name: 'define',
-          chatInputRun: 'chatInputDefine'
         },
         {
           name: 'phoenixav',
@@ -68,15 +64,27 @@ class PingCommand extends Subcommand {
   }
 
   async chatInputAvatar(interaction) {
-    let member = await interaction.options.getMember('user');
-    if (!member) member = interaction.member;
     const guildav = await interaction.options.getBoolean('server');
+    if (guildav) {
+      let member = await interaction.options.getMember('user');
+      if (!member) member = interaction.member;
 
-    const avatar = (guildav == true ? member.avatarURL({ dynamic: true, size: 1024 }) : member.user.avatarURL({ dynamic: true, size: 1024 }));
+      const avatar = member.avatarURL({ dynamic: true, size: 1024 });
 
-    await interaction.reply({
-      files: [avatar]
-    });
+      await interaction.reply({
+        files: [avatar]
+      });
+    }
+    else {
+      let member = await interaction.options.getUser('user');
+      if (!member) member = interaction.user;
+
+      const avatar = member.avatarURL({ dynamic: true, size: 1024 });
+
+      await interaction.reply({
+        files: [avatar]
+      });
+    }
   }
 
   async chatInputPhoenixAV(interaction) {

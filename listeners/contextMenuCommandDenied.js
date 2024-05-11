@@ -1,15 +1,14 @@
 const { Listener } = require('@sapphire/framework');
 
-class contextMenuCommandError extends Listener {
+class contextMenuCommandDenied extends Listener {
     constructor(context, options) {
         super(context, {
           ...options,
           once: false,
-          event: 'contextMenuCommandError'
+          event: 'contextMenuCommandDenied'
         });
       }
     run(error, { interaction }) {
-        console.error(`Error occured while running ${interaction.commandName}`, error);
         if (interaction.deferred || interaction.replied) {
           return interaction.editReply({
             content: `:x: ${error}`
@@ -22,5 +21,5 @@ class contextMenuCommandError extends Listener {
     }
 }
 module.exports = {
-  contextMenuCommandError
+  contextMenuCommandDenied
 };

@@ -24,7 +24,7 @@ class tagLockPrecondition extends Precondition {
     if (!db.lockTags) return this.okay();
     return member.permissions.has(PermissionFlagsBits.ManageGuild)
       ? this.ok()
-      : this.error({ message: 'Sorry, this server has disabled the ability to create tags for members.' });
+      : this.error({ message: 'Tag management is locked for members' });
   }
 }
 module.exports = {

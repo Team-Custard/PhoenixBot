@@ -38,7 +38,7 @@ class PingCommand extends Command {
       .addFields([
         { name: `Utility`, value: general.join(', ') },
         { name: `Config`, value: config.join(', ') },
-        // { name: `Fun`, value: fun.join(', ') }
+        { name: `Fun`, value: fun.join(', ') }
       ]);
       return message.reply({ embeds: [embed] });
     }

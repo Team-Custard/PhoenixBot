@@ -1,11 +1,11 @@
 const { Listener } = require('@sapphire/framework');
 
-class contextMenuCommandError extends Listener {
+class chatInputSubcommandError extends Listener {
     constructor(context, options) {
         super(context, {
           ...options,
           once: false,
-          event: 'contextMenuCommandError'
+          event: 'chatInputSubcommandError'
         });
       }
     run(error, { interaction }) {
@@ -22,5 +22,5 @@ class contextMenuCommandError extends Listener {
     }
 }
 module.exports = {
-  contextMenuCommandError
+  chatInputSubcommandError
 };

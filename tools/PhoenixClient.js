@@ -1,24 +1,25 @@
 const { isGuildBasedChannel } = require('@sapphire/discord.js-utilities');
-const { container, SapphireClient } = require('@sapphire/framework');
-const { GatewayIntentBits, PermissionFlagsBits } = require('discord.js');
+const { SapphireClient } = require('@sapphire/framework');
+const { GatewayIntentBits } = require('discord.js');
 const database = require("../tools/SettingsSchema");
 const settings = require('../config.json');
 
 class PhoenixClient extends SapphireClient {
-    constructor() {
-      super({
-        caseInsensitiveCommands: true,
-        caseInsensitivePrefixes: true,
-        defaultPrefix: settings.prefix,
-        intents: [GatewayIntentBits.MessageContent,
-          GatewayIntentBits.Guilds,
-          GatewayIntentBits.GuildMessages,
-          GatewayIntentBits.DirectMessages,
-          GatewayIntentBits.GuildMembers],
-        loadDefaultErrorListeners: true,
-        loadMessageCommandListeners: true
-      });
-    }
+  constructor() {
+    super({
+      caseInsensitiveCommands: true,
+      caseInsensitivePrefixes: true,
+      defaultPrefix: settings.prefix,
+      intents: [GatewayIntentBits.MessageContent,
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.GuildMembers],
+      loadDefaultErrorListeners: true,
+      loadMessageCommandListeners: true,
+      typing: true
+    });
+  }
 
   async login(token) {
     return super.login(token);
@@ -34,25 +35,30 @@ class PhoenixClient extends SapphireClient {
    */
   fetchPrefix = async (message) => {
     // Return if message is blank
-    if (message.content == "" || message.content == null || message.content == undefined) return null;
+    if (message.content == "" || message.content == null || message.content == undefined) return this.options.defaultPrefix;
     if (isGuildBasedChannel(message.channel)) {
             // Oh my hot roblox :flushed:
       try {
 
-        let serverdb = await database.findById(message.guild.id).exec();
-        if (serverdb === null){
+        const serverdb = await database.findById(message.guild.id).exec();
+        if (serverdb === null) {
             return this.options.defaultPrefix;
         }
-        //console.log(serverdb)
+        // console.log(serverdb)
         const prefixes = serverdb.prefix;
-        //prefixes.push('');
+        // prefixes.push('');
         return prefixes;
-      } catch (err) {
-        console.warn('Database error',err);
+      }
+      catch (err) {
+        console.warn('Database error', err);
         return this.options.defaultPrefix;
       }
     }
-  };
+    
+    return this.options.defaultPrefix;
+  }
+
+  
 }
 module.exports = {
   PhoenixClient
