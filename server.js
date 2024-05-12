@@ -11,6 +11,7 @@ if (settings.dashboard.devmode == "on") {app.enable('trust proxy');}
 
 app.use(require('./routers/mainpage'));
 app.use(require('./routers/api'));
+// app.use(require('./routers/interactions'));
 // app.use(require('./routers/dashboard'));
 
 app.use(function(req, res, next) {
