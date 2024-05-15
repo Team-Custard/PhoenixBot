@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    
+    <title>UserDB - PhoenixBot</title>
+    <link rel="favicon" href="http://phoenixbot.epicgamer.org/favicon.ico">
+
+    <meta content="PhoenixBot" property="og:title" />
+    <meta content="Phoenix is an open-source bot by SylveonDev that adds extended functionality to your server. You can also add Phoenix to your account to access some tools like translating messages." property="og:description" />
+    <meta property="og:image" content="http://phoenixbot.epicgamer.org/phoenixlogo.png">
+    <meta property="og:image:type" content="image/png">
+    <meta content="#FF6D12" data-react-helmet="true" name="theme-color" />
+</head>
+<style>
+    body {
+        background-color: tan;
+    }
+    .pfp {
+        background-color: #aaaaaa;
+        border-radius: 100%;
+        border: black solid 5px;
+    }
+    .back {
+        background-color: white;
+    }
+    .hotmen {
+        font-size: 26px;
+    }
+</style>
+<body>
+    <br><br><br><br>
+    <div class="container text-center back rounded-3">
+    <img class="pfp" src="<%- us.avatarURL({extension: 'png', size: 256}) %>">
+    <h1><%- us.tag %></h1>
+    <div>
+        <span id="timezone" class="hotmen">🕒 Unknown | 📅 Unknown</span>
+        <span class="hotmen"> | 🗣️ <%- (uset.pronouns ? uset.pronouns : 'Unknown' ) %></span>
+    </div>
+    <p><%- uset.description %></p>
+    <a id="twitterButton" style="display: none;" href="https://twitter.com/<%= uset.socials.twitter %>"><img height="64px" src="https://cdn4.iconfinder.com/data/icons/social-media-icons-the-circle-set/48/twitter_circle-256.png"></a>
+    <a id="youtubeButton" style="display: none;" href="https://youtube.com/<%= uset.socials.youtube %>"><img height="64px" src="https://cdn3.iconfinder.com/data/icons/2018-social-media-logotypes/1000/2018_social_media_popular_app_logo_youtube-256.png"></a>
+    </div>
+    <footer class="text-center">Page powered by <a href="/userdb">PhoenixBot UserDB</a>.</footer>
+    <script>
+        // Unhide socials buttons if exists
+        const twtbtn = document.getElementById('twitterButton');
+        const ytbtn = document.getElementById('youtubeButton');
+        
+        if ("<%= uset.socials.twitter %>" != "") twtbtn.style = "display: inline;";
+        if ("<%= uset.socials.youtube %>" != "") ytbtn.style = "display: inline;";
+
+        // Fetch time
+        const thingy = document.getElementById('timezone');
+        console.log(`fetching /api/timefor/<%= uid %>`)
+        fetch(`/api/timefor/<%= uid %>`)
+        .then(r=> {
+            r.json().then(t => {
+                if (t.status == 200) {
+                    thingy.textContent = '🕒 '+t.time+' | 📅 '+t.date;
+                }
+            })
+        })
+    </script>
+</body>

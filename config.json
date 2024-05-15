@@ -2,7 +2,7 @@
     "prefix": "=",
     "process":{
         "noIntro": false,
-        "botclient": false,
+        "botclient": true,
         "dashboard": true,
         "botmode": "dev"
     },
