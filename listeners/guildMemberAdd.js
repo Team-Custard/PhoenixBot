@@ -10,6 +10,7 @@ class GuildMemberAdd extends Listener {
         });
       }
     async run(member) {
+      if (member.user.bot) return;
       const db = await ServerSettings.findById(member.guild.id).cacheQuery();
       if (db.welcomer.channel) {
         const channel = await member.guild.channels.fetch(db.welcomer.channel);

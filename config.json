@@ -1,5 +1,6 @@
 {
     "prefix": "=",
+    "ownerId": "763631377152999435",
     "process":{
         "noIntro": false,
         "botclient": true,
