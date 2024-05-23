@@ -39,13 +39,13 @@ class PhoenixClient extends SapphireClient {
     if (isGuildBasedChannel(message.channel)) {
             // Oh my hot roblox :flushed:
       try {
-
+        if (settings.process.botmode == 'test') return "---";
         const serverdb = await database.findById(message.guild.id).exec();
         if (serverdb === null) {
             return this.options.defaultPrefix;
         }
         // console.log(serverdb)
-        const prefixes = serverdb.prefix;
+        const prefixes = (settings.process.botmode == 'prod' ? serverdb.prefix : serverdb.stagingprefix);
         // prefixes.push('');
         return prefixes;
       }

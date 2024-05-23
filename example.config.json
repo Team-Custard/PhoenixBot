@@ -1,0 +1,25 @@
+{
+    "prefix": "=",
+    "stagingprefix" : "==",
+    "ownerId": "",
+    "process":{
+        "noIntro": false,
+        "botclient": true,
+        "dashboard": false,
+        "botmode": "prod"
+    },
+    "dashboard": {
+        "fullredirecturl": "",
+        "clientid": "",
+        "serverport": 8080,
+        "devmode": false
+    },
+
+    "translator":{
+        "targetLang": "en"
+    },
+    "userdb":{
+        "global": true,
+        "afkEnabled": true
+    }
+}

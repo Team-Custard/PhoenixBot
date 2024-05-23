@@ -4,7 +4,7 @@ const { SpeedGooseCacheAutoCleaner } = require('speedgoose');
 const settingsSchema = new Schema({
     _id: { type: String, required: true },
     prefix: { type: String, required: false, default: "=" },
-    stagingprefix: { type: String, required: false, default: "s=" },
+    stagingprefix: { type: String, required: false, default: "==" },
     enablePrefix: { type: Boolean, required: false, default: true },
     tags: [{
         name: String,

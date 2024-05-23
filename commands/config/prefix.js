@@ -1,6 +1,7 @@
 const { Command } = require('@sapphire/framework');
 const { PermissionFlagsBits } = require('discord.js');
 const serverSettings = require('../../tools/SettingsSchema');
+const settings = require('../../config.json');
 
 class PingCommand extends Command {
     constructor(context, options) {
@@ -27,14 +28,14 @@ class PingCommand extends Command {
       if (newprefix) {
         if (newprefix > 6) return message.reply(`:x: Prefix can be no more than 6 characters.`);
         if (newprefix < 1) return message.reply(`:x: Prefix can be no less than 0 characters.`);
-        db.prefix = newprefix;
+        (settings.process.botmode == 'prod' ? (db.prefix = newprefix) : (db.stagingprefix = newprefix)) ;
 
         db.save()
         .then(() => { message.reply(`:white_check_mark: Prefix is now set to **${newprefix}**.`); })
         .catch((err) => { message.reply(`:x: ${err}`); });
       }
       else {
-        message.reply(`The current prefix is **${db.prefix}**`);
+        message.reply(`The current prefix is **${(settings.process.botmode == 'prod' ? db.prefix : db.stagingprefix)}**`);
       }
     }
   }

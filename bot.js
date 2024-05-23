@@ -2,6 +2,19 @@ const { PhoenixClient } = require('./tools/PhoenixClient');
 
 const client = new PhoenixClient();
 
-client.login(require('./config.json').process.botmode == "dev" ? process.env["DEVTOKEN"] : process.env["TOKEN"]);
+switch (require('./config.json').process.botmode) {
+    case "prod": {
+        client.login(process.env.TOKEN);
+        break;
+    }
+    case "dev": {
+        client.login(process.env.STAGINGTOKEN);
+        break;
+    }
+    case "test": {
+        client.login(process.env.TESTTOKEN);
+        break;
+    }
+}
 
 exports.client = client;
