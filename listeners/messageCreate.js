@@ -32,6 +32,7 @@ class ReadyListener extends Listener {
     }
 
     if (config.userdb.global && config.userdb.afkEnabled && message.guild) {
+      if (!message.member) return;
       if (!message.member.id || message.author.bot) return;
       if (afkCache.indexOf(message.member.id) != -1) {
           const usersettings = await UserDB.findById(message.member.id, UserDB.upsert).cacheQuery();
