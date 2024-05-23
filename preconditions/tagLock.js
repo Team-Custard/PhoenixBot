@@ -21,7 +21,7 @@ class tagLockPrecondition extends Precondition {
 
   async checkLockStatus(member) {
     const db = await serverSettings.findById(member.guild.id, serverSettings.upsert).cacheQuery();
-    if (!db.lockTags) return this.okay();
+    if (!db.lockTags) return this.ok();
     return member.permissions.has(PermissionFlagsBits.ManageGuild)
       ? this.ok()
       : this.error({ message: 'Tag management is locked for members' });

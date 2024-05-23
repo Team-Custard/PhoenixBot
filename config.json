@@ -1,5 +1,6 @@
 {
     "prefix": "=",
+    "stagingprefix" : "==",
     "ownerId": "763631377152999435",
     "process":{
         "noIntro": false,
