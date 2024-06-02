@@ -1,5 +1,5 @@
 const { Listener } = require('@sapphire/framework');
-const { messageLink } = require('discord.js');
+const { messageLink, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const UserDB = require('../tools/UserDB');
 
 class ReadyListener extends Listener {
@@ -15,7 +15,9 @@ class ReadyListener extends Listener {
     // console.log(interaction);
     if (interaction.isMessageContextMenuCommand() && interaction.commandName == "Translate message") {
         // console.log(interaction.targetMessage);
-        await interaction.deferReply({ ephemeral: true });
+        const db = await UserDB.findById(interaction.user.id);
+
+        await interaction.deferReply({ ephemeral: (db ? (db.ephemeral) : false) });
 
         const message = interaction.targetMessage;
 
@@ -40,13 +42,27 @@ class ReadyListener extends Listener {
             else {
                 msgLink = await messageLink(message.channelId, message.id);
             }
-            interaction.followUp({ content: `[${message.author.tag} said:](${msgLink}) ${data[0][0][0]}` });
+
+            const buttons = new ActionRowBuilder()
+            .addComponents(new ButtonBuilder()
+            .setCustomId('userbotinfo')
+            .setLabel('Why am I seeing this')
+            .setEmoji('❔')
+            .setStyle(ButtonStyle.Secondary))
+            .addComponents(new ButtonBuilder()
+            .setCustomId('userbotephemeral-' + interaction.user.id)
+            .setLabel('Toggle ephemeral')
+            .setStyle(ButtonStyle.Secondary));
+
+            interaction.followUp({ content: `[${message.author.tag} said:](${msgLink}) ${data[0][0][0]}`, components: [buttons] });
 
         }).catch((err) => interaction.followUp(`:x: ${err}`));
     }
 
     if (interaction.isUserContextMenuCommand() && interaction.commandName == "Time for user") {
-        await interaction.deferReply({ ephemeral: true });
+        const db = await UserDB.findById(interaction.user.id);
+
+        await interaction.deferReply({ ephemeral: (db ? (db.ephemeral) : false) });
 
         const member = interaction.targetUser;
 
@@ -57,7 +73,19 @@ class ReadyListener extends Listener {
         const date = new Date();
         const strTime = date.toLocaleTimeString('en-US', { timeZone: usersettings.timezone });
         const strDate = date.toLocaleDateString('en-US', { timeZone: usersettings.timezone });
-        await interaction.followUp(`**${member.username}**'s time is **${strTime}** (${strDate}).`);
+
+        const buttons = new ActionRowBuilder()
+        .addComponents(new ButtonBuilder()
+        .setCustomId('userbotinfo')
+        .setLabel('Why am I seeing this')
+        .setEmoji('❔')
+        .setStyle(ButtonStyle.Secondary))
+        .addComponents(new ButtonBuilder()
+        .setCustomId('userbotephemeral-' + interaction.user.id)
+        .setLabel('Toggle ephemeral')
+        .setStyle(ButtonStyle.Secondary));
+
+        await interaction.followUp({ content: `**${member.username}**'s time is **${strTime}** (${strDate}).`, components: [buttons] });
     }
 
     if (interaction.isChatInputCommand() && interaction.commandName == "setup_userdb") {

@@ -16,7 +16,8 @@ const settingsSchema = new Schema({
     afk: {
         since: String,
         status: String
-    }
+    },
+    ephemeral: Boolean
   }).plugin(SpeedGooseCacheAutoCleaner);
 
 const settings = model('userdb', settingsSchema);

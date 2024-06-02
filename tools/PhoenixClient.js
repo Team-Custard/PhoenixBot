@@ -37,16 +37,14 @@ class PhoenixClient extends SapphireClient {
     // Return if message is blank
     if (message.content == "" || message.content == null || message.content == undefined) return this.options.defaultPrefix;
     if (isGuildBasedChannel(message.channel)) {
-            // Oh my hot roblox :flushed:
+      // Oh my hot roblox :flushed:
       try {
-        if (settings.process.botmode == 'test') return "---";
+        if (settings.process.botmode == 'test') return settings.testingprefix;
         const serverdb = await database.findById(message.guild.id).exec();
         if (serverdb === null) {
             return this.options.defaultPrefix;
         }
-        // console.log(serverdb)
         const prefixes = (settings.process.botmode == 'prod' ? serverdb.prefix : serverdb.stagingprefix);
-        // prefixes.push('');
         return prefixes;
       }
       catch (err) {

@@ -1,5 +1,5 @@
 const { Listener } = require('@sapphire/framework');
-const database = require('../tools/SettingsSchema');
+const db = require('../tools/database');
 
 class GuildDelete extends Listener {
     constructor(context, options) {
@@ -10,9 +10,7 @@ class GuildDelete extends Listener {
         });
       }
     async run(guild) {
-      await database.findByIdAndDelete(guild.id).cacheQuery()
-      .then(() => console.log(`Deleted database for ${guild.id}`))
-      .catch((err) => console.error(`Error deleting database for ${guild.id}`, err));
+      db.cleanupGuildDatabase(guild.id, guild.members);
     }
 }
 module.exports = {
