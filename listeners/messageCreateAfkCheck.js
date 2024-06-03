@@ -2,8 +2,6 @@ const { Listener, Events } = require('@sapphire/framework');
 const UserDB = require('../tools/UserDB');
 const config = require('../config.json');
 
-const afkCache = [];
-
 class ReadyListener extends Listener {
   constructor(context, options) {
     super(context, {
@@ -45,8 +43,6 @@ class ReadyListener extends Listener {
           message.reply({ content: `Welcome back ${message.member}! I have cleared you afk status.` });
           }).catch((err) => {message.reply(`Welcome back ${message.member}!\nOops! I was unable to clear your afk status though. Error: ${err}`);});
 
-          const cacheIndex = afkCache.indexOf(message.member.id);
-          afkCache.splice(cacheIndex, 1);
       }
 
       if (message.inGuild() && !message.author.bot && message.mentions.members.size > 0) {
@@ -57,8 +53,6 @@ class ReadyListener extends Listener {
           if (usersettings.afk.status) {
               if (member.id != message.member.id) {
                   message.reply(`${member.user.username} is afk. \`${usersettings.afk.status}\` <t:${usersettings.afk.since}:R>`);
-
-                  if (afkCache.indexOf(member.id) == -1) afkCache.push(member.id);
               }
               else {
                   usersettings.afk.since = null;
@@ -73,6 +67,5 @@ class ReadyListener extends Listener {
   }
 }
 module.exports = {
-  ReadyListener,
-  afkCache
+  ReadyListener
 };

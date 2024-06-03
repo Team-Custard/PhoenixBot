@@ -2,7 +2,6 @@ const { Subcommand } = require('@sapphire/plugin-subcommands');
 const { BucketScope } = require('@sapphire/framework');
 const UserDB = require('../../tools/UserDB');
 const config = require('../../config.json');
-const { afkCache } = require('../../listeners/messageCreate');
 
 const { REST, Routes, ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle, EmbedBuilder, Colors } = require('discord.js');
 
@@ -196,7 +195,6 @@ class PingCommand extends Subcommand {
             interaction.followUp({ content: `:white_check_mark: You are now afk. To remove your afk status, simply send a message in the server.`, ephemeral: false });
         }).catch((err) => {interaction.followUp(`:x: ${err}`);});
 
-        if (afkCache.indexOf(interaction.member.id) == -1) afkCache.push(interaction.member.id);
       }
 
       async chatInputClear(interaction) {
