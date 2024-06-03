@@ -34,9 +34,11 @@ class ReadyListener extends Listener {
     if (config.userdb.global && config.userdb.afkEnabled && message.guild) {
       if (!message.member) return;
       if (!message.member.id || message.author.bot) return;
-      if (afkCache.indexOf(message.member.id) != -1) {
-          const usersettings = await UserDB.findById(message.member.id, UserDB.upsert).cacheQuery();
 
+      let usersettings = await UserDB.findById(message.member.id, UserDB.upsert).cacheQuery();
+      if (!usersettings) return;
+
+      if (usersettings.afk.since) {
           usersettings.afk.since = null;
           usersettings.afk.status = null;
           await usersettings.save().then(() => {
@@ -50,11 +52,11 @@ class ReadyListener extends Listener {
       if (message.inGuild() && !message.author.bot && message.mentions.members.size > 0) {
           if (message.mentions.members.size == 0) return;
           const member = message.mentions.members.first();
-          const usersettings = await UserDB.findById(member.id, UserDB.upsert).cacheQuery();
+          usersettings = await UserDB.findById(member.id, UserDB.upsert).cacheQuery();
           if (!usersettings) return;
           if (usersettings.afk.status) {
               if (member.id != message.member.id) {
-                  message.reply(`${member.user.username} is not available right now.\n\`${usersettings.afk.status}\` <t:${usersettings.afk.since}:R>`);
+                  message.reply(`${member.user.username} is afk. \`${usersettings.afk.status}\` <t:${usersettings.afk.since}:R>`);
 
                   if (afkCache.indexOf(member.id) == -1) afkCache.push(member.id);
               }
