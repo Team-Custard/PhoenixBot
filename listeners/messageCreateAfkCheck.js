@@ -1,3 +1,4 @@
+const { isGuildBasedChannel } = require('@sapphire/discord.js-utilities');
 const { Listener, Events } = require('@sapphire/framework');
 const UserDB = require('../tools/UserDB');
 const config = require('../config.json');
@@ -12,6 +13,13 @@ class ReadyListener extends Listener {
     });
   }
   async run(message) {
+    if (message.author.bot) return;
+    if (!config.userdb.global && !config.userdb.afkEnabled) return;
+    if (!isGuildBasedChannel(message.channel)) return;
+    if (!message.member) return;
+    if (!message.member.id) return;
+
+    /*
     // Only SylveonDev can use these lines. Testing specific shit
     if (message.guild && message.content.toLowerCase() == "test welcomer please" && message.author.id == "763631377152999435") {
       message.reply(`Yes mother Abby, I will obey. <3`);
@@ -27,12 +35,7 @@ class ReadyListener extends Listener {
     if (message.guild && message.content.toLowerCase() == "shut down phoenix" && message.author.id == "763631377152999435") {
       await message.reply(`Awww already?:( Okayyy mother`);
       process.exit(0);
-    }
-
-    if (config.userdb.global && config.userdb.afkEnabled && message.guild) {
-      if (!message.member) return;
-      if (!message.member.id || message.author.bot) return;
-
+    }*/
       let usersettings = await UserDB.findById(message.member.id, UserDB.upsert).cacheQuery();
       if (!usersettings) return;
 
@@ -63,7 +66,6 @@ class ReadyListener extends Listener {
               }
           }
       }
-    }
   }
 }
 module.exports = {
