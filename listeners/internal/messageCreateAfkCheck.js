@@ -19,7 +19,8 @@ class ReadyListener extends Listener {
     if (!message.member) return;
     if (!message.member.id) return;
 
-    if (this.container.client.id == "1171286616967479377" && message.guild.members.cache.has("1227318291475730443")) return;
+    const hasStaging = await message.guild.members.fetch("1227318291475730443");
+    if (this.container.client.id == "1171286616967479377" && hasStaging) return;
 
     /*
     // Only SylveonDev can use these lines. Testing specific shit
