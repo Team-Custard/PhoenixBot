@@ -12,9 +12,10 @@ class GuildMemberAdd extends Listener {
     async run(member) {
       if (member.user.bot) return;
       
-      const hasStaging = await member.guild.members.fetch("1227318291475730443");
-      if (this.container.client.id == "1171286616967479377" && hasStaging) return;
-      
+      if (this.container.client.id == "1171286616967479377") {
+        const hasStaging = await member.guild.members.fetch("1227318291475730443");
+        if (hasStaging) return;
+      }
       const db = await ServerSettings.findById(member.guild.id).cacheQuery();
       if (db.welcomer.channel) {
         const channel = await member.guild.channels.fetch(db.welcomer.channel);
