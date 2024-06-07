@@ -20,7 +20,7 @@ class ReadyListener extends Listener {
     if (!message.member.id) return;
 
     if (this.container.client.id == "1171286616967479377") {
-      const hasStaging = await message.guild.members.fetch("1227318291475730443");
+      const hasStaging = await message.guild.members.fetch("1227318291475730443").catch(()=>undefined);
       if (hasStaging) return;
     }
     /*
