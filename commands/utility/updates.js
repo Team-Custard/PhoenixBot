@@ -9,9 +9,9 @@ class PingCommand extends Command {
         aliases: ['subscribe'],
         description: 'Follows the Phoenix update logs and announcements channels so you can recieve updates reguarding Phoenix.',
         detailedDescription: {
-          usage: 'afk [reason]',
-          examples: ['afk Busy rn', 'afk Doing my studies'],
-          args: ['reason: The reason you are afk.']
+          usage: 'updates <channel>',
+          examples: ['updates #updates'],
+          args: ['channel: The channel to post Phoenix update logs to.']
         },
         cooldownDelay: 3_000,
         requiredClientPermissions: [PermissionFlagsBits.SendMessages],

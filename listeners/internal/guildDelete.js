@@ -1,5 +1,5 @@
 const { Listener } = require('@sapphire/framework');
-const db = require('../tools/database');
+// const db = require('../../tools/database');
 
 class GuildDelete extends Listener {
     constructor(context, options) {
@@ -10,7 +10,8 @@ class GuildDelete extends Listener {
         });
       }
     async run(guild) {
-      db.cleanupGuildDatabase(guild.id, guild.members);
+      console.log(`Left guild ${guild.name} (${guild.id})`);
+      // db.cleanupGuildDatabase(guild.id);
     }
 }
 module.exports = {

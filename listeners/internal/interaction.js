@@ -1,6 +1,6 @@
 const { Listener } = require('@sapphire/framework');
 const { messageLink, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const UserDB = require('../tools/UserDB');
+const UserDB = require('../../tools/UserDB');
 
 class ReadyListener extends Listener {
   constructor(context, options) {

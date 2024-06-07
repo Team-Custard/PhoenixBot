@@ -49,10 +49,8 @@ const initGuildDatabase = async (guild) => {
   }
 };
 
-const cleanupGuildDatabase = async (guild, members) => {
+const cleanupGuildDatabase = async (guild) => {
   try {
-    // Runs a check to see if staging or prod is found in the server.
-    if (members.cache.get(config.process.botmode == "dev" ? "1171286616967479377" : "1227318291475730443")) return console.log(`Not deleting database for ${guild} since another phoenixbot was found.`);
     await settings.findByIdAndDelete(guild).cacheQuery()
       .then(() => console.log(`Deleted database for ${guild}`))
       .catch((err) => console.error(`Error deleting database for ${guild}`, err));

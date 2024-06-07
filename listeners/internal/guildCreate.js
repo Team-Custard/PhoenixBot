@@ -1,5 +1,5 @@
 const { Listener } = require('@sapphire/framework');
-const db = require('../tools/database');
+const db = require('../../tools/database');
 
 class GuildCreate extends Listener {
     constructor(context, options) {

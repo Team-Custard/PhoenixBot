@@ -1,7 +1,7 @@
 const { isGuildBasedChannel } = require('@sapphire/discord.js-utilities');
 const { Listener, Events } = require('@sapphire/framework');
-const UserDB = require('../tools/UserDB');
-const config = require('../config.json');
+const UserDB = require('../../tools/UserDB');
+const config = require('../../config.json');
 
 class ReadyListener extends Listener {
   constructor(context, options) {
@@ -18,6 +18,8 @@ class ReadyListener extends Listener {
     if (!isGuildBasedChannel(message.channel)) return;
     if (!message.member) return;
     if (!message.member.id) return;
+
+    if (this.container.client.id == "1171286616967479377" && message.guild.members.cache.has("1227318291475730443")) return;
 
     /*
     // Only SylveonDev can use these lines. Testing specific shit
