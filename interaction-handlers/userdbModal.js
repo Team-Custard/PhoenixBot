@@ -18,8 +18,8 @@ class MenuHandler extends InteractionHandler {
     async run(interaction) {
         await interaction.deferReply({ ephemeral: true });
 
-        let usersettings = await UserDB.findById(interaction.member.id, UserDB.upsert).cacheQuery();
-        if (!usersettings) usersettings = new UserDB({ _id: interaction.member.id });
+        let usersettings = await UserDB.findById(interaction.user.id, UserDB.upsert).cacheQuery();
+        if (!usersettings) usersettings = new UserDB({ _id: interaction.user.id });
 
         const tzText = await interaction.fields.getTextInputValue('timezoneField', false);
         const pronounText = await interaction.fields.getTextInputValue('pronounField', false);
@@ -27,12 +27,13 @@ class MenuHandler extends InteractionHandler {
         const ytText = await interaction.fields.getTextInputValue('youtubeField', false);
         const twtText = await interaction.fields.getTextInputValue('twitterField', false);
 
+        let finishMessage = "";
         if (tzText) {
             const moment = require('moment-timezone');
             const timezones = moment.tz.names();
-            if (!timezones.includes(tzText)) return interaction.followUp(`:x: timezone: Incorrect timezone specified. If you'd like, you can have Phoenix automatically detect your timezone at https://phoenixbot.epicgamer.org/userdb/tzhelp`);
-            if (tzText.length < 4) return interaction.followUp(`:x: timezone: Sorry, we only support tz format timezones. If you'd like, you can have Phoenix automatically detect your timezone at https://phoenixbot.epicgamer.org/userdb/tzhelp`);
-            usersettings.timezone = tzText;
+            if (!timezones.includes(tzText)) finishMessage += `:warning: timezone: Incorrect timezone specified. Not setting timezone. If you'd like, you can have Phoenix automatically detect your timezone at https://phoenixbot.epicgamer.org/userdb/tzhelp\n`;
+            else if (tzText.length < 4) finishMessage += `:warning: timezone: Sorry, we only support tz format timezones. Not setting timezone. If you'd like, you can have Phoenix automatically detect your timezone at https://phoenixbot.epicgamer.org/userdb/tzhelp\n`;
+            else usersettings.timezone = tzText;
         }
         if (pronounText) {
             usersettings.pronouns = pronounText;
@@ -41,17 +42,18 @@ class MenuHandler extends InteractionHandler {
             usersettings.description = descText;
         }
         if (ytText) {
-            if (!twtText.startsWith('@')) return interaction.followUp(`:x: youtube: Your handle is incorrect.`);
-            usersettings.socials.youtube = ytText;
+            if (!twtText.startsWith('@')) finishMessage += `:warning: youtube: Your handle is incorrect. Not setting social.\n`;
+            else usersettings.socials.youtube = ytText;
         }
         if (twtText) {
-            if (!twtText.startsWith('@')) return interaction.followUp(`:x: twitter: Your handle is incorrect.`);
-            usersettings.socials.twitter = twtText;
+            if (!twtText.startsWith('@')) finishMessage += `:warning: twitter: Your handle is incorrect. Not setting social.\n`;
+            else usersettings.socials.twitter = twtText;
         }
 
+        finishMessage += `:white_check_mark: Successfully setup UserDB.`;
         usersettings.save()
         .then(() => {
-            interaction.followUp({ content: `:white_check_mark: Successfully setup UserDB.`, ephemeral: true });
+            interaction.followUp({ content: finishMessage, ephemeral: true });
         }).catch((err) => {interaction.followUp(`:x: ${err}`);});
     }
 }
