@@ -89,7 +89,7 @@ class ReadyListener extends Listener {
     }
 
     if (interaction.isChatInputCommand() && interaction.commandName == "setup_userdb") {
-      const { modal } = require('../commands/interactions/userdb');
+      const { modal } = require('../../commands/interaction-specific/userdb');
       interaction.showModal(modal);
   }
   }
