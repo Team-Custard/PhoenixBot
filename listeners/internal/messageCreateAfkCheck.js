@@ -40,18 +40,7 @@ class ReadyListener extends Listener {
       await message.reply(`Awww already?:( Okayyy mother`);
       process.exit(0);
     }*/
-      let usersettings = await UserDB.findById(message.member.id, UserDB.upsert).cacheQuery();
-      if (!usersettings) return;
-
-      if (usersettings.afk.since) {
-          usersettings.afk.since = null;
-          usersettings.afk.status = null;
-          await usersettings.save().then(() => {
-          message.reply({ content: `Welcome back ${message.member}! I have cleared you afk status.` });
-          }).catch((err) => {message.reply(`Welcome back ${message.member}!\nOops! I was unable to clear your afk status though. Error: ${err}`);});
-
-      }
-
+   let usersettings
       if (message.inGuild() && !message.author.bot && message.mentions.members.size > 0) {
           if (message.mentions.members.size == 0) return;
           const member = message.mentions.members.first();
@@ -69,6 +58,17 @@ class ReadyListener extends Listener {
                   }).catch((err) => {message.reply(`Welcome back ${message.member}!\nOops! I was unable to clear your afk status though. Error: ${err}`);});
               }
           }
+      }
+      usersettings = await UserDB.findById(message.member.id, UserDB.upsert).cacheQuery();
+      if (!usersettings) return;
+
+      if (usersettings.afk.since) {
+          usersettings.afk.since = null;
+          usersettings.afk.status = null;
+          await usersettings.save().then(() => {
+          message.reply({ content: `Welcome back ${message.member}! I have cleared you afk status.` });
+          }).catch((err) => {message.reply(`Welcome back ${message.member}!\nOops! I was unable to clear your afk status though. Error: ${err}`);});
+
       }
   }
 }
