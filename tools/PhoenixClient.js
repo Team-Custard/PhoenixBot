@@ -1,8 +1,8 @@
-const { isGuildBasedChannel } = require('@sapphire/discord.js-utilities');
-const { SapphireClient } = require('@sapphire/framework');
-const { GatewayIntentBits } = require('discord.js');
+const { isGuildBasedChannel } = require("@sapphire/discord.js-utilities");
+const { SapphireClient } = require("@sapphire/framework");
+const { GatewayIntentBits } = require("discord.js");
 const database = require("../tools/SettingsSchema");
-const settings = require('../config.json');
+const settings = require("../config.json");
 
 class PhoenixClient extends SapphireClient {
   constructor() {
@@ -10,11 +10,13 @@ class PhoenixClient extends SapphireClient {
       caseInsensitiveCommands: true,
       caseInsensitivePrefixes: true,
       defaultPrefix: settings.prefix,
-      intents: [GatewayIntentBits.MessageContent,
+      intents: [
+        GatewayIntentBits.MessageContent,
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.DirectMessages,
-        GatewayIntentBits.GuildMembers],
+        GatewayIntentBits.GuildMembers,
+      ],
       loadDefaultErrorListeners: true,
       loadMessageCommandListeners: true,
       typing: true
@@ -35,29 +37,34 @@ class PhoenixClient extends SapphireClient {
    */
   fetchPrefix = async (message) => {
     // Return if message is blank
-    if (message.content == "" || message.content == null || message.content == undefined) return this.options.defaultPrefix;
+    if (
+      message.content == "" ||
+      message.content == null ||
+      message.content == undefined
+    )
+      return this.options.defaultPrefix;
     if (isGuildBasedChannel(message.channel)) {
       // Oh my hot roblox :flushed:
       try {
-        if (settings.process.botmode == 'test') return settings.testingprefix;
+        if (settings.process.botmode == "test") return settings.testingprefix;
         const serverdb = await database.findById(message.guild.id).exec();
         if (serverdb === null) {
-            return this.options.defaultPrefix;
+          return this.options.defaultPrefix;
         }
-        const prefixes = (settings.process.botmode == 'prod' ? serverdb.prefix : serverdb.stagingprefix);
+        const prefixes =
+          settings.process.botmode == "prod"
+            ? serverdb.prefix
+            : serverdb.stagingprefix;
         return prefixes;
-      }
-      catch (err) {
-        console.warn('Database error', err);
+      } catch (err) {
+        console.warn("Database error", err);
         return this.options.defaultPrefix;
       }
     }
-    
-    return this.options.defaultPrefix;
-  }
 
-  
+    return this.options.defaultPrefix;
+  };
 }
 module.exports = {
-  PhoenixClient
+  PhoenixClient,
 };

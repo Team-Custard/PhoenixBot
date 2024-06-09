@@ -1,15 +1,15 @@
-const { isGuildBasedChannel } = require('@sapphire/discord.js-utilities');
-const { Listener, Events } = require('@sapphire/framework');
-const UserDB = require('../../tools/UserDB');
-const config = require('../../config.json');
+const { isGuildBasedChannel } = require("@sapphire/discord.js-utilities");
+const { Listener, Events } = require("@sapphire/framework");
+const UserDB = require("../../tools/UserDB");
+const config = require("../../config.json");
 
 class ReadyListener extends Listener {
   constructor(context, options) {
     super(context, {
       ...options,
       once: false,
-      name: 'messageCreateAfkCheck',
-      event: Events.MessageCreate
+      name: "messageCreateAfkCheck",
+      event: Events.MessageCreate,
     });
   }
   async run(message) {
@@ -20,7 +20,9 @@ class ReadyListener extends Listener {
     if (!message.member.id) return;
 
     if (this.container.client.id == "1171286616967479377") {
-      const hasStaging = await message.guild.members.fetch("1227318291475730443").catch(()=>undefined);
+      const hasStaging = await message.guild.members
+        .fetch("1227318291475730443")
+        .catch(() => undefined);
       if (hasStaging) return;
     }
     /*
@@ -40,38 +42,66 @@ class ReadyListener extends Listener {
       await message.reply(`Awww already?:( Okayyy mother`);
       process.exit(0);
     }*/
-   let usersettings
-      if (message.inGuild() && !message.author.bot && message.mentions.members.size > 0) {
-          if (message.mentions.members.size == 0) return;
-          const member = message.mentions.members.first();
-          usersettings = await UserDB.findById(member.id, UserDB.upsert).cacheQuery();
-          if (!usersettings) return;
-          if (usersettings.afk.status) {
-              if (member.id != message.member.id) {
-                  message.reply(`${member.user.username} is afk. \`${usersettings.afk.status}\` <t:${usersettings.afk.since}:R>`);
-              }
-              else {
-                  usersettings.afk.since = null;
-                  usersettings.afk.status = null;
-                  await usersettings.save().then(() => {
-                      message.reply({ content: `Welcome back ${message.member}! I have cleared you afk status.` });
-                  }).catch((err) => {message.reply(`Welcome back ${message.member}!\nOops! I was unable to clear your afk status though. Error: ${err}`);});
-              }
-          }
-      }
-      usersettings = await UserDB.findById(message.member.id, UserDB.upsert).cacheQuery();
+    let usersettings;
+    if (
+      message.inGuild() &&
+      !message.author.bot &&
+      message.mentions.members.size > 0
+    ) {
+      if (message.mentions.members.size == 0) return;
+      const member = message.mentions.members.first();
+      usersettings = await UserDB.findById(
+        member.id,
+        UserDB.upsert,
+      ).cacheQuery();
       if (!usersettings) return;
-
-      if (usersettings.afk.since) {
+      if (usersettings.afk.status) {
+        if (member.id != message.member.id) {
+          message.reply(
+            `${member.user.username} is afk. \`${usersettings.afk.status}\` <t:${usersettings.afk.since}:R>`,
+          );
+        } else {
           usersettings.afk.since = null;
           usersettings.afk.status = null;
-          await usersettings.save().then(() => {
-          message.reply({ content: `Welcome back ${message.member}! I have cleared you afk status.` });
-          }).catch((err) => {message.reply(`Welcome back ${message.member}!\nOops! I was unable to clear your afk status though. Error: ${err}`);});
-
+          await usersettings
+            .save()
+            .then(() => {
+              message.reply({
+                content: `Welcome back ${message.member}! I have cleared you afk status.`,
+              });
+            })
+            .catch((err) => {
+              message.reply(
+                `Welcome back ${message.member}!\nOops! I was unable to clear your afk status though. Error: ${err}`,
+              );
+            });
+        }
       }
+    }
+    usersettings = await UserDB.findById(
+      message.member.id,
+      UserDB.upsert,
+    ).cacheQuery();
+    if (!usersettings) return;
+
+    if (usersettings.afk.since) {
+      usersettings.afk.since = null;
+      usersettings.afk.status = null;
+      await usersettings
+        .save()
+        .then(() => {
+          message.reply({
+            content: `Welcome back ${message.member}! I have cleared you afk status.`,
+          });
+        })
+        .catch((err) => {
+          message.reply(
+            `Welcome back ${message.member}!\nOops! I was unable to clear your afk status though. Error: ${err}`,
+          );
+        });
+    }
   }
 }
 module.exports = {
-  ReadyListener
+  ReadyListener,
 };

@@ -1,4 +1,4 @@
-const { Precondition } = require('@sapphire/framework');
+const { Precondition } = require("@sapphire/framework");
 
 class tagLockPrecondition extends Precondition {
   async messageRun(message) {
@@ -17,11 +17,11 @@ class tagLockPrecondition extends Precondition {
   }
 
   async checkOwner(member) {
-    return member.id == require('../config.json').ownerId
+    return member.id == require("../config.json").ownerId
       ? this.ok()
-      : this.error({ message: 'This command is developer only.' });
+      : this.error({ message: "This command is developer only." });
   }
 }
 module.exports = {
-  tagLockPrecondition
+  tagLockPrecondition,
 };

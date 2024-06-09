@@ -9,9 +9,17 @@
     <div></div>
     <p>This dashboard is unfinished so not everything works yet. Check back later to test it out!</p>
 </div>
-<div class="container bg-secondary">
-<% guilds.forEach((server, index) => { %>
+<div class="container bg-secondary text-center">
+<% if (guilderror != "") { %>
+<h4 style="color: white; background-color:darkred;"><%= guilderror %></h4>
+<% } %>
+<% if (guilds) { guilds.forEach((server, index) => { %>
 <a href="/dash/servers/<%= server.id %>"><img src="https://cdn.discordapp.com/icons/<%= server.id %>/<%= server.icon %>.png?size=128" style="padding: 0.5%; margin: 1%; background-color: black; border-radius: 100%;"/></a>
-<% }) %>
+<% })} else { %>
+<br><h2 style="color: white;">We hit a snag!</h2>
+<p style="color: white;">There was an error loading your servers. Most likely reason is you've been rate limited. Reloading the page should fix it.</p>
+<button class="btn btn-primary" onclick="location.reload();">Click to retry</button>
+<h2>  </h2>
+<% } %>
 </div>
 <%- include('../partials/footer'); %>
