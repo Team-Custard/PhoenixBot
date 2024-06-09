@@ -13,12 +13,47 @@ body {
 <br>
 <div class="container rounded-4 text-center">
     <br><img src="https://cdn.discordapp.com/icons/<%= server.id %>/<%= server.icon %>.png?size=128" style="padding: 0.5%; background-color: black; border-radius: 100%;"/>
-    <p><h1><%= server.name %></h1><br>The configuration for this server is below.</p><br>
+    <p><h1><%= server.name %></h1><br>The configuration for this server is below.<br>This dashboard is a work in progress, so some things maybe buggy.</p><br>
 </div>
 <br>
 <div class="container rounded-4">
+    <% if (subStat == "error") { %>
+        <h4 id="bannerMessage" style="background-color: darkred; color: white;"><button class="btn" style="color: white;" onclick="document.getElementById('bannerMessage').style.display = 'NONE';">X</button> The setting has failed to save. Try again.</h4>
+    <% } %>
+    <% if (subStat == "okay") { %>
+        <h4 id="bannerMessage" style="background-color: green; color: white;"><button class="btn" style="color: white;" onclick="document.getElementById('bannerMessage').style.display = 'NONE';">X</button> The setting has saved. Horray!</h4>
+    <% } %>
     <h1>Configuration</h1>
-    <p>Idk</p>
+    <p>The settings below are everything for configuring Phoenix. Submitted text longer than the maximum allowed will be truncated.</p>
+    <form class="configs" method="post">
+        <h3>Prefix settings</h3>
+        <div class="mb-3">
+            <label for="prefix" class="form-label">Server prefix</label>
+            <input id="prefix" class="form-control" type="text" name="prefix" value="<%= config.prefix %>">
+        </div>
+        <div class="mb-3">
+            <label for="stagingprefix" class="form-label">Server prefix</label>
+            <input id="stagingprefix" class="form-control" type="text" name="stagingprefix" value="<%= config.stagingprefix %>" aria-describedby="prefixHelp">
+            <div id="prefixHelp" class="form-text">Staging prefix is for the beta bot, not normal bot.</div>
+        </div>
+        <h3>Tagging</h3>
+        <p>You are using <%= config.tags.length %> tags. The limit is 25 for free users and 50 for donators.<br>To manage tags, you can do so with the tags command.</p>
+        <div style="background-color: lightgray;"><br><p> ID | NAME | DESCRIPTION | CREATOR</p><hr><% if (config.tags.length > 0) { config.tags.forEach((tag, index)=> { %> <p style="font-size: 16px;"> <%= `${index+1} | ${tag.name} | ${tag.description} | ${tag.creator}` %></p><hr> <% })} else { %> <p>No tags to display.</p><hr> <% } %></div>
+        <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="locktags" name="lockTags" <% if (config.lockTags) { %> checked <% } %>>
+            <label class="form-check-label" for="locktags">Lock tags to managers only</label>        
+        </div>
+        
+        
+        <button class="btn btn-secondary" type="submit">Submit</button>
+    </form>
+    
 </div>
 
+<script>
+    const forms = document.getElementsByClassName("configs");
+    for (let i = 0; i < forms.length; i++) {
+        forms[i].setAttribute("action", window.location);
+    }
+</script>
 <%- include('../partials/footer'); %>
