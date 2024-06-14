@@ -38,7 +38,7 @@ const settingsSchema = new Schema({
 }).plugin(SpeedGooseCacheAutoCleaner);
 
 const settings = model(
-  require("../config.json").process.botmode ? "settings" : "settingsStaging",
+  (require("../config.json").process.botmode == "prod" ? "settings" : "settingsStaging"),
   settingsSchema,
 );
 

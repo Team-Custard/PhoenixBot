@@ -34,9 +34,7 @@ class PingCommand extends Command {
       if (newprefix < 1) {
         return message.reply(`:x: Prefix can be no less than 0 characters.`);
       }
-      settings.process.botmode == "prod"
-        ? (db.prefix = newprefix)
-        : (db.stagingprefix = newprefix);
+      db.prefix = newprefix;
 
       db.save()
         .then(() => {
@@ -50,7 +48,7 @@ class PingCommand extends Command {
     }
  else {
       message.reply(
-        `The current prefix is **${settings.process.botmode == "prod" ? db.prefix : db.stagingprefix}**`,
+        `The current prefix is **${db.prefix}**`,
       );
     }
   }
