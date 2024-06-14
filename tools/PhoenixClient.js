@@ -52,9 +52,7 @@ class PhoenixClient extends SapphireClient {
           return this.options.defaultPrefix;
         }
         const prefixes =
-          settings.process.botmode == "prod"
-            ? serverdb.prefix
-            : serverdb.stagingprefix;
+          serverdb.prefix;
         return prefixes;
       } catch (err) {
         console.warn("Database error", err);
