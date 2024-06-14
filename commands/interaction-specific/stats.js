@@ -102,7 +102,7 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         interaction.followUp(
-          `:white_check_mark: Successfully cleared verification settings.`,
+          `:white_check_mark: Looks like the server database does not exist. I have recreated it successfully! Errors should be fixed now.`,
         );
       })
       .catch((err) => {
