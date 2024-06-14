@@ -3,7 +3,7 @@ const { SpeedGooseCacheAutoCleaner } = require("speedgoose");
 
 const settingsSchema = new Schema({
   _id: { type: String, required: true },
-  prefix: { type: String, required: false, default: "=" },
+  prefix: { type: String, required: false, default: (require("../config.json").process.botmode == "prod" ? "=" : "==") },
   stagingprefix: { type: String, required: false, default: "==" },
   enablePrefix: { type: Boolean, required: false, default: true },
   tags: [
