@@ -19,7 +19,7 @@ class PhoenixClient extends SapphireClient {
       ],
       loadDefaultErrorListeners: true,
       loadMessageCommandListeners: true,
-      typing: true
+      typing: true,
     });
   }
 

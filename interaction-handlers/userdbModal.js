@@ -52,11 +52,15 @@ class MenuHandler extends InteractionHandler {
     if (tzText) {
       const moment = require("moment-timezone");
       const timezones = moment.tz.names();
-      if (!timezones.includes(tzText))
+      if (!timezones.includes(tzText)) {
         finishMessage += `:warning: timezone: Incorrect timezone specified. Not setting timezone. If you'd like, you can have Phoenix automatically detect your timezone at https://phoenixbot.epicgamer.org/userdb/tzhelp\n`;
-      else if (tzText.length < 4)
+      }
+ else if (tzText.length < 4) {
         finishMessage += `:warning: timezone: Sorry, we only support tz format timezones. Not setting timezone. If you'd like, you can have Phoenix automatically detect your timezone at https://phoenixbot.epicgamer.org/userdb/tzhelp\n`;
-      else usersettings.timezone = tzText;
+      }
+ else {
+        usersettings.timezone = tzText;
+      }
     }
     if (pronounText) {
       usersettings.pronouns = pronounText;
@@ -65,14 +69,20 @@ class MenuHandler extends InteractionHandler {
       usersettings.description = descText;
     }
     if (ytText) {
-      if (!twtText.startsWith("@"))
+      if (!twtText.startsWith("@")) {
         finishMessage += `:warning: youtube: Your handle is incorrect. Not setting social.\n`;
-      else usersettings.socials.youtube = ytText;
+      }
+ else {
+        usersettings.socials.youtube = ytText;
+      }
     }
     if (twtText) {
-      if (!twtText.startsWith("@"))
+      if (!twtText.startsWith("@")) {
         finishMessage += `:warning: twitter: Your handle is incorrect. Not setting social.\n`;
-      else usersettings.socials.twitter = twtText;
+      }
+ else {
+        usersettings.socials.twitter = twtText;
+      }
     }
 
     finishMessage += `:white_check_mark: Successfully setup UserDB.`;

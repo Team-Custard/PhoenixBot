@@ -49,12 +49,14 @@ class PingCommand extends Command {
           { name: `Fun`, value: fun.join(", ") },
         ]);
       return message.reply({ embeds: [embed] });
-    } else {
+    }
+ else {
       const cmd = this.container.client.stores
         .get("commands")
         .find((i) => i.name === option);
-      if (cmd == null)
+      if (cmd == null) {
         return message.reply({ content: `:x: No such command was found.` });
+      }
       const embed = new EmbedBuilder()
         .setTitle(`${cmd.name} (${cmd.aliases.join(", ")})`)
         .setDescription(

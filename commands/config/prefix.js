@@ -28,10 +28,12 @@ class PingCommand extends Command {
       .cacheQuery();
 
     if (newprefix) {
-      if (newprefix > 6)
+      if (newprefix > 6) {
         return message.reply(`:x: Prefix can be no more than 6 characters.`);
-      if (newprefix < 1)
+      }
+      if (newprefix < 1) {
         return message.reply(`:x: Prefix can be no less than 0 characters.`);
+      }
       settings.process.botmode == "prod"
         ? (db.prefix = newprefix)
         : (db.stagingprefix = newprefix);
@@ -45,7 +47,8 @@ class PingCommand extends Command {
         .catch((err) => {
           message.reply(`:x: ${err}`);
         });
-    } else {
+    }
+ else {
       message.reply(
         `The current prefix is **${settings.process.botmode == "prod" ? db.prefix : db.stagingprefix}**`,
       );

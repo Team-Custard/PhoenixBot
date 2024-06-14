@@ -160,14 +160,17 @@ class PingCommand extends Subcommand {
     const btag = indexes.find((t) => t.name == tagName);
 
     if (tag || btag) return interaction.followUp(":x: Tag already exists.");
-    if (tagName.length > 12)
+    if (tagName.length > 12) {
       return interaction.followUp(":x: Tag name is too long.");
-    if (tagDesc.length > 256)
+    }
+    if (tagDesc.length > 256) {
       return interaction.followUp(":x: Tag description is too long.");
-    if (db.tags.length > 25)
+    }
+    if (db.tags.length > 25) {
       return interaction.followUp(
         ":x: You've maxed out on the maximum of tags you can hold in the server. Limit is 25.",
       );
+    }
 
     db.tags.push({
       name: tagName,
@@ -245,13 +248,15 @@ class PingCommand extends Subcommand {
       interaction.followUp(
         `:information_source: **${tag.name}**:\n${await require("../../tools/textParser").parse(tag.description, interaction.member)}\n(Tag by ${tag.creator})`,
       );
-    } else {
+    }
+ else {
       const btag = indexes.find((t) => t.name == tagName);
       if (btag) {
         interaction.followUp(
           `:information_source: **${btag.name}**:\n${await require("../../tools/textParser").parse(btag.description, interaction.member)}\n(Tag by ${btag.creator})`,
         );
-      } else {
+      }
+ else {
         interaction.followUp(":x: Tag not found.");
       }
     }
@@ -292,12 +297,14 @@ class PingCommand extends Subcommand {
 
     if (tag || btag) return message.reply(":x: Tag already exists.");
     if (tagName.length > 12) return message.reply(":x: Tag name is too long.");
-    if (tagDesc.length > 256)
+    if (tagDesc.length > 256) {
       return message.reply(":x: Tag description is too long.");
-    if (db.tags.length > 25)
+    }
+    if (db.tags.length > 25) {
       return message.reply(
         ":x: You've maxed out on the maximum of tags you can hold in the server. Limit is 25.",
       );
+    }
 
     db.tags.push({
       name: tagName,
@@ -372,15 +379,17 @@ class PingCommand extends Subcommand {
     const tag = db.tags.find((t) => t.name == tagName);
     if (tag) {
       message.reply(
-        `:information_source: **${tag.name}**:\n${await require("../../tools/textParser").parse(tag.description, interaction.member)}\n(Tag by ${tag.creator})`,
+        `:information_source: **${tag.name}**:\n${await require("../../tools/textParser").parse(tag.description, message.member)}\n(Tag by ${tag.creator})`,
       );
-    } else {
+    }
+ else {
       const btag = indexes.find((t) => t.name == tagName);
       if (btag) {
         message.reply(
           `:information_source: **${btag.name}**:\n${await require("../../tools/textParser").parse(btag.description, message.member)}\n(Tag by ${btag.creator})`,
         );
-      } else {
+      }
+ else {
         message.reply(":x: Tag not found.");
       }
     }

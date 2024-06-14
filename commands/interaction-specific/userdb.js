@@ -249,14 +249,16 @@ class PingCommand extends Subcommand {
       member.user.id,
       UserDB.upsert,
     ).cacheQuery();
-    if (!usersettings)
+    if (!usersettings) {
       return interaction.followUp(
         `:x: **${member.user.username}** does not have a timezone set.`,
       );
-    if (!usersettings.timezone)
+    }
+    if (!usersettings.timezone) {
       return interaction.followUp(
         `:x: **${member.user.username}** does not have a timezone set.`,
       );
+    }
 
     const moment = require("moment-timezone");
     const date = new Date();
@@ -278,14 +280,16 @@ class PingCommand extends Subcommand {
       UserDB.upsert,
     ).cacheQuery();
 
-    if (!usersettings)
+    if (!usersettings) {
       return interaction.followUp(
         `:x: **${member.user.username}** does not have pronouns set through UserDB.`,
       );
-    if (!usersettings.pronouns)
+    }
+    if (!usersettings.pronouns) {
       return interaction.followUp(
         `:x: **${member.user.username}** does not have pronouns set through UserDB.`,
       );
+    }
 
     await interaction.followUp(
       `**${member.user.username}**'s pronouns are **${usersettings.pronouns}**.`,
@@ -294,8 +298,9 @@ class PingCommand extends Subcommand {
 
   async chatInputDisplay(interaction) {
     const member = await interaction.options.getMember("user");
-    if (member.user.bot)
+    if (member.user.bot) {
       return interaction.reply(":x: Bots can't be added to UserDB.");
+    }
     await interaction.deferReply();
     const usersettings = await UserDB.findById(
       member.user.id,
@@ -311,7 +316,8 @@ class PingCommand extends Subcommand {
         .setColor(Colors.Orange)
         .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
         .setTimestamp(new Date());
-    } else {
+    }
+ else {
       embed = new EmbedBuilder()
         .setTitle(member.user.username)
         .setDescription(
@@ -332,8 +338,9 @@ class PingCommand extends Subcommand {
       interaction.member.id,
       UserDB.upsert,
     ).cacheQuery();
-    if (!usersettings)
+    if (!usersettings) {
       usersettings = new UserDB({ _id: interaction.member.id });
+    }
     const reason = await interaction.options.getString("reason");
 
     usersettings.afk.since = Math.floor(new Date().getTime() / 1000);

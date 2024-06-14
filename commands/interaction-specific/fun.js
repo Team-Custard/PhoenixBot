@@ -121,7 +121,8 @@ class PingCommand extends Subcommand {
       await interaction.reply({
         files: [avatar],
       });
-    } else {
+    }
+ else {
       let member = await interaction.options.getUser("user");
       if (!member) member = interaction.user;
 
@@ -181,11 +182,13 @@ class PingCommand extends Subcommand {
       `https://api.wolframalpha.com/v1/result?i=${query}&appid=${process.env["wolframkey"]}`,
     )
       .then(async (response) => {
-        if (response.status != 200)
+        if (response.status != 200) {
           return interaction.followUp(`:x: Not found or error occured.`);
+        }
         const result = await response.text();
-        if (!result)
+        if (!result) {
           return interaction.followUp(`:x: Not found or error occured.`);
+        }
         interaction.followUp(`:information_source: ${result}`);
       })
       .catch((err) => {
@@ -198,8 +201,9 @@ class PingCommand extends Subcommand {
     const getStream = await bent("https://cataas.com/");
     const stream = await getStream("/cat");
 
-    if (stream.statusCode != 200)
+    if (stream.statusCode != 200) {
       return interaction.followUp(`:x: ${stream.status}`);
+    }
 
     await interaction.followUp({ files: [stream] });
   }
@@ -209,8 +213,9 @@ class PingCommand extends Subcommand {
     const getStream = await bent("https://dog.ceo");
     const stream = await getStream("/api/breeds/image/random");
 
-    if (stream.statusCode != 200)
+    if (stream.statusCode != 200) {
       return interaction.followUp(`:x: ${stream.status}`);
+    }
 
     const obj = await stream.json();
 
@@ -222,8 +227,9 @@ class PingCommand extends Subcommand {
     const getStream = await bent("https://cataas.com/");
     const stream = await getStream("/cat/kitten");
 
-    if (stream.statusCode != 200)
+    if (stream.statusCode != 200) {
       return interaction.followUp(`:x: ${stream.status}`);
+    }
 
     await interaction.followUp({ files: [stream] });
   }
@@ -233,15 +239,17 @@ class PingCommand extends Subcommand {
     const getStream = await bent("https://meme-api.com");
     const stream = await getStream("/gimme");
 
-    if (stream.statusCode != 200)
+    if (stream.statusCode != 200) {
       return interaction.followUp(`:x: ${stream.status}`);
+    }
 
     const obj = await stream.json();
 
-    if (obj.nsfw == true && !interaction.channel.nsfw)
+    if (obj.nsfw == true && !interaction.channel.nsfw) {
       return interaction.followUp(
         `Refusing to send the scraped reddit post because the post is nsfw.`,
       );
+    }
     await interaction.followUp({
       content: `${obj.title} | ${obj.subreddit} | [Post link](<${obj.postLink}>)`,
       files: [obj.url],

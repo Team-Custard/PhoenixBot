@@ -60,7 +60,8 @@ class ReadyListener extends Listener {
           message.reply(
             `${member.user.username} is afk. \`${usersettings.afk.status}\` <t:${usersettings.afk.since}:R>`,
           );
-        } else {
+        }
+ else {
           usersettings.afk.since = null;
           usersettings.afk.status = null;
           await usersettings

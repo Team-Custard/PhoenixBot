@@ -20,10 +20,10 @@ app.use(require("./routers/dashboard"));
 // Body parsing since express doesn't come with it lol.
 // Top parses application/x-www-form-urlencoded
 // Bottom parses application/json
-app.use(bodyParser.urlencoded({ extended: false }))
-app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
-app.use(function (req, res, next) {
+app.use(function(req, res, next) {
   if (settings.dashboard.devmode == "off" && !req.secure) {
     return res.redirect("https://" + req.headers.host + res.url);
   }
@@ -31,7 +31,7 @@ app.use(function (req, res, next) {
   next();
 });
 
-app.use(function (req, res) {
+app.use(function(req, res) {
   res.status(404);
   if (req.accepts("html")) {
     res.render("errors/404", { title: "Not found", url: req.url });

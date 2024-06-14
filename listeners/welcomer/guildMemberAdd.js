@@ -7,6 +7,7 @@ class GuildMemberAdd extends Listener {
       ...options,
       once: false,
       event: "guildMemberAdd",
+      name: "welcomerAdd",
     });
   }
   async run(member) {
@@ -19,15 +20,19 @@ class GuildMemberAdd extends Listener {
       if (hasStaging) return;
     }
     const db = await ServerSettings.findById(member.guild.id).cacheQuery();
+    if (!db) return;
     if (db.welcomer.channel) {
-      const channel = await member.guild.channels.fetch(db.welcomer.channel);
-      if (channel)
+      const channel = await member.guild.channels
+        .fetch(db.welcomer.channel)
+        .catch(() => undefined);
+      if (channel) {
         channel.send(
           await require("../../tools/textParser").parse(
             db.welcomer.message,
             member,
           ),
         );
+      }
     }
   }
 }

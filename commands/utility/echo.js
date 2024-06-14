@@ -1,4 +1,3 @@
-const { isMessageInstance } = require("@sapphire/discord.js-utilities");
 const { Command } = require("@sapphire/framework");
 const { PermissionFlagsBits } = require("discord.js");
 
@@ -53,7 +52,7 @@ class PingCommand extends Command {
   }
 
   async messageRun(message, args) {
-    const msg = await args.rest("text");
+    const msg = await args.rest("string");
 
     message.channel.send(
       `${await require("../../tools/textParser").parse(msg, message.member)} (${message.author.username})`,

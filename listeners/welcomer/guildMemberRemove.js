@@ -7,6 +7,7 @@ class GuildMemberRemove extends Listener {
       ...options,
       once: false,
       event: "guildMemberRemove",
+      name: "welcomerRemove",
     });
   }
   async run(member) {
@@ -19,15 +20,19 @@ class GuildMemberRemove extends Listener {
       if (hasStaging) return;
     }
     const db = await ServerSettings.findById(member.guild.id).cacheQuery();
+    if (!db) return;
     if (db.goodbyes.channel) {
-      const channel = await member.guild.channels.fetch(db.goodbyes.channel);
-      if (channel)
+      const channel = await member.guild.channels
+        .fetch(db.goodbyes.channel)
+        .catch(() => undefined);
+      if (channel) {
         channel.send(
           await require("../../tools/textParser").parse(
             db.goodbyes.message,
             member,
           ),
         );
+      }
     }
   }
 }

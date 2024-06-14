@@ -28,14 +28,19 @@ const settingsSchema = new Schema({
     channel: String,
     message: String,
   },
-  vanity: {
-    url: String,
-    description: String,
-    invite: String,
+  logging: {
+    members: String,
+    messages: String,
+    moderation: String,
+    roles: String,
+    voice: String,
   },
 }).plugin(SpeedGooseCacheAutoCleaner);
 
-const settings = model("settings", settingsSchema);
+const settings = model(
+  require("../config.json").process.botmode ? "settings" : "settingsStaging",
+  settingsSchema,
+);
 
 module.exports = settings;
 exports.upsert = { upsert: true, setDefaultsOnInsert: true };

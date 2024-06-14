@@ -36,8 +36,9 @@ class ReadyListener extends Listener {
       console.log(targetLang);
       // const targetLang = require('../config.json').translator.targetLang;
 
-      if (sourceLang.length == 0)
+      if (sourceLang.length == 0) {
         return interaction.followUp(":x: Couldn't detect a language.");
+      }
       const translateurl =
         "https://translate.googleapis.com/translate_a/single?client=gtx&sl=" +
         sourceLang[0][0] +
@@ -58,7 +59,8 @@ class ReadyListener extends Listener {
               message.id,
               message.guildId,
             );
-          } else {
+          }
+ else {
             msgLink = await messageLink(message.channelId, message.id);
           }
 
@@ -99,14 +101,16 @@ class ReadyListener extends Listener {
         member.id,
         UserDB.upsert,
       ).cacheQuery();
-      if (!usersettings)
+      if (!usersettings) {
         return interaction.followUp(
           `:x: **${member.username}** does not have a timezone set.`,
         );
-      if (!usersettings.timezone)
+      }
+      if (!usersettings.timezone) {
         return interaction.followUp(
           `:x: **${member.username}** does not have a timezone set.`,
         );
+      }
 
       const date = new Date();
       const strTime = date.toLocaleTimeString("en-US", {
