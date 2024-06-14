@@ -87,8 +87,9 @@ class PingCommand extends Subcommand {
       .findById(interaction.guild.id, serverSettings.upsert)
       .cacheQuery();
 
-    if (!db.goodbyes.channel)
+    if (!db.goodbyes.channel) {
       return interaction.followUp(`:x: Goodbyes is not setup.`);
+    }
 
     interaction.followUp(
       `Goodbye messages are being sent to <#${db.goodbyes.channel}>\nMessage: ${await require("../../tools/textParser").parse(db.goodbyes.message, interaction.member)}`,
@@ -143,8 +144,9 @@ class PingCommand extends Subcommand {
       .findById(message.guild.id, serverSettings.upsert)
       .cacheQuery();
 
-    if (!db.goodbyes.channel)
+    if (!db.goodbyes.channel) {
       return message.reply(`:x: Goodbyes is not setup.`);
+    }
 
     message.reply(
       `Goodbye messages are being sent to <#${db.goodbyes.channel}>\nMessage: ${await require("../../tools/textParser").parse(db.goodbyes.message, message.member)}`,

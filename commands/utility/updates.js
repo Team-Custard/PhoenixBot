@@ -43,7 +43,7 @@ class PingCommand extends Command {
     await interaction.deferReply();
     const channel = await interaction.options.getChannel("channel");
     const newschannel = await this.container.client.channels.fetch(
-      "1224181217952272424",
+      "1251238477484396575",
     );
     await newschannel.addFollower(
       channel,
@@ -57,7 +57,7 @@ class PingCommand extends Command {
   async messageRun(message, args) {
     const channel = await args.pick("channel");
     const newschannel = await this.container.client.channels.fetch(
-      "1224181217952272424",
+      "1251238477484396575",
     );
     await newschannel.addFollower(
       channel,

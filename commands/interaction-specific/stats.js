@@ -92,10 +92,11 @@ class PingCommand extends Subcommand {
     let db = await serverSettings
       .findById(interaction.guild.id, serverSettings.upsert)
       .cacheQuery();
-    if (db)
+    if (db) {
       return interaction.followUp(
         `Database is fine. No further action needed.`,
       );
+    }
     db = new serverSettings({ _id: interaction.guild.id });
 
     db.save()

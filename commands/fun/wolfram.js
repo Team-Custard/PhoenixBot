@@ -32,8 +32,9 @@ class PingCommand extends Command {
       `https://api.wolframalpha.com/v1/result?i=${query}&appid=${process.env["wolframkey"]}`,
     )
       .then(async (response) => {
-        if (response.status != 200)
+        if (response.status != 200) {
           return message.reply(`:x: Not found or error occured.`);
+        }
         const result = await response.text();
         if (!result) return message.reply(`:x: Not found or error occured.`);
         message.reply(`:information_source: ${result}`);

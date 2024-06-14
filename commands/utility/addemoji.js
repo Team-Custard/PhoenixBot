@@ -79,8 +79,9 @@ class PingCommand extends Command {
           if ((emoji = emoteRegex.exec(serverEmoji))) {
             console.log(emoji[1]);
             const fetchedEmoji = `https://cdn.discordapp.com/emojis/${emoji[1]}.png`;
-            if (!emoji[1])
+            if (!emoji[1]) {
               return interaction.followUp(":x: Unable to resolve emoji.");
+            }
             await interaction.guild.emojis
               .create({ attachment: fetchedEmoji, name: emojiName })
               .then((e) =>
@@ -89,11 +90,13 @@ class PingCommand extends Command {
                 ),
               )
               .catch((err) => interaction.followUp(`:x: ${err}`));
-          } else if ((emoji = animatedEmoteRegex.exec(serverEmoji))) {
+          }
+ else if ((emoji = animatedEmoteRegex.exec(serverEmoji))) {
             console.log(emoji[1]);
             const fetchedEmoji = `https://cdn.discordapp.com/emojis/${emoji[1]}.gif`;
-            if (!emoji[1])
+            if (!emoji[1]) {
               return interaction.followUp(":x: Unable to resolve emoji.");
+            }
             await interaction.guild.emojis
               .create({ attachment: fetchedEmoji, name: emojiName })
               .then((e) =>
@@ -102,22 +105,26 @@ class PingCommand extends Command {
                 ),
               )
               .catch((err) => interaction.followUp(`:x: ${err}`));
-          } else {
+          }
+ else {
             interaction.followUp(":x: Couldn't find a valid emoji to paste.");
           }
-        } else {
+        }
+ else {
           return interaction.followUp(
             `:x: \`emoji\` field has incorrect data.`,
           );
         }
-      } else if (emojiUrl) {
+      }
+ else if (emojiUrl) {
         await interaction.guild.emojis
           .create({ attachment: emojiUrl, name: emojiName })
           .then((e) =>
             interaction.followUp(`${e} : successfully added as \`${e.name}\`.`),
           )
           .catch((err) => interaction.followUp(`:x: ${err}`));
-      } else if (emojiImage) {
+      }
+ else if (emojiImage) {
         await interaction.guild.emojis
           .create({ attachment: emojiImage.url, name: emojiName })
           .then((e) =>
@@ -125,7 +132,8 @@ class PingCommand extends Command {
           )
           .catch((err) => interaction.followUp(`:x: ${err}`));
       }
-    } else {
+    }
+ else {
       return interaction.followUp(":x: No emojis specified.");
     }
   }
@@ -142,7 +150,8 @@ class PingCommand extends Command {
             message.reply(`${e} : successfully added as \`${e.name}\`.`),
           )
           .catch((err) => message.reply(`:x: ${err}`));
-      } else {
+      }
+ else {
         const hasEmoteRegex = /<a?:.+:\d+>/gm;
         const emoteRegex = /<:.+:(\d+)>/gm;
         const animatedEmoteRegex = /<a:.+:(\d+)>/gm;
@@ -158,7 +167,8 @@ class PingCommand extends Command {
                 message.reply(`${e} : successfully added as \`${e.name}\`.`),
               )
               .catch((err) => message.reply(`:x: ${err}`));
-          } else if ((emoji = animatedEmoteRegex.exec(emojiref))) {
+          }
+ else if ((emoji = animatedEmoteRegex.exec(emojiref))) {
             console.log(emoji[1]);
             const fetchedEmoji = `https://cdn.discordapp.com/emojis/${emoji[1]}.gif`;
             if (!emoji[1]) return message.reply(":x: Unable to resolve emoji.");
@@ -168,10 +178,12 @@ class PingCommand extends Command {
                 message.reply(`${e} : successfully added as \`${e.name}\`.`),
               )
               .catch((err) => message.reply(`:x: ${err}`));
-          } else {
+          }
+ else {
             message.reply(":x: Couldn't find a valid emoji to paste.");
           }
-        } else if (message.attachments.first()) {
+        }
+ else if (message.attachments.first()) {
           await message.guild.emojis
             .create({
               attachment: message.attachments.first().url,
@@ -181,7 +193,8 @@ class PingCommand extends Command {
               message.reply(`${e} : successfully added as \`${e.name}\`.`),
             )
             .catch((err) => message.reply(`:x: ${err}`));
-        } else {
+        }
+ else {
           message.reply(":x: Couldn't find a valid emoji to paste.");
         }
       }

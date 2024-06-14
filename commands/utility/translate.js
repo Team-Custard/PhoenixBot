@@ -106,8 +106,9 @@ class UserCommand extends Command {
     const targetLang = interaction.locale.substring(0, 2);
     console.log(targetLang);
 
-    if (sourceLang.length == 0)
+    if (sourceLang.length == 0) {
       return interaction.followUp(":x: Couldn't detect a language.");
+    }
     const translateurl =
       "https://translate.googleapis.com/translate_a/single?client=gtx&sl=" +
       sourceLang[0][0] +
@@ -137,8 +138,9 @@ class UserCommand extends Command {
     const targetLang = "en";
     console.log(targetLang);
 
-    if (sourceLang.length == 0)
+    if (sourceLang.length == 0) {
       return message.reply(":x: Couldn't detect a language.");
+    }
     const translateurl =
       "https://translate.googleapis.com/translate_a/single?client=gtx&sl=" +
       sourceLang[0][0] +

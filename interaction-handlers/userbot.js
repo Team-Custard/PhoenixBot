@@ -16,25 +16,28 @@ class MenuHandler extends InteractionHandler {
     if (
       interaction.customId == "userbotinfo" ||
       interaction.customId.startsWith("userbotephemeral")
-    )
+    ) {
       return this.some();
+    }
 
     return this.none();
   }
 
   async run(interaction) {
     if (interaction.customId.startsWith("userbotephemeral")) {
-      if (!interaction.customId.endsWith(interaction.user.id))
+      if (!interaction.customId.endsWith(interaction.user.id)) {
         return interaction.reply({
           content: `Sorry, you can't use that button on messages you don't invoke.`,
           ephemeral: true,
         });
+      }
       await interaction.deferReply({ ephemeral: true });
       const db = await UserDB.findById(interaction.user.id);
-      if (!db)
+      if (!db) {
         return interaction.followUp(
           `:x: You need to configure UserDB before you can do that.`,
         );
+      }
       db.ephemeral = db.ephemeral ? false : true;
       db.save()
         .then(() => {

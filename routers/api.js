@@ -3,19 +3,21 @@ const UserDB = require("../tools/UserDB");
 
 const router = express.Router();
 
-router.get("/api/timefor/:id", async function (req, res) {
+router.get("/api/timefor/:id", async function(req, res) {
   const member = req.params.id;
   const usersettings = await UserDB.findById(
     member,
     UserDB.upsert,
   ).cacheQuery();
-  if (!usersettings)
+  if (!usersettings) {
     return res.send({ status: 400, message: "User have not setup UserDB." });
-  if (!usersettings.timezone)
+  }
+  if (!usersettings.timezone) {
     return res.send({
       status: 400,
       message: "User does not have timezone setup.",
     });
+  }
 
   const moment = require("moment-timezone");
   const date = new Date();
@@ -24,31 +26,34 @@ router.get("/api/timefor/:id", async function (req, res) {
   await res.send({ status: 200, id: member, time: strTime, date: strDate });
 });
 
-router.get("/api/pronouns/:id", async function (req, res) {
+router.get("/api/pronouns/:id", async function(req, res) {
   const member = req.params.id;
   const usersettings = await UserDB.findById(
     member,
     UserDB.upsert,
   ).cacheQuery();
-  if (!usersettings)
+  if (!usersettings) {
     return res.send({ status: 400, message: "User have not setup UserDB." });
-  if (!usersettings.pronouns)
+  }
+  if (!usersettings.pronouns) {
     return res.send({
       status: 400,
       message: "User does not have pronouns setup.",
     });
+  }
 
   await res.send({ status: 200, id: member, pronouns: usersettings.pronouns });
 });
 
-router.get("/api/socials/:id", async function (req, res) {
+router.get("/api/socials/:id", async function(req, res) {
   const member = req.params.id;
   const usersettings = await UserDB.findById(
     member,
     UserDB.upsert,
   ).cacheQuery();
-  if (!usersettings)
+  if (!usersettings) {
     return res.send({ status: 400, message: "User have not setup UserDB." });
+  }
 
   await res.send({
     status: 200,
@@ -60,14 +65,15 @@ router.get("/api/socials/:id", async function (req, res) {
   });
 });
 
-router.get("/api/profile/:id", async function (req, res) {
+router.get("/api/profile/:id", async function(req, res) {
   const member = req.params.id;
   const usersettings = await UserDB.findById(
     member,
     UserDB.upsert,
   ).cacheQuery();
-  if (!usersettings)
+  if (!usersettings) {
     return res.send({ status: 400, message: "User have not setup UserDB." });
+  }
 
   await res.send({
     status: 200,
@@ -85,7 +91,7 @@ router.get("/api/profile/:id", async function (req, res) {
   });
 });
 
-router.get("/api", async function (req, res) {
+router.get("/api", async function(req, res) {
   res.render("pages/api", { title: "Api reference" });
 });
 

@@ -33,10 +33,11 @@ class PingCommand extends Command {
 
     const obj = await stream.json();
 
-    if (obj.nsfw == true && !message.channel.nsfw)
+    if (obj.nsfw == true && !message.channel.nsfw) {
       return message.reply(
         `Refusing to send the scraped reddit post because the post is nsfw.`,
       );
+    }
     await message.reply({
       content: `${obj.title} | ${obj.subreddit} | [Post link](<${obj.postLink}>)`,
       files: [obj.url],

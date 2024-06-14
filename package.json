@@ -7,7 +7,8 @@
     "start": "node .",
     "lint": "eslint . --fix",
     "dev": "nodemon .",
-    "update": "git pull"
+    "update": "git pull",
+    "prettier": "prettier * -w"
   },
   "keywords": [
     "PhoenixBot",

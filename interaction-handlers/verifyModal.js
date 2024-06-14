@@ -29,17 +29,19 @@ class MenuHandler extends InteractionHandler {
         ServerSettings.upsert,
       );
 
-      if (!db.verification.role)
+      if (!db.verification.role) {
         return interaction.followUp(
           `:x: Verification was not setup yet. Please bring this to your server's admin's attention.`,
         );
+      }
       const role = await interaction.guild.roles
         .fetch(db.verification.role)
         .catch(() => undefined);
-      if (!role)
+      if (!role) {
         return interaction.followUp(
           `:x: I couldn't find the verified role anymore as the role appears to have been deleted. You need to use the verification setup command again. Please bring this to your server's admin's attention.`,
         );
+      }
       interaction.member.roles
         .add(role, `Verification`)
         .then(async () => {
@@ -55,7 +57,8 @@ class MenuHandler extends InteractionHandler {
             `:x: I couldn't give you the verified role, most likely I don't have permission to hand out roles or the role is above my topmost role. Please bring this to your server's admin's attention.`,
           );
         });
-    } else {
+    }
+ else {
       interaction.followUp(`:x: Invalid code specified.`);
     }
   }

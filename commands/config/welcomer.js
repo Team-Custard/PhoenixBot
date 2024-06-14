@@ -87,8 +87,9 @@ class PingCommand extends Subcommand {
       .findById(interaction.guild.id, serverSettings.upsert)
       .cacheQuery();
 
-    if (!db.welcomer.channel)
+    if (!db.welcomer.channel) {
       return interaction.followUp(`:x: Welcomer is not setup.`);
+    }
 
     interaction.followUp(
       `Welcomer messages are being sent to <#${db.welcomer.channel}>\nMessage: ${await require("../../tools/textParser").parse(db.welcomer.message, interaction.member)}`,
@@ -143,8 +144,9 @@ class PingCommand extends Subcommand {
       .findById(message.guild.id, serverSettings.upsert)
       .cacheQuery();
 
-    if (!db.welcomer.channel)
+    if (!db.welcomer.channel) {
       return message.reply(`:x: welcomer is not setup.`);
+    }
 
     message.reply(
       `Welcomer messages are being sent to <#${db.welcomer.channel}>\nMessage: ${await require("../../tools/textParser").parse(db.goodbyes.message, message.member)}`,
