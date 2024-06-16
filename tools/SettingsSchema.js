@@ -3,7 +3,11 @@ const { SpeedGooseCacheAutoCleaner } = require("speedgoose");
 
 const settingsSchema = new Schema({
   _id: { type: String, required: true },
-  prefix: { type: String, required: false, default: (require("../config.json").process.botmode == "prod" ? "=" : "==") },
+  prefix: {
+    type: String,
+    required: false,
+    default: require("../config.json").process.botmode == "prod" ? "=" : "==",
+  },
   stagingprefix: { type: String, required: false, default: "==" },
   enablePrefix: { type: Boolean, required: false, default: true },
   tags: [
@@ -38,7 +42,9 @@ const settingsSchema = new Schema({
 }).plugin(SpeedGooseCacheAutoCleaner);
 
 const settings = model(
-  (require("../config.json").process.botmode == "prod" ? "settings" : "settingsStaging"),
+  require("../config.json").process.botmode == "prod"
+    ? "settings"
+    : "settingsStaging",
   settingsSchema,
 );
 

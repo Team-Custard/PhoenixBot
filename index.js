@@ -23,6 +23,8 @@ if (settings.process.noIntro == false) {
 
 require("./tools/database").connect();
 
+global.bottype = require("./config.json").process.botmode;
+
 if (settings.process.botclient == true) {
   require("./bot");
 }

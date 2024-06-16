@@ -47,9 +47,7 @@ class PingCommand extends Command {
         });
     }
  else {
-      message.reply(
-        `The current prefix is **${db.prefix}**`,
-      );
+      message.reply(`The current prefix is **${db.prefix}**`);
     }
   }
 }

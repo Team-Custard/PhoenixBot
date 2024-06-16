@@ -33,27 +33,71 @@ router.get("/dash/login", async function(req, res) {
       );
 
       const oauthData = await tokenResponseData.body.json();
-      // console.log(oauthData);
+      console.log("Dash login success");
 
       if (!oauthData["access_token"]) {
         // There is no access token. An error occured.
         return res.render("errors/500", { title: "Error" });
       }
 
-      const foundHost = tempStorage.find((i) => i.hostname == req.ip);
+      const foundHost = tempStorage.find(
+        (i) => i.hostname == req.ip + req.hostname,
+      );
 
       if (foundHost) {
         foundHost.accessToken = oauthData["access_token"];
         foundHost.tokenType = oauthData["token_type"];
       }
  else {
+        // The user has accepted the Discord oauth2 and a granter token was generated.
+        // The token will be stored in a temporary and private cache binded by ip and
+        // device host so we don't keep getting rate limited by Discord. This will do.
+        // It clears when the user logs off, 30 minutes passes, or if the bot crashes.
         tempStorage.push({
-          hostname: req.ip,
+          hostname: req.ip + req.hostname,
           accessToken: oauthData["access_token"],
           tokenType: oauthData["token_type"],
+          guilds: null,
+          users: null,
         });
       }
+      // Clear the cache after half an hour for security and to free ram usage.
+      setTimeout(async function() {
+        // Run checks first to see if the user didn't already log out beforehand.
+        const refoundHost = tempStorage.find(
+          (i) => i.hostname == req.ip + req.hostname,
+        );
+        if (!refoundHost) {
+          return;
+        }
 
+        try {
+          // Make an api to discord to destroy the bearer token.
+          // We don't want it existing anymore.
+          await request("https://discord.com/api/oauth2/token/revoke", {
+            method: "POST",
+            body: new URLSearchParams({
+              token: refoundHost.accessToken,
+            }).toString(),
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+          });
+
+          // And now we actually remove it from the cache since everything passed.
+          for (let i = 0, j = tempStorage.length; i < j; i++) {
+            if (tempStorage[i]) {
+              if (tempStorage.hostname == req.ip + req.hostname) {
+                tempStorage.splice(i, 1);
+              }
+            }
+          }
+          console.log("Dash cache cleared for a member. gg devs.");
+        }
+ catch (err) {
+          console.error(err);
+        }
+      }, 1800000);
       res.redirect("/dash");
     }
  catch (err) {
@@ -67,7 +111,9 @@ router.get("/dash/login", async function(req, res) {
 });
 
 router.get("/dash/end", async function(req, res) {
-  const foundHost = tempStorage.find((i) => i.hostname == req.ip);
+  const foundHost = tempStorage.find(
+    (i) => i.hostname == req.ip + req.hostname,
+  );
   if (!foundHost) {
     return res.redirect("/");
   }
@@ -85,7 +131,7 @@ router.get("/dash/end", async function(req, res) {
 
     for (let i = 0, j = tempStorage.length; i < j; i++) {
       if (tempStorage[i]) {
-        if (tempStorage.hostname == req.ip) {
+        if (tempStorage.hostname == req.ip + req.hostname) {
           tempStorage.splice(i, 1);
         }
       }
@@ -106,29 +152,42 @@ router.get("/dash/redirect", function(req, res) {
 });
 
 router.get("/dash", async function(req, res) {
-  const foundHost = tempStorage.find((i) => i.hostname == req.ip);
+  const foundHost = tempStorage.find(
+    (i) => i.hostname == req.ip + req.hostname,
+  );
   if (!foundHost) {
     return res.redirect("/dash/redirect");
   }
-
-  const userResult = await request("https://discord.com/api/users/@me", {
-    headers: {
-      authorization: `${foundHost.tokenType} ${foundHost.accessToken}`,
-    },
-  });
-  const guildResult = await request(
-    "https://discord.com/api/users/@me/guilds",
-    {
+  let userinfo;
+  let guildinfo;
+  if (!foundHost.users) {
+    const userResult = await request("https://discord.com/api/users/@me", {
       headers: {
         authorization: `${foundHost.tokenType} ${foundHost.accessToken}`,
       },
-    },
-  );
+    });
+    userinfo = await userResult.body.json();
+    foundHost.users = userinfo;
+  }
+ else {
+    userinfo = foundHost.users;
+  }
+  if (!foundHost.guilds) {
+    const guildResult = await request(
+      "https://discord.com/api/users/@me/guilds",
+      {
+        headers: {
+          authorization: `${foundHost.tokenType} ${foundHost.accessToken}`,
+        },
+      },
+    );
+    guildinfo = await guildResult.body.json();
+    foundHost.guilds = guildinfo;
+  }
+ else {
+    guildinfo = foundHost.guilds;
+  }
 
-  const userinfo = await userResult.body.json();
-  const guildinfo = await guildResult.body.json();
-
-  console.log(guildinfo);
   let servers;
   if (!guildinfo.message) {
     servers = guildinfo.map((g) => ({
@@ -151,21 +210,30 @@ router.post(
   "/dash/servers/:server",
   require("body-parser").urlencoded({ extended: false }),
   async function(req, res) {
-    console.log(req.body);
-    const foundHost = tempStorage.find((i) => i.hostname == req.ip);
+    // console.log(req.body);
+    const foundHost = tempStorage.find(
+      (i) => i.hostname == req.ip + req.hostname,
+    );
     if (!foundHost) {
       return res.redirect("/dash/redirect");
     }
 
-    const guildResult = await request(
-      "https://discord.com/api/users/@me/guilds",
-      {
-        headers: {
-          authorization: `${foundHost.tokenType} ${foundHost.accessToken}`,
+    let guildinfo;
+    if (!foundHost.guilds) {
+      const guildResult = await request(
+        "https://discord.com/api/users/@me/guilds",
+        {
+          headers: {
+            authorization: `${foundHost.tokenType} ${foundHost.accessToken}`,
+          },
         },
-      },
-    );
-    const guildinfo = await guildResult.body.json();
+      );
+      guildinfo = await guildResult.body.json();
+      foundHost.guilds = guildinfo;
+    }
+ else {
+      guildinfo = foundHost.guilds;
+    }
 
     if (guildinfo.message) {
       setTimeout(() => {
@@ -224,21 +292,29 @@ router.post(
 );
 
 router.get("/dash/servers/:server", async function(req, res) {
-  const foundHost = tempStorage.find((i) => i.hostname == req.ip);
+  const foundHost = tempStorage.find(
+    (i) => i.hostname == req.ip + req.hostname,
+  );
   if (!foundHost) {
     return res.redirect("/dash/redirect");
   }
 
-  const guildResult = await request(
-    "https://discord.com/api/users/@me/guilds",
-    {
-      headers: {
-        authorization: `${foundHost.tokenType} ${foundHost.accessToken}`,
+  let guildinfo;
+  if (!foundHost.guilds) {
+    const guildResult = await request(
+      "https://discord.com/api/users/@me/guilds",
+      {
+        headers: {
+          authorization: `${foundHost.tokenType} ${foundHost.accessToken}`,
+        },
       },
-    },
-  );
-
-  const guildinfo = await guildResult.body.json();
+    );
+    guildinfo = await guildResult.body.json();
+    foundHost.guilds = guildinfo;
+  }
+ else {
+    guildinfo = foundHost.guilds;
+  }
 
   if (guildinfo.message) {
     setTimeout(() => {
@@ -253,11 +329,6 @@ router.get("/dash/servers/:server", async function(req, res) {
       );
       if (permissions.includes("MANAGE_GUILD")) {
         const db = await serverSettings.findById(chosenguild.id).cacheQuery();
-        if (!db) {
-          return res.redirect(
-            `https://discord.com/oauth2/authorize?client_id=${settings.dashboard.clientid}&permissions=52224&response_type=code&redirect_uri=${settings.dashboard.devmode ? "http://localhost:8080" : settings.dashboard.fullredirecturl}/dash&scope=bot+applications.commands&guild_id=${chosenguild.id}&disable_guild_select=true`,
-          );
-        }
 
         let invitebanner;
         if (require("../config.json").process.botclient) {
@@ -276,6 +347,12 @@ router.get("/dash/servers/:server", async function(req, res) {
           });
         }
 
+        if (!db) {
+          return res.redirect(
+            `/dash?errormsg=Aw shucks, you caught a rare bug. There's a problem with the database to ${chosenguild.name}. It usually happens if you invite the bot while it is offline. In your server, run /stats dbfix to attempt to fix the database and try again.`,
+          );
+        }
+
         res.render("pages/serverconf", {
           title: "Server config",
           config: db,
@@ -286,7 +363,7 @@ router.get("/dash/servers/:server", async function(req, res) {
       }
  else {
         res.redirect(
-          `/dash?errormsg=Looks like you don't have permission to manage the bot in ${chosenguild.name}. You must have manage server perms to access this server's dashboard. Ask the server owner for help or select another server.`,
+          `/dash?errormsg=Whoops, you're missing permissions in ${chosenguild.name} to manage the bot! Ask the sever owner for help.`,
         );
       }
     }
