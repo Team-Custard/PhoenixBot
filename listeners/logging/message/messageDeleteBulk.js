@@ -46,12 +46,14 @@ class GuildMemberAdd extends Listener {
         const items = [];
         for (let i = 0; i < messages.size; i++) {
           console.log(messages.at(i));
-          if (messages.at(i).partial) {items.push(`(Unfetched message)`);}
-          else {
-items.unshift(
+          if (messages.at(i).partial) {
+            items.push(`(Unfetched message)`);
+          }
+ else {
+            items.unshift(
               `[${messages.at(i).author.tag}]: ${messages.at(i).content}`,
             );
-}
+          }
         }
         const itemFile = new AttachmentBuilder()
           .setFile(Buffer.from(items.join(`\n`), "utf-8"))

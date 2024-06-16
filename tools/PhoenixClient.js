@@ -51,8 +51,7 @@ class PhoenixClient extends SapphireClient {
         if (serverdb === null) {
           return this.options.defaultPrefix;
         }
-        const prefixes =
-          serverdb.prefix;
+        const prefixes = serverdb.prefix;
         return prefixes;
       } catch (err) {
         console.warn("Database error", err);

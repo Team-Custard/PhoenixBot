@@ -31,11 +31,6 @@ body {
             <label for="prefix" class="form-label">Server prefix</label>
             <input id="prefix" class="form-control" type="text" name="prefix" value="<%= config.prefix %>">
         </div>
-        <div class="mb-3">
-            <label for="stagingprefix" class="form-label">Server prefix</label>
-            <input id="stagingprefix" class="form-control" type="text" name="stagingprefix" value="<%= config.stagingprefix %>" aria-describedby="prefixHelp">
-            <div id="prefixHelp" class="form-text">Staging prefix is for the beta bot, not normal bot.</div>
-        </div>
         <h3>Tagging</h3>
         <p>You are using <%= config.tags.length %> tags. The limit is 25 for free users and 50 for donators.<br>To manage tags, you can do so with the tags command.</p>
         <div style="background-color: lightgray;"><br><p> ID | NAME | DESCRIPTION | CREATOR</p><hr><% if (config.tags.length > 0) { config.tags.forEach((tag, index)=> { %> <p style="font-size: 16px;"> <%= `${index+1} | ${tag.name} | ${tag.description} | ${tag.creator}` %></p><hr> <% })} else { %> <p>No tags to display.</p><hr> <% } %></div>
@@ -43,8 +38,6 @@ body {
             <input type="checkbox" class="form-check-input" id="locktags" name="lockTags" <% if (config.lockTags) { %> checked <% } %>>
             <label class="form-check-label" for="locktags">Lock tags to managers only</label>        
         </div>
-        
-        
         <button class="btn btn-secondary" type="submit">Submit</button>
     </form>
     

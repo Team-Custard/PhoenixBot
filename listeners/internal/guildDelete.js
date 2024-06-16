@@ -1,5 +1,5 @@
 const { Listener } = require("@sapphire/framework");
-const db = require('../../tools/database');
+const db = require("../../tools/database");
 
 class GuildDelete extends Listener {
   constructor(context, options) {
