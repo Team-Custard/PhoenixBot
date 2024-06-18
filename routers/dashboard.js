@@ -6,8 +6,9 @@ const router = express.Router();
 
 const serverSettings = require("../tools/SettingsSchema");
 
-// Request hostname is temporarily stored here to save discord tokens.
-// These are wiped when the app restarts.
+// Request hostname is temporarily stored here in a cache to prevent mass requests.
+// This is deleted every 30 minutes or until the user logs out.
+// The entire cache is also wiped if the bot process dies.
 const tempStorage = [];
 
 router.get("/dash/login", async function(req, res) {
@@ -119,16 +120,19 @@ router.get("/dash/end", async function(req, res) {
   }
 
   try {
+    // Make an api to discord to destroy the bearer token.
+    // We don't want it existing anymore.
     await request("https://discord.com/api/oauth2/token/revoke", {
       method: "POST",
       body: new URLSearchParams({
-        token: foundHost.accessToken,
+        token: refoundHost.accessToken,
       }).toString(),
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
     });
 
+    // And now we actually remove it from the cache since everything passed.
     for (let i = 0, j = tempStorage.length; i < j; i++) {
       if (tempStorage[i]) {
         if (tempStorage.hostname == req.ip + req.hostname) {
@@ -136,6 +140,7 @@ router.get("/dash/end", async function(req, res) {
         }
       }
     }
+    console.log("Dash cache cleared for a member. gg devs.");
 
     return res.redirect("/");
   }
