@@ -28,10 +28,12 @@ class PingCommand extends Command {
       const general = [];
       const config = [];
       const fun = [];
+      const mod = [];
       this.container.client.stores.get("commands").forEach((item) => {
         if (item.category == "utility") general.push(`\`${item.name}\``);
         if (item.category == "config") config.push(`\`${item.name}\``);
         if (item.category == "fun") fun.push(`\`${item.name}\``);
+        if (item.category == "mod") mod.push(`\`${item.name}\``);
       });
 
       const embed = new EmbedBuilder()
@@ -45,8 +47,9 @@ class PingCommand extends Command {
         )
         .addFields([
           { name: `Utility`, value: general.join(", ") },
-          { name: `Config`, value: config.join(", ") },
           { name: `Fun`, value: fun.join(", ") },
+          { name: `Moderation`, value: mod.join(", ") },
+          { name: `Config`, value: config.join(", ") },
         ]);
       return message.reply({ embeds: [embed] });
     }
