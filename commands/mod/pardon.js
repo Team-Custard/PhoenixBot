@@ -35,7 +35,7 @@ class PingCommand extends Command {
     }
     
     await db.save();
-    message.reply(`:white_check_mark: Pardoned case  **\` ${caseid} \`**.`);
+    message.reply(`:white_check_mark: Pardoned case  **\` ${caseid} \`** for **${(this.container.client.users.cache.get(thecase.member) ? this.container.client.users.cache.get(thecase.member).tag : thecase.member)}**'s ${thecase.punishment}.`);
     
     if (db.logging.infractions) {
         const channel = await message.guild.channels
