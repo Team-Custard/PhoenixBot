@@ -46,7 +46,7 @@ class PingCommand extends Command {
     if (!channel) channel = interaction.channel;
 
     channel.send(
-      `${await require("../../tools/textParser").parse(msg, interaction.member)} (${interaction.user.username})`,
+      `${await require("../../tools/textParser").parse(msg, interaction.member)}`,
     );
     interaction.followUp(":white_check_mark: Successfully sent the message.");
   }
@@ -55,7 +55,7 @@ class PingCommand extends Command {
     const msg = await args.rest("string");
 
     message.channel.send(
-      `${await require("../../tools/textParser").parse(msg, message.member)} (${message.author.username})`,
+      `${await require("../../tools/textParser").parse(msg, message.member)}`,
     );
   }
 }
