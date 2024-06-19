@@ -36,9 +36,23 @@ const settingsSchema = new Schema({
     members: String,
     messages: String,
     moderation: String,
+    infractions: String,
     roles: String,
     voice: String,
   },
+  infractions: [
+    {
+      id: Number,
+      punishment: String,
+      member: String,
+      moderator: String,
+      reason: String,
+      expiretime: String,
+      expired: Boolean,
+      hidden: Boolean,
+      modlogID: String,
+    }
+  ]
 }).plugin(SpeedGooseCacheAutoCleaner);
 
 const settings = model(
