@@ -39,6 +39,11 @@ class PingCommand extends Subcommand {
           messageRun: "messageModeration",
         },
         {
+          name: "infractions",
+          chatInputRun: "chatInputInfractions",
+          messageRun: "messageInfractions",
+        },
+        {
           name: "roles",
           chatInputRun: "chatInputRoles",
           messageRun: "messageRoles",
@@ -105,6 +110,19 @@ class PingCommand extends Subcommand {
         )
         .addSubcommand((command) =>
           command
+            .setName("infractions")
+            .setDescription(
+              "Logs moderation cases made through Phoenix.",
+            )
+            .addChannelOption((option) =>
+              option
+                .setName("channel")
+                .setDescription("The channel to use. Leave blank to clear.")
+                .setRequired(false),
+            ),
+        )
+        .addSubcommand((command) =>
+          command
             .setName("roles")
             .setDescription("Logs member role updates.")
             .addChannelOption((option) =>
@@ -148,6 +166,7 @@ class PingCommand extends Subcommand {
           `Messages: ${db.logging.messages ? `<#${db.logging.messages}>` : `Unset`}\n` +
           `Members: ${db.logging.members ? `<#${db.logging.members}>` : `Unset`}\n` +
           `Moderation: ${db.logging.moderation ? `<#${db.logging.moderation}>` : `Unset`}\n` +
+          `Infractions: ${db.logging.infractions ? `<#${db.logging.infractions}>` : `Unset`}\n` +
           `Roles: ${db.logging.roles ? `<#${db.logging.roles}>` : `Unset`}\n` +
           `Voice: ${db.logging.voice ? `<#${db.logging.voice}>` : `Unset`}`,
       )
@@ -217,6 +236,30 @@ class PingCommand extends Subcommand {
     }
  else {
       db.logging.moderation = null;
+      successMsg = `:white_check_mark: Log successfully cleared.`;
+    }
+    db.save()
+      .then(() => {
+        interaction.followUp(successMsg);
+      })
+      .catch((err) => {
+        interaction.followUp(`:x: ${err}`);
+      });
+  }
+
+  async chatInputInfractions(interaction) {
+    await interaction.deferReply();
+    const channel = interaction.options.getChannel("channel");
+    const db = await serverSettings
+      .findById(interaction.guild.id, serverSettings.upsert)
+      .cacheQuery();
+    let successMsg = "";
+    if (channel) {
+      db.logging.infractions = channel.id;
+      successMsg = `:white_check_mark: Log successfully set to ${channel}.`;
+    }
+ else {
+      db.logging.infractions = null;
       successMsg = `:white_check_mark: Log successfully cleared.`;
     }
     db.save()

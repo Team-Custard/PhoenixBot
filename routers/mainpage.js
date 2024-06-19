@@ -9,7 +9,7 @@ router.get("/userdb/tzhelp", function(req, res) {
   res.render("pages/userdb/timezone", { title: "Your timezone" });
 });
 router.get("/server", function(req, res) {
-  res.redirect("https://discord.gg/6ZGJVRBKaP");
+  res.redirect("https://discord.gg/PnUYnBbxER");
 });
 router.get("/commands", function(req, res) {
   res.render("pages/commands", { title: "Commands" });
