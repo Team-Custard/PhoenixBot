@@ -3,10 +3,6 @@ const { PermissionFlagsBits, EmbedBuilder, Colors } = require("discord.js");
 const serverSettings = require("../../tools/SettingsSchema");
 const settings = require("../../config.json");
 
-function logging(message, member, casedetails) {
-
-}
-
 class PingCommand extends Command {
   constructor(context, options) {
     super(context, {
