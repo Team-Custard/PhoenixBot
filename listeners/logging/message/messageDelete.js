@@ -13,6 +13,13 @@ class GuildMemberAdd extends Listener {
     });
   }
   async run(message) {
+    if (this.container.client.id == "1239263616025493504") {
+      const hasStaging = await message.guild.members
+        .fetch("1227318291475730443")
+        .catch(() => undefined);
+      if (hasStaging) return;
+    }
+
     if (message.author.bot) return;
     if (!isGuildBasedChannel(message.channel)) return;
 
@@ -23,7 +30,7 @@ class GuildMemberAdd extends Listener {
         .catch(() => undefined);
       if (channel) {
         const webhook = await webhookFetch.find(channel);
-        console.log(webhook);
+        
         if (!webhook) {
           console.log("Welp didn't find a webhook, sry.");
           return;

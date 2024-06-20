@@ -13,6 +13,13 @@ class GuildMemberAdd extends Listener {
     });
   }
   async run(guild, mod, offender, thecase) {
+    if (this.container.client.id == "1239263616025493504") {
+      const hasStaging = await guild.members
+        .fetch("1227318291475730443")
+        .catch(() => undefined);
+      if (hasStaging) return;
+    }
+
     const db = await ServerSettings.findById(guild.id).cacheQuery();
     if (db.logging.infractions) {
       const channel = await guild.channels
