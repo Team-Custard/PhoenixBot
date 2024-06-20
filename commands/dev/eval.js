@@ -29,15 +29,17 @@ class PingCommand extends Command {
       cooldownDelay: 3_000,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
       preconditions: ["devCommand"],
+      flags: true
     });
   }
 
   async messageRun(message, args) {
+    const silent = args.getFlags('silent', 's');
     const code = await args.rest("string");
 
     try {
       const evaled = eval(code);
-      message.reply({
+      if (!silent) message.reply({
         embeds: [
           {
             fields: [
@@ -49,6 +51,7 @@ class PingCommand extends Command {
         ],
         code: "xl",
       });
+      else message.react(`✅`);
     }
  catch (err) {
       message.reply(`The code returned an error. ${clean(err)}`);
