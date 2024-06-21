@@ -87,8 +87,7 @@ class UserCommand extends Command {
         .setFooter({ text: "Triggered" })
         .setTimestamp(new Date());
       await interaction.followUp({ embeds: [embed] });
-    }
- else {
+    } else {
       // Fetch the user instead, they don't exist.
       const user = await interaction.options.getUser("user");
       const embed = new EmbedBuilder()
@@ -126,8 +125,7 @@ class UserCommand extends Command {
         .setFooter({ text: "Triggered" })
         .setTimestamp(new Date());
       await message.reply({ embeds: [embed] });
-    }
- else {
+    } else {
       const embed = new EmbedBuilder()
         .setAuthor({
           name: user.displayName + (user.bot ? `[BOT]` : ``),

@@ -7,7 +7,7 @@ class PingCommand extends Command {
     super(context, {
       ...options,
       name: "timefor",
-      aliases: ["tf","time"],
+      aliases: ["tf", "time"],
       description: "Displays a user's time.",
       detailedDescription: {
         usage: "timefor [user]",

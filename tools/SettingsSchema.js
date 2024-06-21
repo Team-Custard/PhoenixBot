@@ -10,6 +10,8 @@ const settingsSchema = new Schema({
   },
   stagingprefix: { type: String, required: false, default: "==" },
   enablePrefix: { type: Boolean, required: false, default: true },
+  donatorUser: String,
+  customBot: Boolean,
   tags: [
     {
       name: String,
@@ -59,12 +61,12 @@ const settingsSchema = new Schema({
       expired: Boolean,
       hidden: Boolean,
       modlogID: String,
-    }
-  ]
+    },
+  ],
 }).plugin(SpeedGooseCacheAutoCleaner);
 
 const settings = model(
-  require("../config.json").process.botmode == "prod"
+  (require("../config.json").process.botmode == "prod" || require("../config.json").process.botmode == "custom")
     ? "settings"
     : "settingsStaging",
   settingsSchema,

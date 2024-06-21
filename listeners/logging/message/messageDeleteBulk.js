@@ -18,9 +18,9 @@ class GuildMemberAdd extends Listener {
     });
   }
   async run(messages, gchannel) {
-    if (!isGuildBasedChannel(message.channel)) return;
+    if (!isGuildBasedChannel(gchannel)) return;
     if (this.container.client.id == "1239263616025493504") {
-      const hasStaging = await message.guild.members
+      const hasStaging = await gchannel.guild.members
         .fetch("1227318291475730443")
         .catch(() => undefined);
       if (hasStaging) return;
@@ -33,7 +33,7 @@ class GuildMemberAdd extends Listener {
         .catch(() => undefined);
       if (channel) {
         const webhook = await webhookFetch.find(channel);
-        
+
         if (!webhook) {
           console.log("Welp didn't find a webhook, sry.");
           return;
@@ -54,8 +54,7 @@ class GuildMemberAdd extends Listener {
           console.log(messages.at(i));
           if (messages.at(i).partial) {
             items.push(`(Unfetched message)`);
-          }
- else {
+          } else {
             items.unshift(
               `[${messages.at(i).author.tag}]: ${messages.at(i).content}`,
             );

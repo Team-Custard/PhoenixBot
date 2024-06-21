@@ -121,8 +121,7 @@ class PingCommand extends Subcommand {
       await interaction.reply({
         files: [avatar],
       });
-    }
- else {
+    } else {
       let member = await interaction.options.getUser("user");
       if (!member) member = interaction.user;
 

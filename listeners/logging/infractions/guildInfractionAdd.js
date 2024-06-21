@@ -32,13 +32,13 @@ class GuildMemberAdd extends Listener {
             `**Offender:** ${offender}\n**Moderator:** ${mod}\n**Reason:** ${thecase.reason}`,
           )
           .setColor(Colors.Orange)
-          .setFooter({text: `ID ${offender.id}`})
+          .setFooter({ text: `ID ${offender.id}` })
           .setTimestamp(new Date());
 
         await channel
           .send({
             // content: '',
-            embeds: [embed]
+            embeds: [embed],
           })
           .catch((err) =>
             console.error(`[error] Error on sending to channel`, err),

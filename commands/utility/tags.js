@@ -253,15 +253,13 @@ class PingCommand extends Subcommand {
       interaction.followUp(
         `:information_source: **${tag.name}**:\n${await require("../../tools/textParser").parse(tag.description, interaction.member)}\n(Tag by ${tag.creator})`,
       );
-    }
-    else {
+    } else {
       const btag = indexes.find((t) => t.name == tagName);
       if (btag) {
         interaction.followUp(
           `:information_source: **${btag.name}**:\n${await require("../../tools/textParser").parse(btag.description, interaction.member)}\n(Tag by ${btag.creator})`,
         );
-      }
-      else {
+      } else {
         interaction.followUp(":x: Tag not found.");
       }
     }
@@ -282,15 +280,13 @@ class PingCommand extends Subcommand {
       interaction.followUp(
         `**${tag.name}** : Created by ${tag.creator}\nContent: \`\`\`${tag.description}\`\`\``,
       );
-    }
-    else {
+    } else {
       const btag = indexes.find((t) => t.name == tagName);
       if (btag) {
         interaction.followUp(
           `**${btag.name}** : Created by ${btag.creator} : Built-in tag\nContent: \`\`\`${btag.description}\`\`\``,
         );
-      }
-      else {
+      } else {
         interaction.followUp(":x: Tag not found.");
       }
     }
@@ -415,15 +411,13 @@ class PingCommand extends Subcommand {
       message.reply(
         `${await require("../../tools/textParser").parse(tag.description, message.member)}`,
       );
-    }
-    else {
+    } else {
       const btag = indexes.find((t) => t.name == tagName);
       if (btag) {
         message.reply(
           `${await require("../../tools/textParser").parse(btag.description, message.member)}`,
         );
-      }
-      else {
+      } else {
         message.reply(":x: Tag not found.");
       }
     }
@@ -443,15 +437,13 @@ class PingCommand extends Subcommand {
       message.reply(
         `**${tag.name}** : Created by ${tag.creator}\nContent: \`\`\`${tag.description}\`\`\``,
       );
-    }
-    else {
+    } else {
       const btag = indexes.find((t) => t.name == tagName);
       if (btag) {
         message.reply(
           `**${btag.name}** : Created by ${btag.creator} : Built-in tag\nContent: \`\`\`${btag.description}\`\`\``,
         );
-      }
-      else {
+      } else {
         messsage.reply(":x: Tag not found.");
       }
     }

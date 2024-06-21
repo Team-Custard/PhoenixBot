@@ -27,7 +27,7 @@ class GuildMemberAdd extends Listener {
         .catch(() => undefined);
       if (channel) {
         const webhook = await webhookFetch.find(channel);
-        
+
         if (!webhook) {
           console.log("Welp didn't find a webhook, sry.");
           return;

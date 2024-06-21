@@ -13,7 +13,9 @@ class PingCommand extends Command {
         usage: "help [flag] [command]",
         examples: ["help", "help prefix", "help ping"],
         args: ["[command] : The command to show help for."],
-        flags: ["dev : Show dev commands (Can't run these commands, no point in using this)"]
+        flags: [
+          "dev : Show dev commands (Can't run these commands, no point in using this)",
+        ],
       },
       cooldownDelay: 3_000,
       requiredClientPermissions: [
@@ -25,7 +27,7 @@ class PingCommand extends Command {
   }
 
   async messageRun(message, args) {
-    const showDev = args.getFlags('dev', 'd');
+    const showDev = args.getFlags("dev", "d");
     const option = await args.pick("string").catch(() => "");
     if (option == "") {
       const general = [];
@@ -56,19 +58,38 @@ class PingCommand extends Command {
         )
         .setTimestamp(new Date())
         .addFields([
-          { name: `Utility`, value: (general.length > 0 ? general.join(", ") : 'No commands found') },
-          { name: `Fun`, value: (fun.length > 0 ? fun.join(", ") : 'No commands found') },
-          { name: `Moderation`, value: (mod.length > 0 ? mod.join(", ") : 'No commands found') },
-          { name: `Automod`, value: (automod.length > 0 ? automod.join(", ") : 'No commands found') },
-          { name: `Social`, value: (social.length > 0 ? social.join(", ") : 'No commands found') },
-          { name: `Config`, value: (config.length > 0 ? config.join(", ") : 'No commands found') },
+          {
+            name: `Utility`,
+            value:
+              general.length > 0 ? general.join(", ") : "No commands found",
+          },
+          {
+            name: `Fun`,
+            value: fun.length > 0 ? fun.join(", ") : "No commands found",
+          },
+          {
+            name: `Moderation`,
+            value: mod.length > 0 ? mod.join(", ") : "No commands found",
+          },
+          {
+            name: `Automod`,
+            value:
+              automod.length > 0 ? automod.join(", ") : "No commands found",
+          },
+          {
+            name: `Social`,
+            value: social.length > 0 ? social.join(", ") : "No commands found",
+          },
+          {
+            name: `Config`,
+            value: config.length > 0 ? config.join(", ") : "No commands found",
+          },
         ]);
-        if (dev.length > 0 && showDev) {
-          embed.addFields([{name: "Dev", value: dev.join(", ")}]);
-        }
+      if (dev.length > 0 && showDev) {
+        embed.addFields([{ name: "Dev", value: dev.join(", ") }]);
+      }
       return message.reply({ embeds: [embed] });
-    }
- else {
+    } else {
       const cmd = this.container.client.stores
         .get("commands")
         .find((i) => i.name === option);
@@ -76,21 +97,29 @@ class PingCommand extends Command {
         return message.reply({ content: `:x: No such command was found.` });
       }
       const embed = new EmbedBuilder()
-        .setTitle(`${cmd.name} ${(cmd.aliases.length > 0 ? (cmd.aliases.join(", ")) : '')}`)
+        .setTitle(
+          `${cmd.name} ${cmd.aliases.length > 0 ? cmd.aliases.join(", ") : ""}`,
+        )
         .setDescription(
           `Category: ${cmd.fullCategory}\nUsage: ${cmd.detailedDescription.usage}\n${cmd.description}`,
         )
         .setColor(Colors.Orange);
-        if (cmd.detailedDescription.args) {
-          embed.addFields([{name: "Args", value: cmd.detailedDescription.args.join("\n")}]);
-        }
-        if (cmd.detailedDescription.flags) {
-          embed.addFields([{name: "Flags", value: cmd.detailedDescription.flags.join("\n")}]);
-        }
-        embed.addFields([{
+      if (cmd.detailedDescription.args) {
+        embed.addFields([
+          { name: "Args", value: cmd.detailedDescription.args.join("\n") },
+        ]);
+      }
+      if (cmd.detailedDescription.flags) {
+        embed.addFields([
+          { name: "Flags", value: cmd.detailedDescription.flags.join("\n") },
+        ]);
+      }
+      embed.addFields([
+        {
           name: "Examples",
           value: cmd.detailedDescription.examples.join("\n"),
-        }])
+        },
+      ]);
       return message.reply({ embeds: [embed] });
     }
   }
