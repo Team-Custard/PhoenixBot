@@ -29,7 +29,7 @@ class PingCommand extends Command {
         if (!piece) return message.reply(`:x: Command not found.`);
         await piece.reload().then(() => message.reply(`:white_check_mark: Successfully reloaded \`${piece.name}\`.`))
         .catch((err) => {
-            message.reply(`:x: ${err}`);
+            message.reply(`:x: Command refresh failed, ${err}`);
             console.error(err);
         })
     }

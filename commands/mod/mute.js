@@ -7,13 +7,13 @@ class PingCommand extends Command {
   constructor(context, options) {
     super(context, {
       ...options,
-      name: "warn",
-      aliases: [`w`,`strike`],
-      description: "Adds an infraction to a member.",
+      name: "mute",
+      aliases: [`m`],
+      description: "Mutes a member for a specified amount of time. You can only mute up to a maximum of 28 days. Any incorrect time will be converted into a permanent mute.",
       detailedDescription: {
-        usage: "warn <member> [flags] [reason] ",
-        examples: ["warn sylveondev Being cool", "warn bill11 Being a raccoon --silent"],
-        args: ["reason : The reason for the action", "member : The member to moderate"],
+        usage: "mute <member> [flags] [duration] [reason] ",
+        examples: ["mute sylveondev 2h Being cool"],
+        args: ["member : The member to moderate", "duration : The duration of the mute", "reason : The reason for the action"],
         flags: [
             `--silent : Don't send a dm to the member.`,
             `--hide : Don't show yourself as the moderator in user dm.`
@@ -29,12 +29,16 @@ class PingCommand extends Command {
     const member = await args.pick("member");
     const silentDM = args.getFlags('silent', 's');
     const hideMod = args.getFlags('hide', 'h');
-    const reason = await args.rest("string").catch(() => `No reason specified`);
+    const unformattedreason = await args.rest("string").catch(() => `No reason specified`);
+    let reason = unformattedreason;
+
+    const duration = require('ms')(unformattedreason.replace(/ .*/,''));
+    if (!isNaN(duration)) reason = unformattedreason.substring((unformattedreason.replace(/ .*/,'')).length+1);
 
     if (message.member == member) return message.reply(`:x: Bruh. On yourself?`);
     if (member.roles.highest.position >= message.guild.members.me.roles.highest.position) return message.reply(`:x: I'm not high enough in the role hiarchy to moderate this member.`);
     if (member.roles.highest.position >= message.member.roles.highest.position) return message.reply(`:x: You aren't high enough in the role hiarchy to moderate this member.`);
-    if (!member.manageable) return message.reply(`:x: This user is not manageable.`);
+    if (!member.moderatable) return message.reply(`:x: This user is not moderatable.`);
     
     let caseid = 0;
     const db = await serverSettings
@@ -42,9 +46,9 @@ class PingCommand extends Command {
     .cacheQuery();
 
     caseid = db.infractions.length + 1;
-    const thecase = {
+    let thecase = {
         id: caseid,
-        punishment: "Warn",
+        punishment: "Mute",
         member: member.id,
         moderator: message.member.id,
         reason: reason,
@@ -54,12 +58,24 @@ class PingCommand extends Command {
         modlogID: null
     };
 
+    if (!isNaN(duration)) {
+        if ((duration > 0) && (duration <= (40320 * 60 * 1000))) {
+            await member.disableCommunicationUntil(Date.now() + (duration), `(Mute by ${message.author.tag}${isNaN(duration) ? `` : ` | ${require('ms')(duration)}`}) ${reason}`);
+        } else {
+            if (!db.moderation.muteRole) return message.reply(`:x: To mute members pernamently, a mute role needs to be assigned. Use muterole to set one.`)
+            await member.roles.add(db.moderation.muteRole, `(Mute by ${message.author.tag}) ${reason}`);
+        }
+    } else {
+        if (!db.moderation.muteRole) return message.reply(`:x: To mute members pernamently, a mute role needs to be assigned. Use muterole to set one.`)
+        await member.roles.add(db.moderation.muteRole, `(Mute by ${message.author.tag}) ${reason}`);
+    }
+
     let dmSuccess = true;
     const embed = new EmbedBuilder()
     .setAuthor({name: message.guild.name, iconURL: message.guild.iconURL({dynamic: true})})
     .setTitle(`Your infractions has been updated`)
     .addFields(
-        {name: `Details:`, value: `**ID: \` ${caseid} \` | Type:** ${thecase.punishment} | **Responsible moderator:** ${(hideMod ? `Moderator hidden` : message.author)}`},
+        {name: `Details:`, value: `**ID: \` ${caseid} \` | Type:** ${thecase.punishment} | **Duration:** ${!isNaN(duration) ? `${require('ms')(duration, {long: true})}` : `Permanant`} | **Responsible moderator:** ${(hideMod ? `Moderator hidden` : message.author)}`},
         {name: `Reason:`, value: reason}
     )
     .setColor(Colors.Orange)
@@ -75,7 +91,7 @@ class PingCommand extends Command {
           const embed = new EmbedBuilder()
             .setTitle(`${thecase.punishment} - Case ${thecase.id}`)
             .setDescription(
-              `**Offender:** ${member}\n**Moderator:** ${message.author}\n**Reason:** ${thecase.reason}`,
+              `**Offender:** ${member}\n**Moderator:** ${message.author}\n**Duration:** ${!isNaN(duration) ? `${require('ms')(duration, {long: true})}` : `Permanant`}\n**Reason:** ${thecase.reason}`,
             )
             .setColor(Colors.Orange)
             .setFooter({text: `ID ${member.id}`})
@@ -97,7 +113,7 @@ class PingCommand extends Command {
     db.infractions.push(thecase);
 
     await db.save();
-    message.reply(`:white_check_mark: **${member.user.tag}** was warned with case id **\` ${caseid} \`**. ${(silentDM ? '' : (dmSuccess ? `(User was notified)` : `(User was not notified)`))}`);
+    message.reply(`:white_check_mark: **${member.user.tag}** was muted${!isNaN(duration) ? ((duration <= (40320 * 60 * 1000)) ? ` for **${require('ms')(duration, {long: true})}**` : ``) : ``} with case id **\` ${caseid} \`**. ${(silentDM ? '' : (dmSuccess ? `(User was notified)` : `(User was not notified)`))}`);
 }
 }
 module.exports = {

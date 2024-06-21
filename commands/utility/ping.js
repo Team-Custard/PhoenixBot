@@ -12,7 +12,6 @@ class PingCommand extends Command {
       detailedDescription: {
         usage: "ping",
         examples: ["ping"],
-        args: ["No args needed."],
       },
       cooldownDelay: 3_000,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],

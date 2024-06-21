@@ -27,7 +27,7 @@ class MenuHandler extends InteractionHandler {
       const db = await ServerSettings.findById(
         interaction.guild.id,
         ServerSettings.upsert,
-      );
+      ).cacheQuery();
 
       if (!db.verification.role) {
         return interaction.followUp(

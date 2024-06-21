@@ -40,6 +40,14 @@ const settingsSchema = new Schema({
     roles: String,
     voice: String,
   },
+  moderation: {
+    muteRole: String,
+    defaultMuteTime: String,
+    autoDelete: String,
+    modRole: String,
+    alwaysConfirm: Boolean,
+    reasonRequired: Boolean,
+  },
   infractions: [
     {
       id: Number,

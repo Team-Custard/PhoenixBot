@@ -25,6 +25,7 @@ class PingCommand extends Command {
         usage: "eval <code>",
         examples: ["eval new Date();"],
         args: ["code: The code to run"],
+        flags: ["silent : Don't send the results embed"]
       },
       cooldownDelay: 3_000,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
