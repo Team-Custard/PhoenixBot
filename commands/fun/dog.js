@@ -13,7 +13,6 @@ class PingCommand extends Command {
       detailedDescription: {
         usage: "cat",
         examples: ["dog"],
-        args: ["No args needed"],
       },
       cooldownDelay: 60_000,
       cooldownLimit: 10,

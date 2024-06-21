@@ -42,6 +42,11 @@ class PingCommand extends Subcommand {
           preconditions: ["tagLock"],
         },
         {
+          name: "info",
+          chatInputRun: "chatInputInfo",
+          messageRun: "messageInfo",
+        },
+        {
           name: "lock",
           chatInputRun: "chatInputLock",
           messageRun: "messageLock",
@@ -249,14 +254,43 @@ class PingCommand extends Subcommand {
         `:information_source: **${tag.name}**:\n${await require("../../tools/textParser").parse(tag.description, interaction.member)}\n(Tag by ${tag.creator})`,
       );
     }
- else {
+    else {
       const btag = indexes.find((t) => t.name == tagName);
       if (btag) {
         interaction.followUp(
           `:information_source: **${btag.name}**:\n${await require("../../tools/textParser").parse(btag.description, interaction.member)}\n(Tag by ${btag.creator})`,
         );
       }
- else {
+      else {
+        interaction.followUp(":x: Tag not found.");
+      }
+    }
+  }
+
+  async chatInputInfo(interaction) {
+    await interaction.deferReply();
+    const tagName = await interaction.options.getString("name");
+
+    const db = await serverSettings
+      .findById(interaction.guild.id, serverSettings.upsert)
+      .cacheQuery();
+
+    const indexes = require("../../tools/infoStuff.json");
+
+    const tag = db.tags.find((t) => t.name == tagName);
+    if (tag) {
+      interaction.followUp(
+        `**${tag.name}** : Created by ${tag.creator}\nContent: \`\`\`${tag.description}\`\`\``,
+      );
+    }
+    else {
+      const btag = indexes.find((t) => t.name == tagName);
+      if (btag) {
+        interaction.followUp(
+          `**${btag.name}** : Created by ${btag.creator} : Built-in tag\nContent: \`\`\`${btag.description}\`\`\``,
+        );
+      }
+      else {
         interaction.followUp(":x: Tag not found.");
       }
     }
@@ -379,18 +413,46 @@ class PingCommand extends Subcommand {
     const tag = db.tags.find((t) => t.name == tagName);
     if (tag) {
       message.reply(
-        `:information_source: **${tag.name}**:\n${await require("../../tools/textParser").parse(tag.description, message.member)}\n(Tag by ${tag.creator})`,
+        `${await require("../../tools/textParser").parse(tag.description, message.member)}`,
       );
     }
- else {
+    else {
       const btag = indexes.find((t) => t.name == tagName);
       if (btag) {
         message.reply(
-          `:information_source: **${btag.name}**:\n${await require("../../tools/textParser").parse(btag.description, message.member)}\n(Tag by ${btag.creator})`,
+          `${await require("../../tools/textParser").parse(btag.description, message.member)}`,
         );
       }
- else {
+      else {
         message.reply(":x: Tag not found.");
+      }
+    }
+  }
+
+  async messageInfo(message, args) {
+    const tagName = await args.pick("string");
+
+    const db = await serverSettings
+      .findById(message.guild.id, serverSettings.upsert)
+      .cacheQuery();
+
+    const indexes = require("../../tools/infoStuff.json");
+
+    const tag = db.tags.find((t) => t.name == tagName);
+    if (tag) {
+      message.reply(
+        `**${tag.name}** : Created by ${tag.creator}\nContent: \`\`\`${tag.description}\`\`\``,
+      );
+    }
+    else {
+      const btag = indexes.find((t) => t.name == tagName);
+      if (btag) {
+        message.reply(
+          `**${btag.name}** : Created by ${btag.creator} : Built-in tag\nContent: \`\`\`${btag.description}\`\`\``,
+        );
+      }
+      else {
+        messsage.reply(":x: Tag not found.");
       }
     }
   }

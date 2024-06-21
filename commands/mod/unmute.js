@@ -7,13 +7,13 @@ class PingCommand extends Command {
   constructor(context, options) {
     super(context, {
       ...options,
-      name: "warn",
-      aliases: [`w`,`strike`],
-      description: "Adds an infraction to a member.",
+      name: "unmute",
+      aliases: [`um`],
+      description: "Unmutes a member.",
       detailedDescription: {
-        usage: "warn <member> [flags] [reason] ",
-        examples: ["warn sylveondev Being cool", "warn bill11 Being a raccoon --silent"],
-        args: ["reason : The reason for the action", "member : The member to moderate"],
+        usage: "mute <member> [flags] [reason] ",
+        examples: ["unmute sylveondev 2h Being cool"],
+        args: ["member : The member to moderate", "reason : The reason for the action"],
         flags: [
             `--silent : Don't send a dm to the member.`,
             `--hide : Don't show yourself as the moderator in user dm.`
@@ -30,11 +30,11 @@ class PingCommand extends Command {
     const silentDM = args.getFlags('silent', 's');
     const hideMod = args.getFlags('hide', 'h');
     const reason = await args.rest("string").catch(() => `No reason specified`);
-
+    
     if (message.member == member) return message.reply(`:x: Bruh. On yourself?`);
     if (member.roles.highest.position >= message.guild.members.me.roles.highest.position) return message.reply(`:x: I'm not high enough in the role hiarchy to moderate this member.`);
     if (member.roles.highest.position >= message.member.roles.highest.position) return message.reply(`:x: You aren't high enough in the role hiarchy to moderate this member.`);
-    if (!member.manageable) return message.reply(`:x: This user is not manageable.`);
+    if (!member.moderatable) return message.reply(`:x: This user is not moderatable.`);
     
     let caseid = 0;
     const db = await serverSettings
@@ -42,9 +42,9 @@ class PingCommand extends Command {
     .cacheQuery();
 
     caseid = db.infractions.length + 1;
-    const thecase = {
+    let thecase = {
         id: caseid,
-        punishment: "Warn",
+        punishment: "Unmute",
         member: member.id,
         moderator: message.member.id,
         reason: reason,
@@ -53,6 +53,14 @@ class PingCommand extends Command {
         hidden: hideMod,
         modlogID: null
     };
+
+    if (member.communicationDisabledUntil) {
+        await member.disableCommunicationUntil(null, `(Unmute by ${message.author.tag}) ${reason}`);
+    } else {
+        if (!db.moderation.muteRole) return message.reply(`:x: That user isn't muted.`);
+        if (member.roles.cache.has(db.moderation.muteRole)) await member.roles.remove(db.moderation.muteRole, `(Unmute by ${message.author.tag}) ${reason}`);
+        else return message.reply(`:x: That user isn't muted.`);
+    }
 
     let dmSuccess = true;
     const embed = new EmbedBuilder()
@@ -97,7 +105,7 @@ class PingCommand extends Command {
     db.infractions.push(thecase);
 
     await db.save();
-    message.reply(`:white_check_mark: **${member.user.tag}** was warned with case id **\` ${caseid} \`**. ${(silentDM ? '' : (dmSuccess ? `(User was notified)` : `(User was not notified)`))}`);
+    message.reply(`:white_check_mark: **${member.user.tag}** was unmuted with case id **\` ${caseid} \`**. ${(silentDM ? '' : (dmSuccess ? `(User was notified)` : `(User was not notified)`))}`);
 }
 }
 module.exports = {

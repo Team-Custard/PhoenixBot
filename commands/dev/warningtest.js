@@ -13,7 +13,6 @@ class PingCommand extends Command {
       detailedDescription: {
         usage: "warningtest",
         examples: ["warningtest"],
-        args: ["No args needed"],
       },
       cooldownDelay: 3_000,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],

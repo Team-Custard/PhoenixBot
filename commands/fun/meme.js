@@ -13,7 +13,6 @@ class PingCommand extends Command {
       detailedDescription: {
         usage: "meme",
         examples: ["meme"],
-        args: ["No args needed"],
       },
       cooldownDelay: 60_000,
       cooldownLimit: 10,
