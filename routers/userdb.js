@@ -3,7 +3,7 @@ const UserDB = require("../tools/UserDB");
 
 const router = express.Router();
 
-router.get("/u/:id", async function(req, res) {
+router.get("/u/:id", async function (req, res) {
   const member = req.params.id;
   const usersettings = await UserDB.findById(
     member,

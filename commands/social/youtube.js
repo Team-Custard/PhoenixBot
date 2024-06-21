@@ -82,7 +82,7 @@ class PingCommand extends Subcommand {
       type: "video",
     };
 
-    search(query, opts, function(err, results) {
+    search(query, opts, function (err, results) {
       if (err) return interaction.followUp(`:x: Not found.`);
       interaction.followUp(`${results[0].link}`);
     });
@@ -98,7 +98,7 @@ class PingCommand extends Subcommand {
       type: "channel",
     };
 
-    search(query, opts, function(err, results) {
+    search(query, opts, function (err, results) {
       if (err) return interaction.followUp(`:x: Not found.`);
       interaction.followUp(`${results[0].link}`);
     });
@@ -113,7 +113,7 @@ class PingCommand extends Subcommand {
       type: "video",
     };
 
-    search(query, opts, function(err, results) {
+    search(query, opts, function (err, results) {
       if (err) return message.reply(`:x: Not found.`);
       message.reply(`${results[0].link}`);
     });
@@ -128,7 +128,7 @@ class PingCommand extends Subcommand {
       type: "channel",
     };
 
-    search(query, opts, function(err, results) {
+    search(query, opts, function (err, results) {
       if (err) return message.reply(`:x: Not found.`);
       message.reply(`${results[0].link}`);
     });

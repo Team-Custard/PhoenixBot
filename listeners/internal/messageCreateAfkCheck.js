@@ -19,7 +19,10 @@ class ReadyListener extends Listener {
     if (!message.member) return;
     if (!message.member.id) return;
 
-    if (this.container.client.id == "1171286616967479377" || this.container.client.id == "1239263616025493504") {
+    if (
+      this.container.client.id == "1171286616967479377" ||
+      this.container.client.id == "1239263616025493504"
+    ) {
       const hasStaging = await message.guild.members
         .fetch("1227318291475730443")
         .catch(() => undefined);
@@ -60,8 +63,7 @@ class ReadyListener extends Listener {
           message.reply(
             `${member.user.username} is afk. \`${usersettings.afk.status}\` <t:${usersettings.afk.since}:R>`,
           );
-        }
- else {
+        } else {
           usersettings.afk.since = null;
           usersettings.afk.status = null;
           await usersettings

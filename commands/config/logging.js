@@ -111,9 +111,7 @@ class PingCommand extends Subcommand {
         .addSubcommand((command) =>
           command
             .setName("infractions")
-            .setDescription(
-              "Logs moderation cases made through Phoenix.",
-            )
+            .setDescription("Logs moderation cases made through Phoenix.")
             .addChannelOption((option) =>
               option
                 .setName("channel")
@@ -185,8 +183,7 @@ class PingCommand extends Subcommand {
     if (channel) {
       db.logging.messages = channel.id;
       successMsg = `:white_check_mark: Log successfully set to ${channel}.`;
-    }
- else {
+    } else {
       db.logging.messages = null;
       successMsg = `:white_check_mark: Log successfully cleared.`;
     }
@@ -209,8 +206,7 @@ class PingCommand extends Subcommand {
     if (channel) {
       db.logging.members = channel.id;
       successMsg = `:white_check_mark: Log successfully set to ${channel}.`;
-    }
- else {
+    } else {
       db.logging.members = null;
       successMsg = `:white_check_mark: Log successfully cleared.`;
     }
@@ -233,8 +229,7 @@ class PingCommand extends Subcommand {
     if (channel) {
       db.logging.moderation = channel.id;
       successMsg = `:white_check_mark: Log successfully set to ${channel}.`;
-    }
- else {
+    } else {
       db.logging.moderation = null;
       successMsg = `:white_check_mark: Log successfully cleared.`;
     }
@@ -257,8 +252,7 @@ class PingCommand extends Subcommand {
     if (channel) {
       db.logging.infractions = channel.id;
       successMsg = `:white_check_mark: Log successfully set to ${channel}.`;
-    }
- else {
+    } else {
       db.logging.infractions = null;
       successMsg = `:white_check_mark: Log successfully cleared.`;
     }
@@ -281,8 +275,7 @@ class PingCommand extends Subcommand {
     if (channel) {
       db.logging.roles = channel.id;
       successMsg = `:white_check_mark: Log successfully set to ${channel}.`;
-    }
- else {
+    } else {
       db.logging.roles = null;
       successMsg = `:white_check_mark: Log successfully cleared.`;
     }
@@ -305,8 +298,7 @@ class PingCommand extends Subcommand {
     if (channel) {
       db.logging.voice = channel.id;
       successMsg = `:white_check_mark: Log successfully set to ${channel}.`;
-    }
- else {
+    } else {
       db.logging.voice = null;
       successMsg = `:white_check_mark: Log successfully cleared.`;
     }

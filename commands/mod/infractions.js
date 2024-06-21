@@ -13,27 +13,33 @@ class PingCommand extends Command {
       detailedDescription: {
         usage: "infractions <user>",
         examples: ["infractions sylveondev"],
-        args: ["user : The member to search"]
+        args: ["user : The member to search"],
       },
       cooldownDelay: 3_000,
-      requiredUserPermissions: [PermissionFlagsBits.ModerateMembers]
+      requiredUserPermissions: [PermissionFlagsBits.ModerateMembers],
     });
   }
 
   async messageRun(message, args) {
-    const user = await args.pick('user');
+    const user = await args.pick("user");
 
     const db = await serverSettings
-    .findById(message.guild.id, serverSettings.upsert)
-    .cacheQuery();
+      .findById(message.guild.id, serverSettings.upsert)
+      .cacheQuery();
 
-    const infractions = db.infractions.filter(c => c.member == user.id);
-    
-    if (infractions.length == 0) return message.reply(`:x: No infractions on **${user.tag}**. They're squeaky clean.`)
+    const infractions = db.infractions.filter((c) => c.member == user.id);
 
-    const list = infractions.map((m, i)=>`${i+1}: ${m.punishment} | ${m.id} | ${(m.hidden ? `Hidden` : (this.container.client.users.cache.get(m.moderator) ? this.container.client.users.cache.get(m.moderator).tag : m.moderator))} | ${m.reason} | ${(m.expiretime == 0 ? `Permanent` : m.expiretime)} | ${(m.expired ? `Expired` : `Active`)}`)
+    if (infractions.length == 0)
+      return message.reply(
+        `:x: No infractions on **${user.tag}**. They're squeaky clean.`,
+      );
 
-    message.reply(`\`\`\`${list.join('\n')}\`\`\``);
+    const list = infractions.map(
+      (m, i) =>
+        `${i + 1}: ${m.punishment} | ${m.id} | ${m.hidden ? `Hidden` : this.container.client.users.cache.get(m.moderator) ? this.container.client.users.cache.get(m.moderator).tag : m.moderator} | ${m.reason} | ${m.expiretime == 0 ? `Permanent` : m.expiretime} | ${m.expired ? `Expired` : `Active`}`,
+    );
+
+    message.reply(`\`\`\`${list.join("\n")}\`\`\``);
   }
 }
 module.exports = {

@@ -12,8 +12,7 @@ const connect = async () => {
   try {
     await mongoose.connect(process.env["mongourl"]);
     console.log("Success in connecting to mongodb.");
-  }
- catch (err) {
+  } catch (err) {
     console.error("Error in connecting to mongodb.", err);
   }
 };
@@ -22,8 +21,7 @@ const disconnect = async () => {
   try {
     mongoose.disconnect();
     console.log("Success in disconnecting from mongodb.");
-  }
- catch (err) {
+  } catch (err) {
     console.error("Failed to disconnect from mongodb.", err);
   }
 };
@@ -37,12 +35,10 @@ const initGuildDatabase = async (guild) => {
       gset = new settings({ _id: guild });
       gset.save();
       return ["ok"];
-    }
- else {
+    } else {
       return ["ok"];
     }
-  }
- catch (err) {
+  } catch (err) {
     console.error("Failed to initialize the database.", err);
     return ["error", err];
   }
@@ -58,8 +54,7 @@ const cleanupGuildDatabase = async (guild) => {
         console.error(`Error deleting database for ${guild}`, err),
       );
     return ["ok"];
-  }
- catch (err) {
+  } catch (err) {
     console.error("Failed to delete the database.", err);
     return ["error", err];
   }
@@ -69,8 +64,7 @@ const fetch = async (guild) => {
   try {
     const guildSettings = await settings.findById(guild);
     return ["ok", guildSettings];
-  }
- catch (err) {
+  } catch (err) {
     console.error("Failed to read the database.", err);
     return ["error", err];
   }
@@ -80,8 +74,7 @@ const set = async (guild, option, option2) => {
   try {
     await settings.findByIdAndUpdate(guild, { option: option2 });
     return ["ok", `Set ${option} to ${option2}.`];
-  }
- catch (err) {
+  } catch (err) {
     console.error("Failed to write to the database.", err);
     return ["error", err];
   }

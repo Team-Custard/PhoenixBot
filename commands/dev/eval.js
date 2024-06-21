@@ -7,8 +7,7 @@ function clean(text) {
     return text
       .replace(/`/g, "`" + String.fromCharCode(8203))
       .replace(/@/g, "@" + String.fromCharCode(8203));
-  }
- else {
+  } else {
     return text;
   }
 }
@@ -25,36 +24,39 @@ class PingCommand extends Command {
         usage: "eval <code>",
         examples: ["eval new Date();"],
         args: ["code: The code to run"],
-        flags: ["silent : Don't send the results embed"]
+        flags: ["silent : Don't send the results embed"],
       },
       cooldownDelay: 3_000,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
       preconditions: ["devCommand"],
-      flags: true
+      flags: true,
     });
   }
 
   async messageRun(message, args) {
-    const silent = args.getFlags('silent', 's');
+    const silent = args.getFlags("silent", "s");
     const code = await args.rest("string");
 
     try {
       const evaled = eval(code);
-      if (!silent) message.reply({
-        embeds: [
-          {
-            fields: [
-              { name: "📥 Input code", value: `\`\`\`${code}\`\`\`` },
-              { name: "📤 Output code", value: `\`\`\`${clean(evaled)}\`\`\`` },
-            ],
-            color: Colors.Orange,
-          },
-        ],
-        code: "xl",
-      });
+      if (!silent)
+        message.reply({
+          embeds: [
+            {
+              fields: [
+                { name: "📥 Input code", value: `\`\`\`${code}\`\`\`` },
+                {
+                  name: "📤 Output code",
+                  value: `\`\`\`${clean(evaled)}\`\`\``,
+                },
+              ],
+              color: Colors.Orange,
+            },
+          ],
+          code: "xl",
+        });
       else message.react(`✅`);
-    }
- catch (err) {
+    } catch (err) {
       message.reply(`The code returned an error. ${clean(err)}`);
     }
   }
