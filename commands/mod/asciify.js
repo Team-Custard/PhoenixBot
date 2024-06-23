@@ -25,21 +25,21 @@ class PingCommand extends Command {
     const normalisationForm = "NFKC";
     const member = await args.pick("member");
 
-    if (message.member == member)
-      return message.reply(`:x: Bruh. On yourself?`);
+    if (message.member == member) {return message.reply(`:x: Bruh. On yourself?`);}
     if (
       member.roles.highest.position >=
       message.guild.members.me.roles.highest.position
-    )
-      return message.reply(
+    ) {
+return message.reply(
         `:x: I'm not high enough in the role hiarchy to moderate this member.`,
       );
-    if (member.roles.highest.position >= message.member.roles.highest.position)
-      return message.reply(
+}
+    if (member.roles.highest.position >= message.member.roles.highest.position) {
+return message.reply(
         `:x: You aren't high enough in the role hiarchy to moderate this member.`,
       );
-    if (!member.manageable)
-      return message.reply(`:x: This user is not manageable.`);
+}
+    if (!member.manageable) {return message.reply(`:x: This user is not manageable.`);}
 
     const oldnickname = member.displayName;
     const nickname = oldnickname.normalize(normalisationForm);

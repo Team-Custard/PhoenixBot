@@ -316,7 +316,8 @@ class PingCommand extends Subcommand {
         .setColor(Colors.Orange)
         .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
         .setTimestamp(new Date());
-    } else {
+    }
+ else {
       embed = new EmbedBuilder()
         .setTitle(member.user.username)
         .setDescription(

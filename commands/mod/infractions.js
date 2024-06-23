@@ -29,10 +29,11 @@ class PingCommand extends Command {
 
     const infractions = db.infractions.filter((c) => c.member == user.id);
 
-    if (infractions.length == 0)
-      return message.reply(
+    if (infractions.length == 0) {
+return message.reply(
         `:x: No infractions on **${user.tag}**. They're squeaky clean.`,
       );
+}
 
     const list = infractions.map(
       (m, i) =>

@@ -1,8 +1,8 @@
 const { PhoenixClient } = require("./tools/PhoenixClient");
 const fs = require("fs");
-let clients = [];
+const clients = [];
 
-process.on(`message`, function (msg) {
+process.on(`message`, function(msg) {
   const theowner = JSON.parse(
     fs.readFileSync(__dirname + "/custombots.json", "utf8"),
   ).find((b) => b.token == msg);

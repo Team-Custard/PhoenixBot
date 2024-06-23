@@ -37,21 +37,21 @@ class PingCommand extends Command {
     const hideMod = args.getFlags("hide", "h");
     const reason = await args.rest("string").catch(() => `No reason specified`);
 
-    if (message.member == member)
-      return message.reply(`:x: Bruh. On yourself?`);
+    if (message.member == member) {return message.reply(`:x: Bruh. On yourself?`);}
     if (
       member.roles.highest.position >=
       message.guild.members.me.roles.highest.position
-    )
-      return message.reply(
+    ) {
+return message.reply(
         `:x: I'm not high enough in the role hiarchy to moderate this member.`,
       );
-    if (member.roles.highest.position >= message.member.roles.highest.position)
-      return message.reply(
+}
+    if (member.roles.highest.position >= message.member.roles.highest.position) {
+return message.reply(
         `:x: You aren't high enough in the role hiarchy to moderate this member.`,
       );
-    if (!member.manageable)
-      return message.reply(`:x: This user is not manageable.`);
+}
+    if (!member.manageable) {return message.reply(`:x: This user is not manageable.`);}
 
     let caseid = 0;
     const db = await serverSettings
@@ -87,10 +87,11 @@ class PingCommand extends Command {
       )
       .setColor(Colors.Orange)
       .setTimestamp(new Date());
-    if (!silentDM)
-      member.send({ embeds: [embed] }).catch(function () {
+    if (!silentDM) {
+member.send({ embeds: [embed] }).catch(function() {
         dmSuccess = false;
       });
+}
 
     if (db.logging.infractions) {
       const channel = await message.guild.channels

@@ -57,7 +57,8 @@ class MenuHandler extends InteractionHandler {
             `:x: I couldn't give you the verified role, most likely I don't have permission to hand out roles or the role is above my topmost role. Please bring this to your server's admin's attention.`,
           );
         });
-    } else {
+    }
+ else {
       interaction.followUp(`:x: Invalid code specified.`);
     }
   }

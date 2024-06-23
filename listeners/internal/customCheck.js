@@ -12,7 +12,7 @@ class ReadyListener extends Listener {
     });
   }
   run(client) {
-    setInterval(async function () {
+    setInterval(async function() {
       if (require("../../config.json").process.botmode != "custom") return;
       const bots = JSON.parse(
         fs.readFileSync(require("../../custombot").list, "utf8"),
@@ -44,7 +44,8 @@ class ReadyListener extends Listener {
           await user.send({ embeds: [embed] }).catch(() => undefined);
         }
         process.exit();
-      } else console.log(`custombot_check: PASS ${client.id}`);
+      }
+ else {console.log(`custombot_check: PASS ${client.id}`);}
     }, 1000 * 10);
   }
 }

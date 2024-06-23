@@ -1,7 +1,7 @@
 const { PhoenixClient } = require("./tools/PhoenixClient");
 const fs = require("fs");
 const { fork } = require("child_process");
-let clients = [];
+const clients = [];
 
 switch (require("./config.json").process.botmode) {
   case "prod": {
@@ -34,7 +34,7 @@ switch (require("./config.json").process.botmode) {
     );
     for (let i = 0; i < bots.length; i++) {
       const index = i;
-      setTimeout(function () {
+      setTimeout(function() {
         console.log(`Starting bot ${bots[index].client}`);
         fork(`custombot.js`).send(bots[index].token);
       }, 1500 * i);
