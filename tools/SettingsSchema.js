@@ -49,6 +49,7 @@ const settingsSchema = new Schema({
     modRole: String,
     alwaysConfirm: Boolean,
     reasonRequired: Boolean,
+    lockdownChannels: [String],
   },
   infractions: [
     {

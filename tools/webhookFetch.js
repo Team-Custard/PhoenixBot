@@ -31,7 +31,8 @@ exports.find = async (channel) => {
       }
     }
     return webhook;
-  } catch (err) {
+  }
+ catch (err) {
     console.error(`[error] Error occured in webhook handler`, err);
   }
 };

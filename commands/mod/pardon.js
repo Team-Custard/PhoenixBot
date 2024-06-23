@@ -55,11 +55,11 @@ class PingCommand extends Command {
 
         await channel.messages
           .fetch(thecase.modlogID)
-          .then(function (msg) {
+          .then(function(msg) {
             console.log(thecase.modlogID);
             msg.edit({ embeds: [embed] });
           })
-          .catch(function (err) {
+          .catch(function(err) {
             console.error(`[error] Error on sending to channel`, err);
           });
       }

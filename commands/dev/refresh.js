@@ -46,7 +46,8 @@ class PingCommand extends Command {
           message.reply(`:x: Command refresh failed, ${err}`);
           console.error(err);
         });
-    } else {
+    }
+ else {
       const accepted = await require(`../../tools/warningEmbed`).warnMessage(
         message,
         `You're about to refresh the entire stores. Continue?`,

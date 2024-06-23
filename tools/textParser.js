@@ -4,7 +4,7 @@
  * @param {GuildMember} member The member object used by the parser.
  */
 exports.parse = async (text, member) => {
-  const parsed = await text.replace(/\{\{(.*?)\}\}/g, function (match, token) {
+  const parsed = await text.replace(/\{\{(.*?)\}\}/g, function(match, token) {
     switch (token) {
       case "mention": {
         return `${member}`;

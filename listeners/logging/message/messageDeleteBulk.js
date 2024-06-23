@@ -54,7 +54,8 @@ class GuildMemberAdd extends Listener {
           console.log(messages.at(i));
           if (messages.at(i).partial) {
             items.push(`(Unfetched message)`);
-          } else {
+          }
+ else {
             items.unshift(
               `[${messages.at(i).author.tag}]: ${messages.at(i).content}`,
             );

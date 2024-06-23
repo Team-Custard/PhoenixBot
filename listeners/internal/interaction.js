@@ -59,7 +59,8 @@ class ReadyListener extends Listener {
               message.id,
               message.guildId,
             );
-          } else {
+          }
+ else {
             msgLink = await messageLink(message.channelId, message.id);
           }
 

@@ -89,7 +89,8 @@ class PingCommand extends Command {
         embed.addFields([{ name: "Dev", value: dev.join(", ") }]);
       }
       return message.reply({ embeds: [embed] });
-    } else {
+    }
+ else {
       const cmd = this.container.client.stores
         .get("commands")
         .find((i) => i.name === option);

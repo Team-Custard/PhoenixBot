@@ -34,21 +34,21 @@ class PingCommand extends Command {
     const hideMod = args.getFlags("hide", "h");
     const reason = await args.rest("string").catch(() => `No reason specified`);
 
-    if (message.member == member)
-      return message.reply(`:x: Bruh. On yourself?`);
+    if (message.member == member) {return message.reply(`:x: Bruh. On yourself?`);}
     if (
       member.roles.highest.position >=
       message.guild.members.me.roles.highest.position
-    )
-      return message.reply(
+    ) {
+return message.reply(
         `:x: I'm not high enough in the role hiarchy to moderate this member.`,
       );
-    if (member.roles.highest.position >= message.member.roles.highest.position)
-      return message.reply(
+}
+    if (member.roles.highest.position >= message.member.roles.highest.position) {
+return message.reply(
         `:x: You aren't high enough in the role hiarchy to moderate this member.`,
       );
-    if (!member.moderatable)
-      return message.reply(`:x: This user is not moderatable.`);
+}
+    if (!member.moderatable) {return message.reply(`:x: This user is not moderatable.`);}
 
     let caseid = 0;
     const db = await serverSettings
@@ -56,7 +56,7 @@ class PingCommand extends Command {
       .cacheQuery();
 
     caseid = db.infractions.length + 1;
-    let thecase = {
+    const thecase = {
       id: caseid,
       punishment: "Unmute",
       member: member.id,
@@ -73,15 +73,16 @@ class PingCommand extends Command {
         null,
         `(Unmute by ${message.author.tag}) ${reason}`,
       );
-    } else {
-      if (!db.moderation.muteRole)
-        return message.reply(`:x: That user isn't muted.`);
-      if (member.roles.cache.has(db.moderation.muteRole))
-        await member.roles.remove(
+    }
+ else {
+      if (!db.moderation.muteRole) {return message.reply(`:x: That user isn't muted.`);}
+      if (member.roles.cache.has(db.moderation.muteRole)) {
+await member.roles.remove(
           db.moderation.muteRole,
           `(Unmute by ${message.author.tag}) ${reason}`,
         );
-      else return message.reply(`:x: That user isn't muted.`);
+}
+      else {return message.reply(`:x: That user isn't muted.`);}
     }
 
     let dmSuccess = true;
@@ -100,10 +101,11 @@ class PingCommand extends Command {
       )
       .setColor(Colors.Orange)
       .setTimestamp(new Date());
-    if (!silentDM)
-      member.send({ embeds: [embed] }).catch(function () {
+    if (!silentDM) {
+member.send({ embeds: [embed] }).catch(function() {
         dmSuccess = false;
       });
+}
 
     if (db.logging.infractions) {
       const channel = await message.guild.channels

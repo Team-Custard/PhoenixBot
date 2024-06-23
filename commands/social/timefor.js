@@ -20,7 +20,7 @@ class PingCommand extends Command {
   }
 
   async messageRun(message, args) {
-    let user = await args.pick("user").catch(() => message.author);
+    const user = await args.pick("user").catch(() => message.author);
 
     const usersettings = await UserDB.findById(
       user.id,

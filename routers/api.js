@@ -3,7 +3,7 @@ const UserDB = require("../tools/UserDB");
 
 const router = express.Router();
 
-router.get("/api/timefor/:id", async function (req, res) {
+router.get("/api/timefor/:id", async function(req, res) {
   const member = req.params.id;
   const usersettings = await UserDB.findById(
     member,
@@ -26,7 +26,7 @@ router.get("/api/timefor/:id", async function (req, res) {
   await res.send({ status: 200, id: member, time: strTime, date: strDate });
 });
 
-router.get("/api/pronouns/:id", async function (req, res) {
+router.get("/api/pronouns/:id", async function(req, res) {
   const member = req.params.id;
   const usersettings = await UserDB.findById(
     member,
@@ -45,7 +45,7 @@ router.get("/api/pronouns/:id", async function (req, res) {
   await res.send({ status: 200, id: member, pronouns: usersettings.pronouns });
 });
 
-router.get("/api/socials/:id", async function (req, res) {
+router.get("/api/socials/:id", async function(req, res) {
   const member = req.params.id;
   const usersettings = await UserDB.findById(
     member,
@@ -65,7 +65,7 @@ router.get("/api/socials/:id", async function (req, res) {
   });
 });
 
-router.get("/api/profile/:id", async function (req, res) {
+router.get("/api/profile/:id", async function(req, res) {
   const member = req.params.id;
   const usersettings = await UserDB.findById(
     member,
@@ -91,7 +91,7 @@ router.get("/api/profile/:id", async function (req, res) {
   });
 });
 
-router.get("/api", async function (req, res) {
+router.get("/api", async function(req, res) {
   res.render("pages/api", { title: "Api reference" });
 });
 
