@@ -59,7 +59,7 @@ class PingCommand extends Subcommand {
       .addUserOption((option) => option.setName('user').setDescription('The user').setRequired(false)))
       .addSubcommand((command) => command.setName('avatar').setDescription('Displays a member\'s avatar')
       .addUserOption((option) => option.setName('user').setDescription('The user').setRequired(false))
-      .addBooleanOption((option) => option.setName('server').setDescription('Displays the user\'s server avatar if enabled').setRequired(false)))
+      .addBooleanOption((option) => option.setName('server').setDescription('Displays the user\'s server avatar if enabled, falls back to the default if it doesn\'t exist').setRequired(false)))
       .setDMPermission(false));
   }
 
