@@ -69,7 +69,11 @@ class PingCommand extends Subcommand {
       let member = await interaction.options.getMember('user');
       if (!member) member = interaction.member;
 
-      const avatar = member.avatarURL({ dynamic: true, size: 1024 });
+      let avatar = member.avatarURL({ dynamic: true, size: 1024 });
+      if (!avatar){
+        avatar = await interaction.options.getUser('user').avatarURL({ dynamic: true, size: 1024 });
+        console.log('Server Avatar was null! Falling back to user avatar!');
+      }
 
       await interaction.reply({
         files: [avatar]
