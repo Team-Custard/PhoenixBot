@@ -35,12 +35,12 @@ class GuildMemberAdd extends Listener {
         const embed = new EmbedBuilder()
           .setAuthor({
             name: member.user.username,
-            iconURL: member.user.avatarURL({ dynamic: true, size: 256 }),
+            iconURL: member.user.displayAvatarURL({ dynamic: true, size: 256 }),
           })
           .setDescription(
             `${member} joined\nCreated <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`,
           )
-          .setThumbnail(member.user.avatarURL({ dynamic: true, size: 1024 }))
+          .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 1024 }))
           .setColor(Colors.Orange)
           .setTimestamp(new Date());
 
@@ -48,7 +48,7 @@ class GuildMemberAdd extends Listener {
           .send({
             // content: '',
             username: this.container.client.user.username,
-            avatarURL: this.container.client.user.avatarURL({
+            avatarURL: this.container.client.user.displayAvatarURL({
               extension: "png",
               size: 512,
             }),

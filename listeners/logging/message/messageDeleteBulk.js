@@ -68,7 +68,7 @@ class GuildMemberAdd extends Listener {
         const embed = new EmbedBuilder()
           .setAuthor({
             name: executor.username,
-            iconURL: executor.avatarURL({ dynamic: true, size: 256 }),
+            iconURL: executor.displayAvatarURL({ dynamic: true, size: 256 }),
           })
           .setDescription(
             `${executor} purged ${firstEntry.extra.count} messages in ${channel}.\n${messages.size}/${firstEntry.extra.count} messages were logged.`,
@@ -80,7 +80,7 @@ class GuildMemberAdd extends Listener {
           .send({
             // content: '',
             username: this.container.client.user.username,
-            avatarURL: this.container.client.user.avatarURL({
+            avatarURL: this.container.client.user.displayAvatarURL({
               extension: "png",
               size: 512,
             }),

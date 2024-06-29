@@ -135,12 +135,12 @@ class PingCommand extends Subcommand {
     await interaction.deferReply();
     const user = interaction.options.getUser('user');
     const links = interaction.options.getBoolean('links');
-    const url = `https://serpapi.com/search.json?engine=google_reverse_image&image_url=${user.avatarURL({ dynamic: true, size: 1024 })}&api_key=${process.env["serpapikey"]}`;
+    const url = `https://serpapi.com/search.json?engine=google_reverse_image&image_url=${user.displayAvatarURL({ dynamic: true, size: 1024 })}&api_key=${process.env["serpapikey"]}`;
 
     if (links) {
-        return interaction.followUp({ content: `Search **${user.username}**'s avatar.\n[\`[Google]\`](<https://lens.google.com/uploadbyurl?url=${user.avatarURL({ size: 2048, dynamic: true })}>) ` +
-        `[\`[TinEye]\`](<https://www.tineye.com/search/?&url=${user.avatarURL({ size: 2048, dynamic: true })}>) ` +
-        `[\`[Bing]\`](<https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIVSP&sbisrc=UrlPaste&q=imgurl:${user.avatarURL({ size: 2048, dynamic: true })}>)` });
+        return interaction.followUp({ content: `Search **${user.username}**'s avatar.\n[\`[Google]\`](<https://lens.google.com/uploadbyurl?url=${user.displayAvatarURL({ size: 2048, dynamic: true })}>) ` +
+        `[\`[TinEye]\`](<https://www.tineye.com/search/?&url=${user.displayAvatarURL({ size: 2048, dynamic: true })}>) ` +
+        `[\`[Bing]\`](<https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIVSP&sbisrc=UrlPaste&q=imgurl:${user.displayAvatarURL({ size: 2048, dynamic: true })}>)` });
     }
 
     fetch(url, {
@@ -167,7 +167,7 @@ class PingCommand extends Subcommand {
       let member = await interaction.options.getMember("user");
       if (!member) member = interaction.member;
 
-      const avatar = member.avatarURL({ dynamic: true, size: 1024 });
+      const avatar = member.displayAvatarURL({ dynamic: true, size: 1024 });
 
       await interaction.reply({
         files: [avatar],
@@ -177,7 +177,7 @@ class PingCommand extends Subcommand {
       let member = await interaction.options.getUser("user");
       if (!member) member = interaction.user;
 
-      const avatar = member.avatarURL({ dynamic: true, size: 1024 });
+      const avatar = member.displayAvatarURL({ dynamic: true, size: 1024 });
 
       await interaction.reply({
         files: [avatar],
@@ -197,7 +197,7 @@ class PingCommand extends Subcommand {
     const ctx = canvas.getContext("2d");
 
     console.log("Creating image 2");
-    await loadImage(user.avatarURL({ format: "png", size: 1024 }))
+    await loadImage(user.displayAvatarURL({ format: "png", size: 1024 }))
       .then(async (img) => {
         ctx.drawImage(img, 0, 0, canvas.height, canvas.width);
       })

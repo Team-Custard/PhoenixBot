@@ -38,7 +38,7 @@ class GuildMemberAdd extends Listener {
         const embed = new EmbedBuilder()
           .setAuthor({
             name: message.author.username,
-            iconURL: message.author.avatarURL({ dynamic: true, size: 256 }),
+            iconURL: message.author.displayAvatarURL({ dynamic: true, size: 256 }),
           })
           .setDescription(
             `Message deleted in ${channel}\n**Message:**\n${message.content}`,
@@ -50,7 +50,7 @@ class GuildMemberAdd extends Listener {
           .send({
             // content: '',
             username: this.container.client.user.username,
-            avatarURL: this.container.client.user.avatarURL({
+            avatarURL: this.container.client.user.displayAvatarURL({
               extension: "png",
               size: 512,
             }),

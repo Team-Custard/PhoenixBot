@@ -51,6 +51,12 @@ const settingsSchema = new Schema({
     reasonRequired: Boolean,
     lockdownChannels: [String],
   },
+  automod: {
+    muteduration: String,
+    reportchannel: String,
+    pingreport: String,
+    nsfwimage: [],
+  },
   infractions: [
     {
       id: Number,

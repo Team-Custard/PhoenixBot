@@ -30,6 +30,7 @@ class PingCommand extends Command {
         new ChannelSelectMenuBuilder()
         .setCustomId("lockdownChannels")
         .addDefaultChannels(db.moderation.lockdownChannels)
+        .setChannelTypes([ChannelType.GuildAnnouncement, ChannelType.GuildDirectory, ChannelType.GuildCategory, ChannelType.GuildForum, ChannelType.GuildMedia, ChannelType.GuildStageVoice, ChannelType.GuildVoice, ChannelType.GuildText])
         .setPlaceholder("Select channels to lock")
         .setMaxValues(25)
     );
@@ -50,6 +51,7 @@ class PingCommand extends Command {
                 new ChannelSelectMenuBuilder()
                 .setCustomId("lockdownChannels")
                 .addDefaultChannels(channels)
+                .setChannelTypes([ChannelType.GuildAnnouncement, ChannelType.GuildDirectory, ChannelType.GuildForum, ChannelType.GuildMedia, ChannelType.GuildStageVoice, ChannelType.GuildVoice, ChannelType.GuildText])
                 .setPlaceholder("Select channels to lock")
                 .setMaxValues(25)
                 .setDisabled(true)
