@@ -27,7 +27,7 @@ class PingCommand extends Command {
   async messageRun(message, args) {
     let member = await args.pick("user").catch(() => undefined);
     if (!member) member = message.author;
-    const avatar = member.avatarURL({ dynamic: true, size: 1024 });
+    const avatar = member.displayAvatarURL({ dynamic: true, size: 1024 });
 
     await message.reply({
       files: [avatar],

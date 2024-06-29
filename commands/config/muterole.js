@@ -99,8 +99,8 @@ class PingCommand extends Command {
  else {
         if (!db.moderation.muteRole) {return message.reply(`:x: No mute role was set.`);}
         return message.reply({
-          content: `The current mute role is **${message.guild.roles.cache.get(db.moderation.muteRole) ? message.guild.roles.cache.get(db.moderation.muteRole).name : db.moderation.muteRole}**. This will be assigned when Discord timeouts aren't able to be used.`,
-          allowedMentions: [],
+          content: `The current mute role is **${message.guild.roles.cache.get(db.moderation.muteRole) ? message.guild.roles.cache.get(db.moderation.muteRole) : db.moderation.muteRole}**. This will be assigned when Discord timeouts aren't able to be used.`,
+          allowedMentions: { parse: [] },
         });
       }
     }

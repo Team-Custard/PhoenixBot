@@ -34,7 +34,7 @@ class PingCommand extends Command {
     const ctx = canvas.getContext("2d");
 
     console.log("Creating image 2");
-    await loadImage(user.avatarURL({ format: "png", size: 1024 }))
+    await loadImage(user.displayAvatarURL({ format: "png", size: 1024 }))
       .then(async (img) => {
         ctx.drawImage(img, 0, 0, canvas.height, canvas.width);
       })

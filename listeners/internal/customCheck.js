@@ -38,7 +38,7 @@ class ReadyListener extends Listener {
                 value: `> PhoenixBot will take over for the custom bot. Everything will continue to function as planned. If you don't have PhoenixBot, you can invite it [here](https://phoenix.sylveondev.xyz/invite).\n> Phoenix's prefix will set to the custom bot's prefix.\nThank you for your interest in using Custom Phoenix. We hope you had fun with our service.`,
               },
             ])
-            .setThumbnail(client.user.avatarURL({ dynamic: true, size: 256 }))
+            .setThumbnail(client.user.displayAvatarURL({ dynamic: true, size: 256 }))
             .setColor(Colors.Orange)
             .setTimestamp(new Date());
           await user.send({ embeds: [embed] }).catch(() => undefined);

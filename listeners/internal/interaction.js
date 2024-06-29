@@ -17,7 +17,7 @@ class ReadyListener extends Listener {
   }
   async run(interaction) {
     // Global user commands must be used here for the time being.
-    console.log(interaction);
+    // console.log(interaction);
     if (
       interaction.isMessageContextMenuCommand() &&
       interaction.commandName == "Translate message"

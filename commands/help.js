@@ -54,7 +54,7 @@ class PingCommand extends Command {
         )
         .setColor(Colors.Orange)
         .setThumbnail(
-          this.container.client.user.avatarURL({ format: "png", size: 2048 }),
+          this.container.client.user.displayAvatarURL({ format: "png", size: 2048 }),
         )
         .setTimestamp(new Date())
         .addFields([
