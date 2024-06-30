@@ -122,8 +122,8 @@ class PingCommand extends Subcommand {
             )
             .addBooleanOption((option) =>
               option
-                .setName("links")
-                .setDescription("Show links to search instead of using the api")
+                .setName("find")
+                .setDescription("Find the image instead of sending links to")
                 .setRequired(false),
             ),
         )
@@ -134,10 +134,10 @@ class PingCommand extends Subcommand {
   async chatInputRav(interaction) {
     await interaction.deferReply();
     const user = interaction.options.getUser('user');
-    const links = interaction.options.getBoolean('links');
+    const find = interaction.options.getBoolean('find');
     const url = `https://serpapi.com/search.json?engine=google_reverse_image&image_url=${user.displayAvatarURL({ dynamic: true, size: 1024 })}&api_key=${process.env["serpapikey"]}`;
 
-    if (links) {
+    if (!find) {
         return interaction.followUp({ content: `Search **${user.username}**'s avatar.\n[\`[Google]\`](<https://lens.google.com/uploadbyurl?url=${user.displayAvatarURL({ size: 2048, dynamic: true })}>) ` +
         `[\`[TinEye]\`](<https://www.tineye.com/search/?&url=${user.displayAvatarURL({ size: 2048, dynamic: true })}>) ` +
         `[\`[Bing]\`](<https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIVSP&sbisrc=UrlPaste&q=imgurl:${user.displayAvatarURL({ size: 2048, dynamic: true })}>)` });

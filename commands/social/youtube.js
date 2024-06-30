@@ -78,7 +78,7 @@ class PingCommand extends Subcommand {
 
     const opts = {
       maxResults: 1,
-      key: process.env.youtubekey,
+      key: process.env.googlekey,
       type: "video",
     };
 
@@ -94,7 +94,7 @@ class PingCommand extends Subcommand {
 
     const opts = {
       maxResults: 1,
-      key: process.env.youtubekey,
+      key: process.env.googlekey,
       type: "channel",
     };
 
@@ -109,7 +109,7 @@ class PingCommand extends Subcommand {
 
     const opts = {
       maxResults: 1,
-      key: process.env.youtubekey,
+      key: process.env.googlekey,
       type: "video",
     };
 
@@ -124,7 +124,7 @@ class PingCommand extends Subcommand {
 
     const opts = {
       maxResults: 1,
-      key: process.env.youtubekey,
+      key: process.env.googlekey,
       type: "channel",
     };
 
