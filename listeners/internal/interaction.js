@@ -29,42 +29,26 @@ class ReadyListener extends Listener {
 
       const message = interaction.targetMessage;
 
-      const detectLang = new (require("languagedetect"))();
-      detectLang.setLanguageType("iso2");
-      const sourceLang = await detectLang.detect(message.content, 1);
-      const targetLang = interaction.locale.substring(0, 2);
-      console.log(targetLang);
-      // const targetLang = require('../config.json').translator.targetLang;
+      const translate = require('translate');
+      const detect = require("text-language-detector");
+      const detected = await detect(message.content);
 
-      if (sourceLang.length == 0) {
-        return interaction.followUp(":x: Couldn't detect a language.");
+      translate.engine = "google";
+      translate.key = process.env.googlekey;
+
+      let msgLink;
+      if (message.guildId) {
+        msgLink = await messageLink(
+          message.channelId,
+          message.id,
+          message.guildId,
+        );
       }
-      const translateurl =
-        "https://translate.googleapis.com/translate_a/single?client=gtx&sl=" +
-        sourceLang[0][0] +
-        "&tl=" +
-        targetLang +
-        "&dt=t&q=" +
-        encodeURI(message.content);
+      else {
+        msgLink = await messageLink(message.channelId, message.id);
+      }
 
-      const fetch = require("node-fetch");
-      await fetch(translateurl)
-        .then(async (response) => {
-          const data = await response.json();
-
-          let msgLink;
-          if (message.guildId) {
-            msgLink = await messageLink(
-              message.channelId,
-              message.id,
-              message.guildId,
-            );
-          }
- else {
-            msgLink = await messageLink(message.channelId, message.id);
-          }
-
-          const buttons = new ActionRowBuilder()
+      const buttons = new ActionRowBuilder()
             .addComponents(
               new ButtonBuilder()
                 .setCustomId("userbotinfo")
@@ -79,12 +63,8 @@ class ReadyListener extends Listener {
                 .setStyle(ButtonStyle.Secondary),
             );
 
-          interaction.followUp({
-            content: `[${message.author.tag} said:](${msgLink}) ${data[0][0][0]}`,
-            components: [buttons],
-          });
-        })
-        .catch((err) => interaction.followUp(`:x: ${err}`));
+      const text = await translate(message.content, { from: detected.match_language_data.code2, to: interaction.locale.substring(0, 2) });
+      interaction.followUp({ content: `[${message.author.tag} said:](<${msgLink}>) ${text}`, allowedMentions: { parse: [] }, components: [buttons] });
     }
 
     if (

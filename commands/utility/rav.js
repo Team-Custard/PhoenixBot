@@ -17,7 +17,7 @@ class PingCommand extends Command {
             `user : The user to search`
         ],
         flags: [
-          `--links : Provides links to search the user's avatar instead.`,
+          `--find : Searches for the image instead of sharing links.`,
         ],
       },
       cooldownDelay: 3_000,
@@ -28,11 +28,12 @@ class PingCommand extends Command {
   }
 
   async messageRun(message, args) {
-    const links = args.getFlags("links", "l");
+    const find = args.getFlags("find", "f");
     const user = await args.pick('user');
+
     const url = `https://serpapi.com/search.json?engine=google_reverse_image&image_url=${user.displayAvatarURL({ dynamic: true, size: 1024 })}&api_key=${process.env["serpapikey"]}`;
 
-    if (links) {
+    if (!find) {
         return message.reply({ content: `Search **${user.username}**'s avatar.\n[\`[Google]\`](<https://lens.google.com/uploadbyurl?url=${user.displayAvatarURL({ size: 2048, dynamic: true })}>) ` +
         `[\`[TinEye]\`](<https://www.tineye.com/search/?&url=${user.displayAvatarURL({ size: 2048, dynamic: true })}>) ` +
         `[\`[Bing]\`](<https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIVSP&sbisrc=UrlPaste&q=imgurl:${user.displayAvatarURL({ size: 2048, dynamic: true })}>)` });

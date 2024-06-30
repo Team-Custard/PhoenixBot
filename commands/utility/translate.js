@@ -97,67 +97,30 @@ class UserCommand extends Command {
   } */
 
   async chatInputRun(interaction) {
+    const content = await interaction.options.getString("text");
+    const translate = require('translate');
     await interaction.deferReply();
-    const text = interaction.options.getString("text");
 
-    const detectLang = new (require("languagedetect"))();
-    detectLang.setLanguageType("iso2");
-    const sourceLang = await detectLang.detect(text, 1);
-    const targetLang = interaction.locale.substring(0, 2);
-    console.log(targetLang);
+    const detect = require("text-language-detector");
+    const detected = await detect(content);
+    translate.engine = "google";
+    translate.key = process.env.googlekey;
 
-    if (sourceLang.length == 0) {
-      return interaction.followUp(":x: Couldn't detect a language.");
-    }
-    const translateurl =
-      "https://translate.googleapis.com/translate_a/single?client=gtx&sl=" +
-      sourceLang[0][0] +
-      "&tl=" +
-      targetLang +
-      "&dt=t&q=" +
-      encodeURI(text);
-
-    const fetch = require("node-fetch");
-    await fetch(translateurl)
-      .then(async (response) => {
-        const data = await response.json();
-
-        interaction.followUp({
-          content: `Translation result: ${data[0][0][0]}`,
-        });
-      })
-      .catch((err) => interaction.followUp(`:x: ${err}`));
+    const text = await translate(content, { from: detected.match_language_data.code2, to: interaction.locale.substring(0, 2) });
+    interaction.followUp({ content: `You said: ${text}`, allowedMentions: { parse: [] } });
   }
 
   async messageRun(message, args) {
-    const text = await args.rest("string");
+    const content = await args.rest("string");
+    const translate = require('translate');
 
-    const detectLang = new (require("languagedetect"))();
-    detectLang.setLanguageType("iso2");
-    const sourceLang = await detectLang.detect(text, 1);
-    const targetLang = "en";
-    console.log(targetLang);
+    const detect = require("text-language-detector");
+    const detected = await detect(content);
+    translate.engine = "google";
+    translate.key = process.env.googlekey;
 
-    if (sourceLang.length == 0) {
-      return message.reply(":x: Couldn't detect a language.");
-    }
-    const translateurl =
-      "https://translate.googleapis.com/translate_a/single?client=gtx&sl=" +
-      sourceLang[0][0] +
-      "&tl=" +
-      targetLang +
-      "&dt=t&q=" +
-      encodeURI(text);
-
-    const fetch = require("node-fetch");
-    await fetch(translateurl)
-      .then(async (response) => {
-        const data = await response.json();
-        message.reply({
-          content: `Translation result: ${data[0][0][0]}\n\nTo translate to your currently set language, use the **translate** slash command or context menu.`,
-        });
-      })
-      .catch((err) => message.reply(`:x: ${err}`));
+    const text = await translate(content, { from: detected.match_language_data.code2, to: "en" });
+    message.reply({ content: `You said: ${text}`, allowedMentions: { parse: [] } });
   }
 }
 module.exports = {
