@@ -41,7 +41,7 @@ class GuildMemberAdd extends Listener {
             iconURL: message.author.displayAvatarURL({ dynamic: true, size: 256 }),
           })
           .setDescription(
-            `Message updated in ${channel}\n[Message jump link](${message.url})`,
+            `Message updated in ${message.channel}\n[Message jump link](${message.url})`,
           )
           .addFields(
             {

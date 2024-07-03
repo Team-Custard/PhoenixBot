@@ -71,7 +71,7 @@ class GuildMemberAdd extends Listener {
             iconURL: executor.displayAvatarURL({ dynamic: true, size: 256 }),
           })
           .setDescription(
-            `${executor} purged ${firstEntry.extra.count} messages in ${channel}.\n${messages.size}/${firstEntry.extra.count} messages were logged.`,
+            `${executor} purged ${firstEntry.extra.count} messages in ${gchannel}.\n${messages.size}/${firstEntry.extra.count} messages were logged.`,
           )
           .setColor(Colors.Orange)
           .setTimestamp(new Date());
