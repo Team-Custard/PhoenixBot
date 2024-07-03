@@ -41,7 +41,7 @@ class GuildMemberAdd extends Listener {
             iconURL: message.author.displayAvatarURL({ dynamic: true, size: 256 }),
           })
           .setDescription(
-            `Message deleted in ${channel}\n**Message:**\n${message.content}`,
+            `Message deleted in ${message.channel}\n**Message:**\n${message.content}`,
           )
           .setColor(Colors.Orange)
           .setTimestamp(new Date());
