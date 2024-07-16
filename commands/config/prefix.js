@@ -45,8 +45,7 @@ class PingCommand extends Command {
         .catch((err) => {
           message.reply(`:x: ${err}`);
         });
-    }
- else {
+    } else {
       message.reply(`The current prefix is **${db.prefix}**`);
     }
   }

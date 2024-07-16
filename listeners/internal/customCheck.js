@@ -12,7 +12,7 @@ class ReadyListener extends Listener {
     });
   }
   run(client) {
-    setInterval(async function() {
+    setInterval(async function () {
       if (require("../../config.json").process.botmode != "custom") return;
       const bots = JSON.parse(
         fs.readFileSync(require("../../custombot").list, "utf8"),
@@ -38,14 +38,17 @@ class ReadyListener extends Listener {
                 value: `> PhoenixBot will take over for the custom bot. Everything will continue to function as planned. If you don't have PhoenixBot, you can invite it [here](https://phoenix.sylveondev.xyz/invite).\n> Phoenix's prefix will set to the custom bot's prefix.\nThank you for your interest in using Custom Phoenix. We hope you had fun with our service.`,
               },
             ])
-            .setThumbnail(client.user.displayAvatarURL({ dynamic: true, size: 256 }))
+            .setThumbnail(
+              client.user.displayAvatarURL({ dynamic: true, size: 256 }),
+            )
             .setColor(Colors.Orange)
             .setTimestamp(new Date());
           await user.send({ embeds: [embed] }).catch(() => undefined);
         }
         process.exit();
+      } else {
+        console.log(`custombot_check: PASS ${client.id}`);
       }
- else {console.log(`custombot_check: PASS ${client.id}`);}
     }, 1000 * 10);
   }
 }

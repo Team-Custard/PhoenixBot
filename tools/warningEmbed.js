@@ -43,10 +43,10 @@ async function warnMessage(message, reason) {
     interaction.user.id === message.author.id;
   const response = await msg
     .awaitMessageComponent({ filter, time: 15_000 })
-    .then(function(interaction) {
+    .then(function (interaction) {
       if (interaction.customId === `ConfirmButton`) {
         interaction.deferUpdate();
-        setTimeout(function() {
+        setTimeout(function () {
           msg.delete();
         }, 500);
         return true;
@@ -77,7 +77,7 @@ async function warnMessage(message, reason) {
         return false;
       }
     })
-    .catch(function() {
+    .catch(function () {
       const tembed = new EmbedBuilder()
         .setTitle(`Confirm your action`)
         .setDescription(reason)

@@ -7,54 +7,74 @@ class PingCommand extends Command {
   constructor(context, options) {
     super(context, {
       ...options,
-      name: "unmute",
-      aliases: [`um`],
-      description: "Unmutes a member.",
+      name: "ban",
+      aliases: [`b`, `yeet`, `obliterate`],
+      description:
+        "Bans a member. Note that temporary bans are not yet possible through Phoenix at this time.",
       detailedDescription: {
-        usage: "mute <member> [flags] [reason] ",
-        examples: ["unmute sylveondev Love ya"],
+        usage: "ban <member> [flags] [reason] ",
+        examples: [
+          "ban sylveondev Being cool",
+          "ban bill11 Being a raccoon --silent",
+        ],
         args: [
-          "member : The member to moderate",
           "reason : The reason for the action",
+          "member : The member to moderate",
         ],
         flags: [
           `--silent : Don't send a dm to the member.`,
           `--hide : Don't show yourself as the moderator in user dm.`,
+          `--purge : Purges the user's messages up to 7 days`,
         ],
       },
       cooldownDelay: 3_000,
-      requiredUserPermissions: [PermissionFlagsBits.ModerateMembers],
-      requiredClientPermissions: [PermissionFlagsBits.ModerateMembers],
+      requiredUserPermissions: [PermissionFlagsBits.BanMembers],
+      requiredClientPermissions: [PermissionFlagsBits.BanMembers],
       flags: true,
     });
   }
 
   async messageRun(message, args) {
-    const member = await args.pick("member");
-    const silentDM = args.getFlags("silent", "s");
+    const member = await args.pick("user");
+    let silentDM = args.getFlags("silent", "s");
     const hideMod = args.getFlags("hide", "h");
+    const purge = args.getFlags("purge", "p");
     const reason = await args.rest("string").catch(() => `No reason specified`);
 
-    if (message.member == member) {
-      return message.reply(`:x: Bruh. On yourself?`);
-    }
-    if (
-      member.roles.highest.position >=
-      message.guild.members.me.roles.highest.position
-    ) {
-      return message.reply(
-        `:x: I'm not high enough in the role hiarchy to moderate this member.`,
-      );
-    }
-    if (
-      member.roles.highest.position >= message.member.roles.highest.position
-    ) {
-      return message.reply(
-        `:x: You aren't high enough in the role hiarchy to moderate this member.`,
-      );
-    }
-    if (!member.moderatable) {
-      return message.reply(`:x: This user is not moderatable.`);
+    // Run a check if the user is in the server. We need to do this to see if
+    // the moderator and bot has the correct permissions to ban the member.
+    // Forcefully enable the silentDM flag if the member isn't in the server.
+    // Users shouldn't be notified if they have been banned from a server they aren't in
+    const isBanned = await message.guild.bans
+      .fetch(member.id)
+      .catch(() => undefined);
+    if (isBanned) return message.reply(`:x: That user is already banned.`);
+    const isGuildMember = await message.guild.members
+      .fetch(member.id)
+      .catch(() => undefined);
+    if (!isGuildMember) silentDM = true;
+    else {
+      if (message.member == member) {
+        return message.reply(`:x: Bruh. On yourself?`);
+      }
+      if (
+        member.roles.highest.position >=
+        message.guild.members.me.roles.highest.position
+      ) {
+        return message.reply(
+          `:x: I'm not high enough in the role hiarchy to moderate this member.`,
+        );
+      }
+      if (
+        member.roles.highest.position >= message.member.roles.highest.position
+      ) {
+        return message.reply(
+          `:x: You aren't high enough in the role hiarchy to moderate this member.`,
+        );
+      }
+      if (!member.bannable) {
+        return message.reply(`:x: This user is not bannable.`);
+      }
     }
 
     let caseid = 0;
@@ -65,7 +85,7 @@ class PingCommand extends Command {
     caseid = db.infractions.length + 1;
     const thecase = {
       id: caseid,
-      punishment: "Unmute",
+      punishment: "Ban",
       member: member.id,
       moderator: message.member.id,
       reason: reason,
@@ -74,25 +94,6 @@ class PingCommand extends Command {
       hidden: hideMod,
       modlogID: null,
     };
-
-    if (member.communicationDisabledUntil) {
-      await member.disableCommunicationUntil(
-        null,
-        `(Unmute by ${message.author.tag}) ${reason}`,
-      );
-    } else {
-      if (!db.moderation.muteRole) {
-        return message.reply(`:x: That user isn't muted.`);
-      }
-      if (member.roles.cache.has(db.moderation.muteRole)) {
-        await member.roles.remove(
-          db.moderation.muteRole,
-          `(Unmute by ${message.author.tag}) ${reason}`,
-        );
-      } else {
-        return message.reply(`:x: That user isn't muted.`);
-      }
-    }
 
     let dmSuccess = true;
     const embed = new EmbedBuilder()
@@ -115,13 +116,17 @@ class PingCommand extends Command {
         dmSuccess = false;
       });
     }
+    await message.guild.bans.create(member.id, {
+      deleteMessageSeconds: purge ? 60 * 60 * 24 * 7 : 0,
+      reason: `(Ban by ${message.author.tag}) ${reason}`,
+    });
 
     if (db.logging.infractions) {
       const channel = await message.guild.channels
         .fetch(db.logging.infractions)
         .catch(() => undefined);
       if (channel) {
-        const embed = new EmbedBuilder()
+        const embedT = new EmbedBuilder()
           .setTitle(`${thecase.punishment} - Case ${thecase.id}`)
           .setDescription(
             `**Offender:** ${member}\n**Moderator:** ${message.author}\n**Reason:** ${thecase.reason}`,
@@ -133,7 +138,7 @@ class PingCommand extends Command {
         const msg = await channel
           .send({
             // content: '',
-            embeds: [embed],
+            embeds: [embedT],
           })
           .catch((err) => {
             console.error(`[error] Error on sending to channel`, err);
@@ -147,7 +152,7 @@ class PingCommand extends Command {
 
     await db.save();
     message.reply(
-      `:white_check_mark: **${member.user.tag}** was unmuted with case id **\` ${caseid} \`**. ${silentDM ? "" : dmSuccess ? `(User was notified)` : `(User was not notified)`}`,
+      `:white_check_mark: **${member.tag}** was banned with case id **\` ${caseid} \`**. ${silentDM ? "" : dmSuccess ? `(User was notified)` : `(User was not notified)`}`,
     );
   }
 }

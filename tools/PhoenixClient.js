@@ -1,6 +1,6 @@
 const { isGuildBasedChannel } = require("@sapphire/discord.js-utilities");
 const { SapphireClient } = require("@sapphire/framework");
-const { GatewayIntentBits } = require("discord.js");
+const { GatewayIntentBits, Partials } = require("discord.js");
 const database = require("../tools/SettingsSchema");
 const settings = require("../config.json");
 
@@ -16,10 +16,12 @@ class PhoenixClient extends SapphireClient {
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.DirectMessages,
         GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessageReactions,
       ],
       loadDefaultErrorListeners: true,
       loadMessageCommandListeners: true,
       typing: true,
+      partials: [Partials.Message, Partials.Reaction],
     });
   }
 

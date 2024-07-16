@@ -40,7 +40,9 @@ class GuildMemberAdd extends Listener {
           .setDescription(
             `${member} left\nMember since <t:${Math.floor(member.joinedTimestamp / 1000)}:R>\nCreated <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`,
           )
-          .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 1024 }))
+          .setThumbnail(
+            member.user.displayAvatarURL({ dynamic: true, size: 1024 }),
+          )
           .setColor(Colors.Orange)
           .setTimestamp(new Date());
 

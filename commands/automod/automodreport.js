@@ -13,7 +13,10 @@ class PingCommand extends Command {
       detailedDescription: {
         usage: "automod [channel] [pingrole]",
         examples: ["automod #reports @mods", "automod #automodflags"],
-        args: ["channel : The channel to use", "pingrole : The role to ping when there's a flag"],
+        args: [
+          "channel : The channel to use",
+          "pingrole : The role to ping when there's a flag",
+        ],
       },
       cooldownDelay: 3_000,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
@@ -30,7 +33,7 @@ class PingCommand extends Command {
 
     if (channel) {
       db.automod.reportchannel = channel.id;
-      db.automod.pingreport = (pingrole ? pingrole.id : "");
+      db.automod.pingreport = pingrole ? pingrole.id : "";
 
       db.save()
         .then(() => {
@@ -41,20 +44,19 @@ class PingCommand extends Command {
         .catch((err) => {
           message.reply(`:x: ${err}`);
         });
-    }
-    else {
-        db.automod.reportchannel = "";
-        db.automod.pingreport = "";
-  
-        db.save()
-          .then(() => {
-            message.reply(
-              `:white_check_mark: Automod reports channel was cleared.`,
-            );
-          })
-          .catch((err) => {
-            message.reply(`:x: ${err}`);
-          });
+    } else {
+      db.automod.reportchannel = "";
+      db.automod.pingreport = "";
+
+      db.save()
+        .then(() => {
+          message.reply(
+            `:white_check_mark: Automod reports channel was cleared.`,
+          );
+        })
+        .catch((err) => {
+          message.reply(`:x: ${err}`);
+        });
     }
   }
 }

@@ -98,7 +98,7 @@ class UserCommand extends Command {
 
   async chatInputRun(interaction) {
     const content = await interaction.options.getString("text");
-    const translate = require('translate');
+    const translate = require("translate");
     await interaction.deferReply();
 
     const detect = require("text-language-detector");
@@ -106,21 +106,33 @@ class UserCommand extends Command {
     translate.engine = "google";
     translate.key = process.env.googlekey;
 
-    const text = await translate(content, { from: detected.match_language_data.code2, to: interaction.locale.substring(0, 2) });
-    interaction.followUp({ content: `You said: ${text}`, allowedMentions: { parse: [] } });
+    const text = await translate(content, {
+      from: detected.match_language_data.code2,
+      to: interaction.locale.substring(0, 2),
+    });
+    interaction.followUp({
+      content: `You said: ${text}`,
+      allowedMentions: { parse: [] },
+    });
   }
 
   async messageRun(message, args) {
     const content = await args.rest("string");
-    const translate = require('translate');
+    const translate = require("translate");
 
     const detect = require("text-language-detector");
     const detected = await detect(content);
     translate.engine = "google";
     translate.key = process.env.googlekey;
 
-    const text = await translate(content, { from: detected.match_language_data.code2, to: "en" });
-    message.reply({ content: `You said: ${text}`, allowedMentions: { parse: [] } });
+    const text = await translate(content, {
+      from: detected.match_language_data.code2,
+      to: "en",
+    });
+    message.reply({
+      content: `You said: ${text}`,
+      allowedMentions: { parse: [] },
+    });
   }
 }
 module.exports = {

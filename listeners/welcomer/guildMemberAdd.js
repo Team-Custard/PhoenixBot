@@ -19,12 +19,14 @@ class GuildMemberAdd extends Listener {
         .fetch(db.welcomer.channel)
         .catch(() => undefined);
       if (channel) {
-        channel.send(
-          await require("../../tools/textParser").parse(
-            db.welcomer.message,
-            member,
-          ),
-        );
+        channel
+          .send(
+            await require("../../tools/textParser").parse(
+              db.welcomer.message,
+              member,
+            ),
+          )
+          .catch(() => undefined);
       }
     }
   }

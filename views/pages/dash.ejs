@@ -43,7 +43,7 @@
     <br><br>
     <h3>Your servers</h3>
     <div></div>
-    <p>To continue, select your server from below.<%= (bottype == 'prod' ? '' : ' You are on the dashboard for staging, so settings from prod will not show.') %></p>
+    <p>You are in <b><%= guilds.length %></b> servers. To continue, select your server from below.<br>If <%= (bottype == 'prod' ? 'Phoenix' : 'Phoenix Staging') %> is not added to your server, you will be automatically redirected to the screen to add the bot.</p>
 </div>
 <div class="container bg-secondary text-center">
 <% if (guilderror != "") { %>
@@ -58,4 +58,13 @@
 <h2>  </h2>
 <% } %>
 </div>
+<script>
+    let userthing = window.localStorage.getItem('userTemp');
+    if (!userthing) {
+        window.localStorage.setItem('userTemp', JSON.stringify({
+            username: "<%= username %>",
+            usericon: "<%= usericon %>"
+        }));
+    }
+</script>
 <%- include('../partials/footer'); %>

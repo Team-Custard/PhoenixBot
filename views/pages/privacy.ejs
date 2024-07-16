@@ -1,0 +1,12 @@
+<%- include('../partials/header'); %>
+<div class="container">
+    <h1>Privacy Policy</h1>
+    <p>By using PhoenixBot in your server, you agree to our privacy policy. These terms tells you what information we store, and what we do with it. These policies are divided into three sections. As always you can view the <a href="https://github.com/team-custard/phoenixbot">source code</a> to Phoenix at anytime to see if the bot is safe for yourself, and of course make changes to the bot to better it. If you find any issues with the privacy policy, you can also make a change to it in our source code.</p>
+    <h3>The dashboard</h3>
+    <p>Logging into the dashboard stores your ip address in a temporary private cache. The cache entry is deleted after 30 minutes, and can't be retrieved through any means outside of the dashboard file. The cache allows the dashboard to function properly without being affected by Discord's rate limits. If you want the entry to be deleted before the normal 30 minutes, you can simply log out of the dashboard which will also delete the cache entry. If you don't want your ip being used in this way, you can instead change the bot settings from your server through the use of Phoenix's commands.</p>
+    <h3>UserDB</h3>
+    <p>UserDB is a service by Phoenix that allows you to setup your own page with your current time, pronouns, and social media handles. It also has an api allowing other services to see your page details. We only store what you input in the userdb set command, and can be deleted at anytime with the userdb clear command.</p>
+    <h3>The bot itself</h3>
+    <p>The bot only stores server settings that you configure, and it doesn't store anything else. The server database is cleared when you kick the bot to save resources. Phoenix and Phoenix Staging both use separate databases, and they can be cleared by kicking the bot.</p>
+</div>
+<%- include('../partials/footer'); %>

@@ -34,7 +34,7 @@ switch (require("./config.json").process.botmode) {
     );
     for (let i = 0; i < bots.length; i++) {
       const index = i;
-      setTimeout(function() {
+      setTimeout(function () {
         console.log(`Starting bot ${bots[index].client}`);
         fork(`custombot.js`).send(bots[index].token);
       }, 1500 * i);
@@ -42,4 +42,5 @@ switch (require("./config.json").process.botmode) {
   }
 }
 
+exports.client = clients[0];
 exports.clients = clients;
