@@ -66,7 +66,7 @@ class ReadyListener extends Listener {
         })
         .setDescription(message.content ? message.content : `(No content)`)
         .setImage(image)
-        .setColor(message.guild.cache.members.get(message.author.id) ? message.guild.cache.members.get(message.author.id).roles.highest.color : Colors.Orange)
+        .setColor(Colors.Orange)
         .setTimestamp(new Date());
       const lastFetch = await channel.messages.fetch(stars.id);
       if (reaction.count >= db.starboard.threshold)
