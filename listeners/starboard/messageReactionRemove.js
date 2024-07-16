@@ -64,7 +64,7 @@ class ReadyListener extends Listener {
           name: message.author.tag,
           iconURL: message.author.displayAvatarURL({ dynamic: true }),
         })
-        .setDescription(message.content)
+        .setDescription(message.content ? message.content : `(No content)`)
         .setImage(image)
         .setColor(message.member.roles.highest.color)
         .setTimestamp(new Date());
