@@ -9,7 +9,7 @@ function extension(attachment) {
   const imageLink = attachment.split(".");
   const typeOfImage = imageLink[imageLink.length - 1];
   const image = /(jpg|jpeg|png|gif)/gi.test(typeOfImage);
-  if (!image) return "";
+  if (!image) return null;
   return attachment;
 }
 
