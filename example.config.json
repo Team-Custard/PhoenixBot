@@ -12,6 +12,7 @@
   "dashboard": {
     "fullredirecturl": "",
     "clientid": "",
+    "stageid": "",
     "serverport": 8080,
     "devmode": false
   },
