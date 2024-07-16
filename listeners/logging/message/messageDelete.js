@@ -13,6 +13,51 @@ class GuildMemberAdd extends Listener {
     });
   }
   async run(message) {
+    if (message.partial) {
+      // The message is a partial. Attempt to log it anyway.
+      const recoveredchannel = await this.container.client.channels
+        .fetch(message.channelId)
+        .catch(() => undefined);
+      if (!recoveredchannel) return console.log(`Unable to find log channel.`);
+      const recoveredguild = recoveredchannel.guild;
+      if (!isGuildBasedChannel(recoveredchannel)) return;
+      const db = await ServerSettings.findById(message.guild.id).cacheQuery();
+      if (db.logging.messages) {
+        const channel = await recoveredguild.channels
+          .fetch(db.logging.messages)
+          .catch(() => undefined);
+        if (channel) {
+          const webhook = await webhookFetch.find(channel);
+
+          if (!webhook) {
+            console.log("Welp didn't find a webhook, sry.");
+            return;
+          }
+          const embed = new EmbedBuilder()
+            .setDescription(
+              `A message was deleted in ${recoveredchannel} but I was unable to find out what the message was.`,
+            )
+            .setColor(Colors.Orange)
+            .setTimestamp(new Date());
+
+          await webhook
+            .send({
+              // content: '',
+              username: this.container.client.user.username,
+              avatarURL: this.container.client.user.displayAvatarURL({
+                extension: "png",
+                size: 512,
+              }),
+              embeds: [embed],
+              files: message.attachments.map((a) => a.toJSON()),
+            })
+            .catch((err) =>
+              console.error(`[error] Error on sending webhook`, err),
+            );
+          return;
+        }
+      }
+    }
     if (!isGuildBasedChannel(message.channel)) return;
     if (this.container.client.id == "1239263616025493504") {
       const hasStaging = await message.guild.members
@@ -38,7 +83,10 @@ class GuildMemberAdd extends Listener {
         const embed = new EmbedBuilder()
           .setAuthor({
             name: message.author.username,
-            iconURL: message.author.displayAvatarURL({ dynamic: true, size: 256 }),
+            iconURL: message.author.displayAvatarURL({
+              dynamic: true,
+              size: 256,
+            }),
           })
           .setDescription(
             `Message deleted in ${message.channel}\n**Message:**\n${message.content}`,

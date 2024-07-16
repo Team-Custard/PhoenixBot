@@ -31,14 +31,28 @@
                 <div class="navbar-nav me-auto mb-2 mb-lg-0">
                   <a class="nav-link active" aria-current="page" href="/">Home</a>
                   <a class="nav-link" href="/commands">Commands</a>
+                  <a class="nav-link" href="/plus">Plus</a>
                   <a class="nav-link" href="/server">Server</a>
                   <a class="nav-link" href="/invite">Invite</a>
-                  <a class="nav-link" href="/api">API</a>
                 </div>
                 <div class="navbar-nav d-flex me-2">
-                  <a class="nav-link" href="/dash">Dashboard</a>
+                  <img style="display: none;" width="42px" height="42px" class="rounded-circle" id="dashboardImage">
+                  <a class="nav-link" id="dashboardButton" href="/dash">Dashboard</a>
                 </div>
                 
               </div>
             </div>
           </nav>
+
+          <script>
+            const userthing = window.localStorage.getItem('userTemp');
+            console.log(userthing);
+            if (userthing) {
+                const details = JSON.parse(userthing);
+                const dashText = document.getElementById("dashboardButton");
+                const dashImg = document.getElementById("dashboardImage");
+                dashText.textContent = details.username;
+                dashImg.style = "display: inline;"
+                dashImg.setAttribute('src', details.usericon);
+            }
+          </script>

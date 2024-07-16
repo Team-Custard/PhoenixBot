@@ -13,6 +13,7 @@ class GuildMemberAdd extends Listener {
     });
   }
   async run(oldmessage, message) {
+    if (message.partial) message = await message.fetch();
     if (!isGuildBasedChannel(message.channel)) return;
     if (this.container.client.id == "1239263616025493504") {
       const hasStaging = await message.guild.members
@@ -38,7 +39,10 @@ class GuildMemberAdd extends Listener {
         const embed = new EmbedBuilder()
           .setAuthor({
             name: message.author.username,
-            iconURL: message.author.displayAvatarURL({ dynamic: true, size: 256 }),
+            iconURL: message.author.displayAvatarURL({
+              dynamic: true,
+              size: 256,
+            }),
           })
           .setDescription(
             `Message updated in ${message.channel}\n[Message jump link](${message.url})`,

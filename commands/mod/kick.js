@@ -7,15 +7,18 @@ class PingCommand extends Command {
   constructor(context, options) {
     super(context, {
       ...options,
-      name: "unmute",
-      aliases: [`um`],
-      description: "Unmutes a member.",
+      name: "kick",
+      aliases: [`k`, `boot`],
+      description: "Kicks a member.",
       detailedDescription: {
-        usage: "mute <member> [flags] [reason] ",
-        examples: ["unmute sylveondev Love ya"],
+        usage: "kick <member> [flags] [reason] ",
+        examples: [
+          "kick sylveondev Being cool",
+          "kick bill11 Being a raccoon --silent",
+        ],
         args: [
-          "member : The member to moderate",
           "reason : The reason for the action",
+          "member : The member to moderate",
         ],
         flags: [
           `--silent : Don't send a dm to the member.`,
@@ -23,8 +26,8 @@ class PingCommand extends Command {
         ],
       },
       cooldownDelay: 3_000,
-      requiredUserPermissions: [PermissionFlagsBits.ModerateMembers],
-      requiredClientPermissions: [PermissionFlagsBits.ModerateMembers],
+      requiredUserPermissions: [PermissionFlagsBits.KickMembers],
+      requiredClientPermissions: [PermissionFlagsBits.KickMembers],
       flags: true,
     });
   }
@@ -53,8 +56,8 @@ class PingCommand extends Command {
         `:x: You aren't high enough in the role hiarchy to moderate this member.`,
       );
     }
-    if (!member.moderatable) {
-      return message.reply(`:x: This user is not moderatable.`);
+    if (!member.kickable) {
+      return message.reply(`:x: This user is not kickable.`);
     }
 
     let caseid = 0;
@@ -65,7 +68,7 @@ class PingCommand extends Command {
     caseid = db.infractions.length + 1;
     const thecase = {
       id: caseid,
-      punishment: "Unmute",
+      punishment: "Kick",
       member: member.id,
       moderator: message.member.id,
       reason: reason,
@@ -74,25 +77,6 @@ class PingCommand extends Command {
       hidden: hideMod,
       modlogID: null,
     };
-
-    if (member.communicationDisabledUntil) {
-      await member.disableCommunicationUntil(
-        null,
-        `(Unmute by ${message.author.tag}) ${reason}`,
-      );
-    } else {
-      if (!db.moderation.muteRole) {
-        return message.reply(`:x: That user isn't muted.`);
-      }
-      if (member.roles.cache.has(db.moderation.muteRole)) {
-        await member.roles.remove(
-          db.moderation.muteRole,
-          `(Unmute by ${message.author.tag}) ${reason}`,
-        );
-      } else {
-        return message.reply(`:x: That user isn't muted.`);
-      }
-    }
 
     let dmSuccess = true;
     const embed = new EmbedBuilder()
@@ -115,13 +99,14 @@ class PingCommand extends Command {
         dmSuccess = false;
       });
     }
+    await member.kick(`(Kick by ${message.author.tag}) ${reason}`);
 
     if (db.logging.infractions) {
       const channel = await message.guild.channels
         .fetch(db.logging.infractions)
         .catch(() => undefined);
       if (channel) {
-        const embed = new EmbedBuilder()
+        const embedT = new EmbedBuilder()
           .setTitle(`${thecase.punishment} - Case ${thecase.id}`)
           .setDescription(
             `**Offender:** ${member}\n**Moderator:** ${message.author}\n**Reason:** ${thecase.reason}`,
@@ -133,7 +118,7 @@ class PingCommand extends Command {
         const msg = await channel
           .send({
             // content: '',
-            embeds: [embed],
+            embeds: [embedT],
           })
           .catch((err) => {
             console.error(`[error] Error on sending to channel`, err);
@@ -147,7 +132,7 @@ class PingCommand extends Command {
 
     await db.save();
     message.reply(
-      `:white_check_mark: **${member.user.tag}** was unmuted with case id **\` ${caseid} \`**. ${silentDM ? "" : dmSuccess ? `(User was notified)` : `(User was not notified)`}`,
+      `:white_check_mark: **${member.user.tag}** was warned with case id **\` ${caseid} \`**. ${silentDM ? "" : dmSuccess ? `(User was notified)` : `(User was not notified)`}`,
     );
   }
 }

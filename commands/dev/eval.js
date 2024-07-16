@@ -7,8 +7,7 @@ function clean(text) {
     return text
       .replace(/`/g, "`" + String.fromCharCode(8203))
       .replace(/@/g, "@" + String.fromCharCode(8203));
-  }
- else {
+  } else {
     return text;
   }
 }
@@ -41,7 +40,7 @@ class PingCommand extends Command {
     try {
       const evaled = eval(code);
       if (!silent) {
-message.reply({
+        message.reply({
           embeds: [
             {
               fields: [
@@ -56,10 +55,10 @@ message.reply({
           ],
           code: "xl",
         });
-}
-      else {message.react(`✅`);}
-    }
- catch (err) {
+      } else {
+        message.react(`✅`);
+      }
+    } catch (err) {
       message.reply(`The code returned an error. ${clean(err)}`);
     }
   }

@@ -63,9 +63,9 @@ class PingCommand extends Command {
         let trueindex = 0;
         let success = 0;
         console.log(`Modifying ${total} channels`);
-        channels.forEach(function(channel) {
+        channels.forEach(function (channel) {
           index++;
-          setTimeout(async function() {
+          setTimeout(async function () {
             trueindex++;
             console.log(`Modifying channel ${trueindex}/${total}`);
             await channel.permissionOverwrites
@@ -79,7 +79,7 @@ class PingCommand extends Command {
                 },
                 "Applying muted role permissions",
               )
-              .then(function() {
+              .then(function () {
                 console.log(`Success`);
                 success++;
               })
@@ -95,16 +95,16 @@ class PingCommand extends Command {
             }
           }, 1000 * index);
         });
-      }
- else {
-        if (!db.moderation.muteRole) {return message.reply(`:x: No mute role was set.`);}
+      } else {
+        if (!db.moderation.muteRole) {
+          return message.reply(`:x: No mute role was set.`);
+        }
         return message.reply({
           content: `The current mute role is **${message.guild.roles.cache.get(db.moderation.muteRole) ? message.guild.roles.cache.get(db.moderation.muteRole) : db.moderation.muteRole}**. This will be assigned when Discord timeouts aren't able to be used.`,
           allowedMentions: { parse: [] },
         });
       }
-    }
- else {
+    } else {
       db.moderation.muteRole = role.id;
       await db.save();
       return message.reply(

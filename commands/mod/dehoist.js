@@ -7,12 +7,13 @@ class PingCommand extends Command {
   constructor(context, options) {
     super(context, {
       ...options,
-      name: "asciify",
-      aliases: [`ascii`, `decancer`, `nofancyletters`],
-      description: "Removes special characters from a member's nickname.",
+      name: "dehoist",
+      aliases: [`dh`],
+      description:
+        "Moves a member that is hoisting down to the bottom of the members list.",
       detailedDescription: {
-        usage: "asciify <member>",
-        examples: ["asciify sylveondev"],
+        usage: "dehoist <member>",
+        examples: ["dehoist sylveondev"],
         args: ["member : The member to change the name of"],
       },
       cooldownDelay: 3_000,
@@ -22,7 +23,6 @@ class PingCommand extends Command {
   }
 
   async messageRun(message, args) {
-    const normalisationForm = "NFKC";
     const member = await args.pick("member");
 
     if (message.member == member) {
@@ -48,12 +48,10 @@ class PingCommand extends Command {
     }
 
     const oldnickname = member.displayName;
-    const nickname = oldnickname.normalize(normalisationForm);
+    const nickname = ` ឵${oldnickname}`;
 
-    await member.setNickname(nickname, `(Asciify by ${message.author.tag})`);
-    message.reply(
-      `:white_check_mark: Asciified **${member.user.tag}**'s nickname from \`${oldnickname}\` to \`${nickname}\` successfully.`,
-    );
+    await member.setNickname(nickname, `(Dehoist by ${message.author.tag})`);
+    message.reply(`:white_check_mark: Dehoisted **${member.user.tag}**.`);
   }
 }
 module.exports = {

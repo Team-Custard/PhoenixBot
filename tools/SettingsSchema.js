@@ -57,6 +57,12 @@ const settingsSchema = new Schema({
     pingreport: String,
     nsfwimage: [],
   },
+  starboard: {
+    emoji: String,
+    channel: String,
+    threshold: String,
+    selfstar: Boolean,
+  },
   infractions: [
     {
       id: Number,

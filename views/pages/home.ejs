@@ -1,5 +1,51 @@
 <%- include('../partials/header'); %>
-<h1>PhoenixBot</h1>
-<p>The bot of all time ngl.</p>
-<p>This website is heavily unfinished. There'll be stuff here soon. <a href="https://discord.com/oauth2/authorize?client_id=1171286616967479377">Invite the bot here.</a></p>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Freehand&display=swap');
+    h1 {
+        font-size:42px;
+        font-family: "Freehand", cursive;
+        font-weight: bolder;
+    }
+    p {
+        font-size: large;
+    }
+    .warning {
+        background-color: orange;
+        padding: 1%;
+        font-size: large;
+        border-radius: 10px;
+    }
+    carl {
+        font-size: 128px;
+    }
+</style>
+
+<% if (bottype != 'prod') { %>
+<h3 class="warning">⚠ You are on the staging version of the website. The main bot cannot be configured from the staging dashboard. <a href="https://phoenix.sylveondev.xyz">Looking for the main site?</a></h3>
+<% } %>
+<div class="container-fluid text-center">
+    <div style="background-color: black;"><img style="height: 256px;" src="/header.png" class="img-fluid" alt="Phoenix header icon"></div>
+    <h1>PhoenixBot</h1>
+    <p style='font-weight: bolder; font-size:x-large; font-family: "Freehand", cursive;'>Now you're thinking with Discord bots.</p>
+    <p>PhoenixBot is a multi-functional Discord bot designed by SylveonDev that aims to help improve the server in more ways than one and be easy to setup and packed with features, eliminating the need to invite a ton of bots. The bot is open-source and can be modified by anyone.</p>
+    <h3 class="warning">⚠ The website is a heavy work in progress. Most things maybe broken and incomplete.</h3>
+    <h1>Features</h1>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <tbody>
+                <tr>
+                    <td><img class="img-fluid" src="/translator.png"></td>
+                    <td>
+                        <h4>Translations</h4> Our translation feature allows you to translate messages to your set language in your client.
+
+                    </td>
+                </tr>    
+            </tbody>
+        </table>
+    </div>
+    <p>Phoenix can translate messages to your current language defined in your user settings when using the slash commands and context menus.</p>
+    <h1>Fun facts</h1>
+    <carl>🐢</carl>
+    <p>The turle emoji is actually Carl-bot on Android devices running Android 11 and newer, and on devices that uses Google emojis.</p>
+</div>
 <%- include('../partials/footer'); %>

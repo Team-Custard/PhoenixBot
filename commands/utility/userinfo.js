@@ -4,7 +4,9 @@ const {
   EmbedBuilder,
   Colors,
   PermissionFlagsBits,
+  GuildMemberFlags,
 } = require("discord.js");
+const serverSettings = require("../../tools/SettingsSchema");
 
 class UserCommand extends Command {
   constructor(context, options) {
@@ -74,6 +76,16 @@ class UserCommand extends Command {
     await interaction.deferReply();
     const member = await interaction.options.getMember("user");
     if (member) {
+      let latestPunishment;
+      let punishments;
+      if (interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+        const db = await serverSettings
+          .findById(interaction.guild.id, serverSettings.upsert)
+          .cacheQuery();
+        punishments = db.infractions.filter((f) => f.member == member.id);
+        latestPunishment = punishments[punishments.length - 1];
+      }
+
       const embed = new EmbedBuilder()
         .setAuthor({
           name: member.user.displayName + (member.user.bot ? `[BOT]` : ``),
@@ -81,14 +93,14 @@ class UserCommand extends Command {
         })
         .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
         .setDescription(
-          `**Tag:** ${member.user.tag}\n${member.nickname ? `**Nickname:** ${member.nickname}\n` : ``}**Display Name:**: ${member.user.displayName}\n**ID:** ${member.user.id}\n**Joined server:** <t:${Math.floor(member.joinedTimestamp / 1000)}:R>\n**Account created:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>\n\n**Roles:** ${member.roles.cache.map((r) => r)}\n**Passed Onboarding:** ${member.pending ? "No" : "Yes"}\n**Boosting:** ${member.premiumSinceTimestamp ? `Yes, started boosting <t:${Math.floor(member.premiumSinceTimestamp / 1000)}:R>` : `No`}`,
+          `**Tag:** ${member.user.tag}\n${member.nickname ? `**Nickname:** ${member.nickname}\n` : ``}**Display Name:**: ${member.user.displayName}\n**ID:** ${member.user.id}\n**Joined server:** <t:${Math.floor(member.joinedTimestamp / 1000)}:R>\n**Account created:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>\n\n**Roles:** ${member.roles.cache.map((r) => r)}\n**Passed Onboarding:** ${member.flags.has(GuildMemberFlags.CompletedOnboarding) ? "Yes" : member.flags.has(GuildMemberFlags.StartedOnboarding) ? "Not yet, they started it" : "No"}\n**Boosting:** ${member.premiumSinceTimestamp ? `Yes, started boosting <t:${Math.floor(member.premiumSinceTimestamp / 1000)}:R>` : `No`}\n**Rejoined server:** ${member.flags.has(GuildMemberFlags.DidRejoin) ? "Yes" : "No"}\n**Quarentined:** ${member.flags.has(GuildMemberFlags.AutomodQuarantinedBio) ? "Yes, bad bio" : member.flags.has(GuildMemberFlags.AutomodQuarantinedUsernameOrGuildNickname) ? "Yes, bad nickname" : "No"}` +
+            `${interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers) && !member.user.bot ? `\n\n**Latest infraction:**\n${latestPunishment ? `\` ${latestPunishment.id} \` ${latestPunishment.punishment} by <@${latestPunishment.moderator}>\nReason: ${latestPunishment.reason}\n**${punishments.length}** total infractions.` : `No infractions found for this user.`}` : ``}`,
         )
         .setColor(member.roles.highest.color)
         .setFooter({ text: "Triggered" })
         .setTimestamp(new Date());
       await interaction.followUp({ embeds: [embed] });
-    }
- else {
+    } else {
       // Fetch the user instead, they don't exist.
       const user = await interaction.options.getUser("user");
       const embed = new EmbedBuilder()
@@ -113,6 +125,16 @@ class UserCommand extends Command {
       .fetch(user.id)
       .catch(() => undefined);
     if (member) {
+      let latestPunishment;
+      let punishments;
+      if (message.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+        const db = await serverSettings
+          .findById(message.guild.id, serverSettings.upsert)
+          .cacheQuery();
+        punishments = db.infractions.filter((f) => f.member == member.id);
+        latestPunishment = punishments[punishments.length - 1];
+      }
+
       const embed = new EmbedBuilder()
         .setAuthor({
           name: member.user.displayName + (member.user.bot ? `[BOT]` : ``),
@@ -120,14 +142,14 @@ class UserCommand extends Command {
         })
         .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
         .setDescription(
-          `**Tag:** ${member.user.tag}\n${member.nickname ? `**Nickname:** ${member.nickname}\n` : ``}**Display Name:**: ${member.user.displayName}\n**ID:** ${member.user.id}\n**Joined server:** <t:${Math.floor(member.joinedTimestamp / 1000)}:R>\n**Account created:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>\n\n**Roles:** ${member.roles.cache.map((r) => r)}\n**Passed Onboarding:** ${member.pending ? "No" : "Yes"}\n**Boosting:** ${member.premiumSinceTimestamp ? `Yes, started boosting <t:${Math.floor(member.premiumSinceTimestamp / 1000)}:R>` : `No`}`,
+          `**Tag:** ${member.user.tag}\n${member.nickname ? `**Nickname:** ${member.nickname}\n` : ``}**Display Name:**: ${member.user.displayName}\n**ID:** ${member.user.id}\n**Joined server:** <t:${Math.floor(member.joinedTimestamp / 1000)}:R>\n**Account created:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>\n\n**Roles:** ${member.roles.cache.map((r) => r)}\n**Passed Onboarding:** ${member.flags.has(GuildMemberFlags.CompletedOnboarding) ? "Yes" : member.flags.has(GuildMemberFlags.StartedOnboarding) ? "Not yet, they started it" : "No"}\n**Boosting:** ${member.premiumSinceTimestamp ? `Yes, started boosting <t:${Math.floor(member.premiumSinceTimestamp / 1000)}:R>` : `No`}\n**Rejoined server:** ${member.flags.has(GuildMemberFlags.DidRejoin) ? "Yes" : "No"}\n**Quarentined:** ${member.flags.has(GuildMemberFlags.AutomodQuarantinedBio) ? "Yes, bad bio" : member.flags.has(GuildMemberFlags.AutomodQuarantinedUsernameOrGuildNickname) ? "Yes, bad nickname" : "No"}` +
+            `${message.member.permissions.has(PermissionFlagsBits.ModerateMembers) && !member.user.bot ? `\n\n**Latest infraction:**\n${latestPunishment ? `\` ${latestPunishment.id} \` ${latestPunishment.punishment} by <@${latestPunishment.moderator}>\nReason: ${latestPunishment.reason}\n**${punishments.length}** total infractions.` : `No infractions found for this user.`}` : ``}`,
         )
         .setColor(member.roles.highest.color)
         .setFooter({ text: "Triggered" })
         .setTimestamp(new Date());
       await message.reply({ embeds: [embed] });
-    }
- else {
+    } else {
       const embed = new EmbedBuilder()
         .setAuthor({
           name: user.displayName + (user.bot ? `[BOT]` : ``),

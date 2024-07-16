@@ -7,7 +7,7 @@ class PingCommand extends Command {
     super(context, {
       ...options,
       name: "mute",
-      aliases: [`m`],
+      aliases: [`m`, `timeout`, `silence`],
       description:
         "Mutes a member for a specified amount of time. You can only mute up to a maximum of 28 days. Any incorrect time will be converted into a permanent mute.",
       detailedDescription: {
@@ -25,6 +25,7 @@ class PingCommand extends Command {
       },
       cooldownDelay: 3_000,
       requiredUserPermissions: [PermissionFlagsBits.ModerateMembers],
+      requiredClientPermissions: [PermissionFlagsBits.ModerateMembers],
       flags: true,
     });
   }
@@ -40,26 +41,32 @@ class PingCommand extends Command {
 
     const duration = require("ms")(unformattedreason.replace(/ .*/, ""));
     if (!isNaN(duration)) {
-reason = unformattedreason.substring(
+      reason = unformattedreason.substring(
         unformattedreason.replace(/ .*/, "").length + 1,
       );
-}
+    }
 
-    if (message.member == member) {return message.reply(`:x: Bruh. On yourself?`);}
+    if (message.member == member) {
+      return message.reply(`:x: Bruh. On yourself?`);
+    }
     if (
       member.roles.highest.position >=
       message.guild.members.me.roles.highest.position
     ) {
-return message.reply(
+      return message.reply(
         `:x: I'm not high enough in the role hiarchy to moderate this member.`,
       );
-}
-    if (member.roles.highest.position >= message.member.roles.highest.position) {
-return message.reply(
+    }
+    if (
+      member.roles.highest.position >= message.member.roles.highest.position
+    ) {
+      return message.reply(
         `:x: You aren't high enough in the role hiarchy to moderate this member.`,
       );
-}
-    if (!member.moderatable) {return message.reply(`:x: This user is not moderatable.`);}
+    }
+    if (!member.moderatable) {
+      return message.reply(`:x: This user is not moderatable.`);
+    }
 
     let caseid = 0;
     const db = await serverSettings
@@ -85,25 +92,23 @@ return message.reply(
           Date.now() + duration,
           `(Mute by ${message.author.tag}${isNaN(duration) ? `` : ` | ${require("ms")(duration)}`}) ${reason}`,
         );
-      }
- else {
+      } else {
         if (!db.moderation.muteRole) {
-return message.reply(
+          return message.reply(
             `:x: To mute members pernamently, a mute role needs to be assigned. Use muterole to set one.`,
           );
-}
+        }
         await member.roles.add(
           db.moderation.muteRole,
           `(Mute by ${message.author.tag}) ${reason}`,
         );
       }
-    }
- else {
+    } else {
       if (!db.moderation.muteRole) {
-return message.reply(
+        return message.reply(
           `:x: To mute members pernamently, a mute role needs to be assigned. Use muterole to set one.`,
         );
-}
+      }
       await member.roles.add(
         db.moderation.muteRole,
         `(Mute by ${message.author.tag}) ${reason}`,
@@ -127,10 +132,10 @@ return message.reply(
       .setColor(Colors.Orange)
       .setTimestamp(new Date());
     if (!silentDM) {
-member.send({ embeds: [embed] }).catch(function() {
+      member.send({ embeds: [embed] }).catch(function () {
         dmSuccess = false;
       });
-}
+    }
 
     if (db.logging.infractions) {
       const channel = await message.guild.channels

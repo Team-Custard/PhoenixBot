@@ -19,12 +19,14 @@ class GuildMemberRemove extends Listener {
         .fetch(db.goodbyes.channel)
         .catch(() => undefined);
       if (channel) {
-        channel.send(
-          await require("../../tools/textParser").parse(
-            db.goodbyes.message,
-            member,
-          ),
-        );
+        channel
+          .send(
+            await require("../../tools/textParser").parse(
+              db.goodbyes.message,
+              member,
+            ),
+          )
+          .catch(() => undefined);
       }
     }
   }

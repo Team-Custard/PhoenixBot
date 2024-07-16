@@ -22,111 +22,129 @@ class ReadyListener extends Listener {
       interaction.isMessageContextMenuCommand() &&
       interaction.commandName == "Translate message"
     ) {
-      // console.log(interaction.targetMessage);
-      const db = await UserDB.findById(interaction.user.id);
+      try {
+        // console.log(interaction.targetMessage);
+        const db = await UserDB.findById(interaction.user.id);
 
-      await interaction.deferReply({ ephemeral: db ? db.ephemeral : false });
+        await interaction.deferReply({ ephemeral: db ? db.ephemeral : false });
 
-      const message = interaction.targetMessage;
+        const message = interaction.targetMessage;
 
-      const translate = require('translate');
-      const detect = require("text-language-detector");
-      const detected = await detect(message.content);
+        const translate = require("translate");
+        const detect = require("text-language-detector");
+        const detected = await detect(message.content);
 
-      translate.engine = "google";
-      translate.key = process.env.googlekey;
+        translate.engine = "google";
+        translate.key = process.env.googlekey;
 
-      let msgLink;
-      if (message.guildId) {
-        msgLink = await messageLink(
-          message.channelId,
-          message.id,
-          message.guildId,
-        );
+        let msgLink;
+        if (message.guildId) {
+          msgLink = await messageLink(
+            message.channelId,
+            message.id,
+            message.guildId,
+          );
+        } else {
+          msgLink = await messageLink(message.channelId, message.id);
+        }
+
+        const buttons = new ActionRowBuilder()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId("userbotinfo")
+              .setLabel("Why am I seeing this")
+              .setEmoji("❔")
+              .setStyle(ButtonStyle.Secondary),
+          )
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId("userbotephemeral-" + interaction.user.id)
+              .setLabel("Toggle ephemeral")
+              .setStyle(ButtonStyle.Secondary),
+          );
+
+        const text = await translate(message.content, {
+          from: detected.match_language_data.code2,
+          to: interaction.locale.substring(0, 2),
+        });
+        interaction.followUp({
+          content: `[${message.author.tag} said:](<${msgLink}>) ${text}`,
+          allowedMentions: { parse: [] },
+          components: [buttons],
+        });
+      } catch (err) {
+        console.error(err);
       }
-      else {
-        msgLink = await messageLink(message.channelId, message.id);
-      }
-
-      const buttons = new ActionRowBuilder()
-            .addComponents(
-              new ButtonBuilder()
-                .setCustomId("userbotinfo")
-                .setLabel("Why am I seeing this")
-                .setEmoji("❔")
-                .setStyle(ButtonStyle.Secondary),
-            )
-            .addComponents(
-              new ButtonBuilder()
-                .setCustomId("userbotephemeral-" + interaction.user.id)
-                .setLabel("Toggle ephemeral")
-                .setStyle(ButtonStyle.Secondary),
-            );
-
-      const text = await translate(message.content, { from: detected.match_language_data.code2, to: interaction.locale.substring(0, 2) });
-      interaction.followUp({ content: `[${message.author.tag} said:](<${msgLink}>) ${text}`, allowedMentions: { parse: [] }, components: [buttons] });
     }
 
     if (
       interaction.isUserContextMenuCommand() &&
       interaction.commandName == "Time for user"
     ) {
-      const db = await UserDB.findById(interaction.user.id);
+      try {
+        const db = await UserDB.findById(interaction.user.id);
 
-      await interaction.deferReply({ ephemeral: db ? db.ephemeral : false });
+        await interaction.deferReply({ ephemeral: db ? db.ephemeral : false });
 
-      const member = interaction.targetUser;
+        const member = interaction.targetUser;
 
-      const usersettings = await UserDB.findById(
-        member.id,
-        UserDB.upsert,
-      ).cacheQuery();
-      if (!usersettings) {
-        return interaction.followUp(
-          `:x: **${member.username}** does not have a timezone set.`,
-        );
+        const usersettings = await UserDB.findById(
+          member.id,
+          UserDB.upsert,
+        ).cacheQuery();
+        if (!usersettings) {
+          return interaction.followUp(
+            `:x: **${member.username}** does not have a timezone set.`,
+          );
+        }
+        if (!usersettings.timezone) {
+          return interaction.followUp(
+            `:x: **${member.username}** does not have a timezone set.`,
+          );
+        }
+
+        const date = new Date();
+        const strTime = date.toLocaleTimeString("en-US", {
+          timeZone: usersettings.timezone,
+        });
+        const strDate = date.toLocaleDateString("en-US", {
+          timeZone: usersettings.timezone,
+        });
+
+        const buttons = new ActionRowBuilder()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId("userbotinfo")
+              .setLabel("Why am I seeing this")
+              .setEmoji("❔")
+              .setStyle(ButtonStyle.Secondary),
+          )
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId("userbotephemeral-" + interaction.user.id)
+              .setLabel("Toggle ephemeral")
+              .setStyle(ButtonStyle.Secondary),
+          );
+
+        await interaction.followUp({
+          content: `**${member.username}**'s time is **${strTime}** (${strDate}).`,
+          components: [buttons],
+        });
+      } catch (err) {
+        console.error(err);
       }
-      if (!usersettings.timezone) {
-        return interaction.followUp(
-          `:x: **${member.username}** does not have a timezone set.`,
-        );
-      }
-
-      const date = new Date();
-      const strTime = date.toLocaleTimeString("en-US", {
-        timeZone: usersettings.timezone,
-      });
-      const strDate = date.toLocaleDateString("en-US", {
-        timeZone: usersettings.timezone,
-      });
-
-      const buttons = new ActionRowBuilder()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId("userbotinfo")
-            .setLabel("Why am I seeing this")
-            .setEmoji("❔")
-            .setStyle(ButtonStyle.Secondary),
-        )
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId("userbotephemeral-" + interaction.user.id)
-            .setLabel("Toggle ephemeral")
-            .setStyle(ButtonStyle.Secondary),
-        );
-
-      await interaction.followUp({
-        content: `**${member.username}**'s time is **${strTime}** (${strDate}).`,
-        components: [buttons],
-      });
     }
 
     if (
       interaction.isChatInputCommand() &&
       interaction.commandName == "setup_userdb"
     ) {
-      const { modal } = require("../../commands/interaction-specific/userdb");
-      interaction.showModal(modal);
+      try {
+        const { modal } = require("../../commands/interaction-specific/userdb");
+        interaction.showModal(modal);
+      } catch (err) {
+        console.error(err);
+      }
     }
   }
 }

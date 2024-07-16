@@ -37,21 +37,27 @@ class PingCommand extends Command {
     const hideMod = args.getFlags("hide", "h");
     const reason = await args.rest("string").catch(() => `No reason specified`);
 
-    if (message.member == member) {return message.reply(`:x: Bruh. On yourself?`);}
+    if (message.member == member) {
+      return message.reply(`:x: Bruh. On yourself?`);
+    }
     if (
       member.roles.highest.position >=
       message.guild.members.me.roles.highest.position
     ) {
-return message.reply(
+      return message.reply(
         `:x: I'm not high enough in the role hiarchy to moderate this member.`,
       );
-}
-    if (member.roles.highest.position >= message.member.roles.highest.position) {
-return message.reply(
+    }
+    if (
+      member.roles.highest.position >= message.member.roles.highest.position
+    ) {
+      return message.reply(
         `:x: You aren't high enough in the role hiarchy to moderate this member.`,
       );
-}
-    if (!member.manageable) {return message.reply(`:x: This user is not manageable.`);}
+    }
+    if (!member.manageable) {
+      return message.reply(`:x: This user is not manageable.`);
+    }
 
     let caseid = 0;
     const db = await serverSettings
@@ -88,17 +94,17 @@ return message.reply(
       .setColor(Colors.Orange)
       .setTimestamp(new Date());
     if (!silentDM) {
-member.send({ embeds: [embed] }).catch(function() {
+      member.send({ embeds: [embed] }).catch(function () {
         dmSuccess = false;
       });
-}
+    }
 
     if (db.logging.infractions) {
       const channel = await message.guild.channels
         .fetch(db.logging.infractions)
         .catch(() => undefined);
       if (channel) {
-        const embed = new EmbedBuilder()
+        const embedT = new EmbedBuilder()
           .setTitle(`${thecase.punishment} - Case ${thecase.id}`)
           .setDescription(
             `**Offender:** ${member}\n**Moderator:** ${message.author}\n**Reason:** ${thecase.reason}`,
@@ -110,7 +116,7 @@ member.send({ embeds: [embed] }).catch(function() {
         const msg = await channel
           .send({
             // content: '',
-            embeds: [embed],
+            embeds: [embedT],
           })
           .catch((err) => {
             console.error(`[error] Error on sending to channel`, err);
