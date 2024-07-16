@@ -53,7 +53,7 @@ class ReadyListener extends Listener {
       // const star = starRegex.exec(stars.content);
       const image =
         message.attachments.size > 0
-          ? await extension(message.attachments.array()[0].url)
+          ? await extension(message.attachments.at(0).url)
           : null;
       const embed = new EmbedBuilder()
         .setAuthor({
