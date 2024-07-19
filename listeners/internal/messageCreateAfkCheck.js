@@ -70,7 +70,7 @@ class ReadyListener extends Listener {
             .save()
             .then(() => {
               message.reply({
-                content: `Welcome back ${message.member}! I have cleared you afk status.`,
+                content: `Welcome back ${message.member}! I have cleared your afk status.`,
               });
             })
             .catch((err) => {
@@ -94,7 +94,7 @@ class ReadyListener extends Listener {
         .save()
         .then(() => {
           message.reply({
-            content: `Welcome back ${message.member}! I have cleared you afk status.`,
+            content: `Welcome back ${message.member}! I have cleared your afk status.`,
           });
         })
         .catch((err) => {
