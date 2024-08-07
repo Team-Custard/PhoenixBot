@@ -7,6 +7,8 @@ const {
   Message,
 } = require("discord.js");
 
+const { container } = require("@sapphire/framework");
+
 /**
  * Send a warning prompt in the server. If the user accepts, returns true, otherwise false.
  * @param {Message} message The message the warning is replying to.
@@ -22,12 +24,12 @@ async function warnMessage(message, reason) {
     new ButtonBuilder()
       .setLabel(`Confirm`)
       .setCustomId(`ConfirmButton`)
-      .setEmoji(`✅`)
+      .setEmoji(`${container.emojis.success}`)
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setLabel(`Cancel`)
       .setCustomId(`CancelButton`)
-      .setEmoji(`❌`)
+      .setEmoji(`${container.emojis.error}`)
       .setStyle(ButtonStyle.Danger),
   );
 
@@ -63,13 +65,13 @@ async function warnMessage(message, reason) {
           new ButtonBuilder()
             .setLabel(`Confirm`)
             .setCustomId(`ConfirmButton`)
-            .setEmoji(`✅`)
+            .setEmoji(`${container.emojis.success}`)
             .setStyle(ButtonStyle.Success)
             .setDisabled(true),
           new ButtonBuilder()
             .setLabel(`Cancel`)
             .setCustomId(`CancelButton`)
-            .setEmoji(`❌`)
+            .setEmoji(`${container.emojis.error}`)
             .setStyle(ButtonStyle.Danger)
             .setDisabled(true),
         );
@@ -88,13 +90,13 @@ async function warnMessage(message, reason) {
         new ButtonBuilder()
           .setLabel(`Confirm`)
           .setCustomId(`ConfirmButton`)
-          .setEmoji(`✅`)
+          .setEmoji(`${container.emojis.success}`)
           .setStyle(ButtonStyle.Success)
           .setDisabled(true),
         new ButtonBuilder()
           .setLabel(`Cancel`)
           .setCustomId(`CancelButton`)
-          .setEmoji(`❌`)
+          .setEmoji(`${container.emojis.error}`)
           .setStyle(ButtonStyle.Danger)
           .setDisabled(true),
       );

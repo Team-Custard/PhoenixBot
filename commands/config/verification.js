@@ -157,11 +157,11 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         interaction.followUp(
-          `:white_check_mark: Successfully setup verification.`,
+          `${this.container.emojis.success} Successfully setup verification.`,
         );
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -178,11 +178,11 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         interaction.followUp(
-          `:white_check_mark: Successfully cleared verification settings.`,
+          `${this.container.emojis.success} Successfully cleared verification settings.`,
         );
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -232,10 +232,10 @@ class PingCommand extends Subcommand {
 
     db.save()
       .then(() => {
-        message.reply(`:white_check_mark: Successfully setup verification.`);
+        message.reply(`${this.container.emojis.success} Successfully setup verification.`);
       })
       .catch((err) => {
-        message.reply(`:x: ${err}`);
+        message.reply(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -251,11 +251,11 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         message.reply(
-          `:white_check_mark: Successfully cleared verification settings.`,
+          `${this.container.emojis.success} Successfully cleared verification settings.`,
         );
       })
       .catch((err) => {
-        message.reply(`:x: ${err}`);
+        message.reply(`${this.container.emojis.error} ${err}`);
       });
   }
 }

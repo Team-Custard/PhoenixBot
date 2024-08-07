@@ -34,16 +34,16 @@ class PingCommand extends Command {
 
     if (code) {
       const piece = this.container.client.stores.get("commands").resolve(code);
-      if (!piece) return message.reply(`:x: Command not found.`);
+      if (!piece) return message.reply(`${this.container.emojis.error} Command not found.`);
       await piece
         .reload()
         .then(() =>
           message.reply(
-            `:white_check_mark: Successfully reloaded \`${piece.name}\`.`,
+            `${this.container.emojis.success} Successfully reloaded \`${piece.name}\`.`,
           ),
         )
         .catch((err) => {
-          message.reply(`:x: Command refresh failed, ${err}`);
+          message.reply(`${this.container.emojis.error} Command refresh failed, ${err}`);
           console.error(err);
         });
     } else {
@@ -53,13 +53,13 @@ class PingCommand extends Command {
       );
       if (!accepted) return;
       const msg = await message.reply(
-        `<a:load:1253195468830146703> **Refreshing bot stores...**`,
+        `${this.container.emojis.loading} **Refreshing bot stores...**`,
       );
       await this.container.client.stores.get("listeners").loadAll();
       await this.container.client.stores.get("preconditions").loadAll();
       await this.container.client.stores.get("commands").loadAll();
       await this.container.client.stores.get("interaction-handlers").loadAll();
-      msg.edit(`:white_check_mark: Reloaded bot stores successfully.`);
+      msg.edit(`${this.container.emojis.success} Reloaded bot stores successfully.`);
     }
   }
 }

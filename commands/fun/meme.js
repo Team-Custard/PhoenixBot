@@ -28,7 +28,7 @@ class PingCommand extends Command {
     const getStream = await bent("https://meme-api.com");
     const stream = await getStream("/gimme");
 
-    if (stream.statusCode != 200) return message.reply(`:x: ${stream.status}`);
+    if (stream.statusCode != 200) return message.reply(`${this.container.emojis.error} ${stream.status}`);
 
     const obj = await stream.json();
 

@@ -9,17 +9,13 @@ class contextMenuCommandError extends Listener {
     });
   }
   run(error, { interaction }) {
-    console.error(
-      `Error occured while running ${interaction.commandName}`,
-      error,
-    );
     if (interaction.deferred || interaction.replied) {
       return interaction.editReply({
-        content: `:x: ${error}`,
+        content: `${this.container.emojis.error} ${error}`,
       });
     }
     return interaction.reply({
-      content: `:x: ${error}`,
+      content: `${this.container.emojis.error} ${error}`,
       ephemeral: true,
     });
   }

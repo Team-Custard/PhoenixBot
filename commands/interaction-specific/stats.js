@@ -81,7 +81,7 @@ class PingCommand extends Subcommand {
       .setDescription(
         `PhoenixBot is an open-source bot by SylveonDev that adds extended functionality to your account and your servers, and providing useful tools like translations and verification.\n\nUptime: Booted <t:${Math.floor((Date.now() - this.container.client.uptime) / 1000)}:R>\nCached guilds: ${this.container.client.guilds.cache.size}\nCached users: ${this.container.client.users.cache.size}`,
       )
-      .setThumbnail("https://phoenixbot.epicgamer.org/phoenixlogo.png")
+      .setThumbnail("https://phoenix.sylveondev.xyz/phoenixlogo.png")
       .setColor(Colors.Orange)
       .setTimestamp(new Date());
     await interaction.reply({ embeds: [embed] });
@@ -102,11 +102,11 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         interaction.followUp(
-          `:white_check_mark: Looks like the server database does not exist. I have recreated it successfully! Errors should be fixed now.`,
+          `${this.container.emojis.success} Looks like the server database does not exist. I have recreated it successfully! Errors should be fixed now.`,
         );
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 }

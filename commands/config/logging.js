@@ -182,17 +182,17 @@ class PingCommand extends Subcommand {
     let successMsg = "";
     if (channel) {
       db.logging.messages = channel.id;
-      successMsg = `:white_check_mark: Log successfully set to ${channel}.`;
+      successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
     } else {
       db.logging.messages = null;
-      successMsg = `:white_check_mark: Log successfully cleared.`;
+      successMsg = `${this.container.emojis.success} Log successfully cleared.`;
     }
     db.save()
       .then(() => {
         interaction.followUp(successMsg);
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -205,17 +205,17 @@ class PingCommand extends Subcommand {
     let successMsg = "";
     if (channel) {
       db.logging.members = channel.id;
-      successMsg = `:white_check_mark: Log successfully set to ${channel}.`;
+      successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
     } else {
       db.logging.members = null;
-      successMsg = `:white_check_mark: Log successfully cleared.`;
+      successMsg = `${this.container.emojis.success} Log successfully cleared.`;
     }
     db.save()
       .then(() => {
         interaction.followUp(successMsg);
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -228,17 +228,17 @@ class PingCommand extends Subcommand {
     let successMsg = "";
     if (channel) {
       db.logging.moderation = channel.id;
-      successMsg = `:white_check_mark: Log successfully set to ${channel}.`;
+      successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
     } else {
       db.logging.moderation = null;
-      successMsg = `:white_check_mark: Log successfully cleared.`;
+      successMsg = `${this.container.emojis.success} Log successfully cleared.`;
     }
     db.save()
       .then(() => {
         interaction.followUp(successMsg);
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -251,17 +251,17 @@ class PingCommand extends Subcommand {
     let successMsg = "";
     if (channel) {
       db.logging.infractions = channel.id;
-      successMsg = `:white_check_mark: Log successfully set to ${channel}.`;
+      successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
     } else {
       db.logging.infractions = null;
-      successMsg = `:white_check_mark: Log successfully cleared.`;
+      successMsg = `${this.container.emojis.success} Log successfully cleared.`;
     }
     db.save()
       .then(() => {
         interaction.followUp(successMsg);
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -274,17 +274,17 @@ class PingCommand extends Subcommand {
     let successMsg = "";
     if (channel) {
       db.logging.roles = channel.id;
-      successMsg = `:white_check_mark: Log successfully set to ${channel}.`;
+      successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
     } else {
       db.logging.roles = null;
-      successMsg = `:white_check_mark: Log successfully cleared.`;
+      successMsg = `${this.container.emojis.success} Log successfully cleared.`;
     }
     db.save()
       .then(() => {
         interaction.followUp(successMsg);
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -297,17 +297,17 @@ class PingCommand extends Subcommand {
     let successMsg = "";
     if (channel) {
       db.logging.voice = channel.id;
-      successMsg = `:white_check_mark: Log successfully set to ${channel}.`;
+      successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
     } else {
       db.logging.voice = null;
-      successMsg = `:white_check_mark: Log successfully cleared.`;
+      successMsg = `${this.container.emojis.success} Log successfully cleared.`;
     }
     db.save()
       .then(() => {
         interaction.followUp(successMsg);
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 }

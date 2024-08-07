@@ -36,25 +36,25 @@ class PingCommand extends Command {
     const reason = await args.rest("string").catch(() => `No reason specified`);
 
     if (message.member == member) {
-      return message.reply(`:x: Bruh. On yourself?`);
+      return message.reply(`${this.container.emojis.error} Bruh. On yourself?`);
     }
     if (
       member.roles.highest.position >=
       message.guild.members.me.roles.highest.position
     ) {
       return message.reply(
-        `:x: I'm not high enough in the role hiarchy to moderate this member.`,
+        `${this.container.emojis.error} I'm not high enough in the role hiarchy to moderate this member.`,
       );
     }
     if (
       member.roles.highest.position >= message.member.roles.highest.position
     ) {
       return message.reply(
-        `:x: You aren't high enough in the role hiarchy to moderate this member.`,
+        `${this.container.emojis.error} You aren't high enough in the role hiarchy to moderate this member.`,
       );
     }
     if (!member.moderatable) {
-      return message.reply(`:x: This user is not moderatable.`);
+      return message.reply(`${this.container.emojis.error} This user is not moderatable.`);
     }
 
     let caseid = 0;
@@ -82,7 +82,7 @@ class PingCommand extends Command {
       );
     } else {
       if (!db.moderation.muteRole) {
-        return message.reply(`:x: That user isn't muted.`);
+        return message.reply(`${this.container.emojis.error} That user isn't muted.`);
       }
       if (member.roles.cache.has(db.moderation.muteRole)) {
         await member.roles.remove(
@@ -90,7 +90,7 @@ class PingCommand extends Command {
           `(Unmute by ${message.author.tag}) ${reason}`,
         );
       } else {
-        return message.reply(`:x: That user isn't muted.`);
+        return message.reply(`${this.container.emojis.error} That user isn't muted.`);
       }
     }
 
@@ -147,7 +147,7 @@ class PingCommand extends Command {
 
     await db.save();
     message.reply(
-      `:white_check_mark: **${member.user.tag}** was unmuted with case id **\` ${caseid} \`**. ${silentDM ? "" : dmSuccess ? `(User was notified)` : `(User was not notified)`}`,
+      `${this.container.emojis.success} **${member.user.tag}** was unmuted with case id **\` ${caseid} \`**. ${silentDM ? "" : dmSuccess ? `(User was notified)` : `(User was not notified)`}`,
     );
   }
 }

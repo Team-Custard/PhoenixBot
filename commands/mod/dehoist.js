@@ -26,32 +26,32 @@ class PingCommand extends Command {
     const member = await args.pick("member");
 
     if (message.member == member) {
-      return message.reply(`:x: Bruh. On yourself?`);
+      return message.reply(`${this.container.emojis.error} Bruh. On yourself?`);
     }
     if (
       member.roles.highest.position >=
       message.guild.members.me.roles.highest.position
     ) {
       return message.reply(
-        `:x: I'm not high enough in the role hiarchy to moderate this member.`,
+        `${this.container.emojis.error} I'm not high enough in the role hiarchy to moderate this member.`,
       );
     }
     if (
       member.roles.highest.position >= message.member.roles.highest.position
     ) {
       return message.reply(
-        `:x: You aren't high enough in the role hiarchy to moderate this member.`,
+        `${this.container.emojis.error} You aren't high enough in the role hiarchy to moderate this member.`,
       );
     }
     if (!member.manageable) {
-      return message.reply(`:x: This user is not manageable.`);
+      return message.reply(`${this.container.emojis.error} This user is not manageable.`);
     }
 
     const oldnickname = member.displayName;
     const nickname = ` ឵${oldnickname}`;
 
     await member.setNickname(nickname, `(Dehoist by ${message.author.tag})`);
-    message.reply(`:white_check_mark: Dehoisted **${member.user.tag}**.`);
+    message.reply(`${this.container.emojis.success} Dehoisted **${member.user.tag}**.`);
   }
 }
 module.exports = {

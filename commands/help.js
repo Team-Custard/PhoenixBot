@@ -97,7 +97,7 @@ class PingCommand extends Command {
         .get("commands")
         .find((i) => i.name === option);
       if (cmd == null) {
-        return message.reply({ content: `:x: No such command was found.` });
+        return message.reply({ content: `${this.container.emojis.error} No such command was found.` });
       }
       const embed = new EmbedBuilder()
         .setTitle(

@@ -41,7 +41,7 @@ class PingCommand extends Command {
       );
       if (!accepted) return;
       const msg = await message.reply(
-        `<a:load:1253195468830146703> **Lockdown started...**`,
+        `${this.container.emojis.loading} **Lockdown started...**`,
       );
       let index = 0;
       let trueindex = 0;
@@ -57,7 +57,7 @@ class PingCommand extends Command {
       console.log(`Modifying ${total} channels`);
       if (total == 0)
         return message.reply(
-          `:x: No channels were set to lock. Use \`lockchannels\` to set them.`,
+          `${this.container.emojis.error} No channels were set to lock. Use \`lockchannels\` to set them.`,
         );
       channels.forEach(function (channel) {
         index++;
@@ -84,14 +84,14 @@ class PingCommand extends Command {
             });
           if (trueindex == total) {
             msg.edit(
-              `:white_check_mark: Successfully locked ${success}/${total} channels.`,
+              `${this.container.emojis.success} Successfully locked ${success}/${total} channels.`,
             );
           }
         }, 1000 * index);
       });
     } else if (endAll) {
       const msg = await message.reply(
-        `<a:load:1253195468830146703> **Unlock started...**`,
+        `${this.container.emojis.loading} **Unlock started...**`,
       );
       let index = 0;
       let trueindex = 0;
@@ -107,7 +107,7 @@ class PingCommand extends Command {
       console.log(`Modifying ${total} channels`);
       if (total == 0)
         return message.reply(
-          `:x: No channels were set to lock. Use \`lockchannels\` to set them.`,
+          `${this.container.emojis.error} No channels were set to lock. Use \`lockchannels\` to set them.`,
         );
       channels.forEach(function (channel) {
         index++;
@@ -134,7 +134,7 @@ class PingCommand extends Command {
             });
           if (trueindex == total) {
             msg.edit(
-              `:white_check_mark: Successfully unlocked ${success}/${total} channels.`,
+              `${this.container.emojis.success} Successfully unlocked ${success}/${total} channels.`,
             );
           }
         }, 1000 * index);
@@ -153,11 +153,11 @@ class PingCommand extends Command {
         )
         .then(function () {
           message.reply(
-            `:white_check_mark: Successfully unlocked ${message.channel}.`,
+            `${this.container.emojis.success} Successfully unlocked ${message.channel}.`,
           );
         })
         .catch((err) => {
-          message.reply(`:x: ${err}`);
+          message.reply(`${this.container.emojis.error} ${err}`);
         });
     } else {
       await message.channel.permissionOverwrites
@@ -173,11 +173,11 @@ class PingCommand extends Command {
         )
         .then(function () {
           message.reply(
-            `:white_check_mark: Successfully locked ${message.channel}.`,
+            `${this.container.emojis.success} Successfully locked ${message.channel}.`,
           );
         })
         .catch((err) => {
-          message.reply(`:x: ${err}`);
+          message.reply(`${this.container.emojis.error} ${err}`);
         });
     }
   }

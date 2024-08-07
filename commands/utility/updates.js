@@ -50,7 +50,7 @@ class PingCommand extends Command {
       `(${interaction.user.username}) Subscribing to bot announcements.`,
     );
     interaction.followUp(
-      `:white_check_mark: Phoenix announcements are now being sent to ${channel}.`,
+      `${this.container.emojis.success} Phoenix announcements are now being sent to ${channel}.`,
     );
   }
 
@@ -64,7 +64,7 @@ class PingCommand extends Command {
       `(${message.author.username}) Subscribing to bot announcements.`,
     );
     message.reply(
-      `:white_check_mark: Phoenix announcements are now being sent to ${channel}.`,
+      `${this.container.emojis.success} Phoenix announcements are now being sent to ${channel}.`,
     );
   }
 }

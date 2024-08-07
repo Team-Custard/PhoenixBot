@@ -38,11 +38,11 @@ class PingCommand extends Command {
       db.save()
         .then(() => {
           message.reply(
-            `:white_check_mark: Automod flags will now be reported to ${channel}.`,
+            `${this.container.emojis.success} Automod flags will now be reported to ${channel}.`,
           );
         })
         .catch((err) => {
-          message.reply(`:x: ${err}`);
+          message.reply(`${this.container.emojis.error} ${err}`);
         });
     } else {
       db.automod.reportchannel = "";
@@ -51,11 +51,11 @@ class PingCommand extends Command {
       db.save()
         .then(() => {
           message.reply(
-            `:white_check_mark: Automod reports channel was cleared.`,
+            `${this.container.emojis.success} Automod reports channel was cleared.`,
           );
         })
         .catch((err) => {
-          message.reply(`:x: ${err}`);
+          message.reply(`${this.container.emojis.error} ${err}`);
         });
     }
   }

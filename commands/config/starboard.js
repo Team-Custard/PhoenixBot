@@ -103,7 +103,7 @@ class PingCommand extends Subcommand {
       .cacheQuery();
 
     if (!db.starboard.channel) {
-      return interaction.followUp(`:x: Starboard is not setup.`);
+      return interaction.followUp(`${this.container.emojis.error} Starboard is not setup.`);
     }
 
     interaction.followUp(
@@ -130,7 +130,7 @@ class PingCommand extends Subcommand {
       /<a?:.+?:\d{18}>|\p{Extended_Pictographic}/gu,
     );
     if (emojis.length == 0)
-      return interaction.followUp(`:x: Invalid emoji specified.`);
+      return interaction.followUp(`${this.container.emojis.error} Invalid emoji specified.`);
 
     db.starboard.channel = channel.id;
     db.starboard.threshold = threshold;
@@ -140,11 +140,11 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         interaction.followUp(
-          `:white_check_mark: Successfully setup starboard.`,
+          `${this.container.emojis.success} Successfully setup starboard.`,
         );
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -162,11 +162,11 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         interaction.followUp(
-          `:white_check_mark: Successfully cleared starboard settings.`,
+          `${this.container.emojis.success} Successfully cleared starboard settings.`,
         );
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -176,7 +176,7 @@ class PingCommand extends Subcommand {
       .cacheQuery();
 
     if (!db.starboard.channel) {
-      return message.reply(`:x: Starboard is not setup.`);
+      return message.reply(`${this.container.emojis.error} Starboard is not setup.`);
     }
 
     message.reply(
@@ -199,9 +199,9 @@ class PingCommand extends Subcommand {
       `Matched emoji: ${baseemoji} - ${baseemoji.match(/<a?:.+?:\d+>|\p{Extended_Pictographic}/gu)}`,
     );
     const emojis = baseemoji.match(/<a?:.+?:\d+>|\p{Extended_Pictographic}/gu);
-    if (!emojis) return message.reply(`:x: Invalid emoji specified.`);
+    if (!emojis) return message.reply(`${this.container.emojis.error} Invalid emoji specified.`);
     if (emojis.length == 0)
-      return message.reply(`:x: Invalid emoji specified.`);
+      return message.reply(`${this.container.emojis.error} Invalid emoji specified.`);
 
     db.starboard.channel = channel.id;
     db.starboard.threshold = threshold;
@@ -210,10 +210,10 @@ class PingCommand extends Subcommand {
 
     db.save()
       .then(() => {
-        message.reply(`:white_check_mark: Successfully setup starboard.`);
+        message.reply(`${this.container.emojis.success} Successfully setup starboard.`);
       })
       .catch((err) => {
-        message.reply(`:x: ${err}`);
+        message.reply(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -230,11 +230,11 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         message.reply(
-          `:white_check_mark: Successfully cleared starboard settings.`,
+          `${this.container.emojis.success} Successfully cleared starboard settings.`,
         );
       })
       .catch((err) => {
-        message.reply(`:x: ${err}`);
+        message.reply(`${this.container.emojis.error} ${err}`);
       });
   }
 }

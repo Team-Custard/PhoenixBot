@@ -34,11 +34,11 @@ class PingCommand extends Command {
       .save()
       .then(() => {
         message.reply({
-          content: `:white_check_mark: You are now afk. To remove your afk status, simply send a message in the server.`,
+          content: `${this.container.emojis.success} You are now afk. To remove your afk status, simply send a message in the server.`,
         });
       })
       .catch((err) => {
-        message.reply(`:x: ${err}`);
+        message.reply(`${this.container.emojis.error} ${err}`);
       });
   }
 }

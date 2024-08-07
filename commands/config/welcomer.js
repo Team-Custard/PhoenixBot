@@ -88,7 +88,7 @@ class PingCommand extends Subcommand {
       .cacheQuery();
 
     if (!db.welcomer.channel) {
-      return interaction.followUp(`:x: Welcomer is not setup.`);
+      return interaction.followUp(`${this.container.emojis.error} Welcomer is not setup.`);
     }
 
     interaction.followUp(
@@ -112,10 +112,10 @@ class PingCommand extends Subcommand {
 
     db.save()
       .then(() => {
-        interaction.followUp(`:white_check_mark: Successfully setup welcomer.`);
+        interaction.followUp(`${this.container.emojis.success} Successfully setup welcomer.`);
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -131,11 +131,11 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         interaction.followUp(
-          `:white_check_mark: Successfully cleared welcomer settings.`,
+          `${this.container.emojis.success} Successfully cleared welcomer settings.`,
         );
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -145,7 +145,7 @@ class PingCommand extends Subcommand {
       .cacheQuery();
 
     if (!db.welcomer.channel) {
-      return message.reply(`:x: welcomer is not setup.`);
+      return message.reply(`${this.container.emojis.error} welcomer is not setup.`);
     }
 
     message.reply(
@@ -168,10 +168,10 @@ class PingCommand extends Subcommand {
 
     db.save()
       .then(() => {
-        message.reply(`:white_check_mark: Successfully setup welcomer.`);
+        message.reply(`${this.container.emojis.success} Successfully setup welcomer.`);
       })
       .catch((err) => {
-        message.reply(`:x: ${err}`);
+        message.reply(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -186,11 +186,11 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         message.reply(
-          `:white_check_mark: Successfully cleared welcomer settings.`,
+          `${this.container.emojis.success} Successfully cleared welcomer settings.`,
         );
       })
       .catch((err) => {
-        message.reply(`:x: ${err}`);
+        message.reply(`${this.container.emojis.error} ${err}`);
       });
   }
 }

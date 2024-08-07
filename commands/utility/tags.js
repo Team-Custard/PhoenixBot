@@ -10,16 +10,16 @@ class PingCommand extends Subcommand {
       ...options,
       name: "tags",
       aliases: ["tag"],
-      description: "Displays a tag.",
+      description: "Displays legacy tags settings.",
       detailedDescription: {
         usage: "tag [subcommand] <name>",
         examples: [
           "tag list",
           "tag breezip",
-          "youtube add sylveon I like Sylveons",
+          "tag add sylveon I like Sylveons",
         ],
         args: [
-          "subcommand: Can be list/add/remove/lock/display. Defaults to video.",
+          "subcommand: Can be list/add/remove/lock/display. Defaults to display.",
           "name: The name of the tag.",
         ],
       },
@@ -95,12 +95,13 @@ class PingCommand extends Subcommand {
         .addSubcommand((command) =>
           command
             .setName("remove")
-            .setDescription("Removes a tag to the server")
+            .setDescription("Removes a tag from the server")
             .addStringOption((option) =>
               option
                 .setName("name")
                 .setDescription("The name of the tag")
-                .setRequired(true),
+                .setRequired(true)
+                .setAutocomplete(true),
             ),
         )
         .addSubcommand((command) =>
@@ -111,7 +112,8 @@ class PingCommand extends Subcommand {
               option
                 .setName("name")
                 .setDescription("The name of the tag")
-                .setRequired(true),
+                .setRequired(true)
+                .setAutocomplete(true),
             ),
         )
         .addSubcommand((command) =>
@@ -142,11 +144,11 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         interaction.followUp(
-          `:white_check_mark: ${option ? "locked tags. You now need to be a server manager to manage tags." : "unlocked tags."}`,
+          `${this.container.emojis.success} ${option ? "locked tags. You now need to be a server manager to manage tags." : "unlocked tags."}`,
         );
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -164,16 +166,16 @@ class PingCommand extends Subcommand {
     const tag = db.tags.find((t) => t.name == tagName);
     const btag = indexes.find((t) => t.name == tagName);
 
-    if (tag || btag) return interaction.followUp(":x: Tag already exists.");
+    if (tag || btag) return interaction.followUp(`${this.container.emojis.error} Tag already exists.`);
     if (tagName.length > 12) {
-      return interaction.followUp(":x: Tag name is too long.");
+      return interaction.followUp(`${this.container.emojis.error} Tag name is too long.`);
     }
     if (tagDesc.length > 256) {
-      return interaction.followUp(":x: Tag description is too long.");
+      return interaction.followUp(`${this.container.emojis.error} Tag description is too long.`);
     }
     if (db.tags.length > 25) {
       return interaction.followUp(
-        ":x: You've maxed out on the maximum of tags you can hold in the server. Limit is 25.",
+        `${this.container.emojis.error} You've maxed out on the maximum of tags you can hold in the server. Limit is 25.`,
       );
     }
 
@@ -186,11 +188,11 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         interaction.followUp(
-          `:white_check_mark: Successfully added tag \`${tagName}\`.`,
+          `${this.container.emojis.success} Successfully added tag \`${tagName}\`.`,
         );
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -203,7 +205,7 @@ class PingCommand extends Subcommand {
 
     const tag = db.tags.find((t) => t.name == tagName);
 
-    if (!tag) return interaction.followUp(":x: Tag does not exist.");
+    if (!tag) return interaction.followUp(`${this.container.emojis.error} Tag does not exist.`);
 
     for (let i = 0; i < db.tags.length; i++) {
       if (db.tags[i].name == tagName) db.tags.splice(i, 1);
@@ -212,11 +214,11 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         interaction.followUp(
-          `:white_check_mark: Successfully removed tag \`${tagName}\`.`,
+          `${this.container.emojis.success} Successfully removed tag \`${tagName}\`.`,
         );
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -251,16 +253,16 @@ class PingCommand extends Subcommand {
     const tag = db.tags.find((t) => t.name == tagName);
     if (tag) {
       interaction.followUp(
-        `:information_source: **${tag.name}**:\n${await require("../../tools/textParser").parse(tag.description, interaction.member)}\n(Tag by ${tag.creator})`,
+        `${await require("../../tools/textParser").parse(tag.description, interaction.member)}`,
       );
     } else {
       const btag = indexes.find((t) => t.name == tagName);
       if (btag) {
         interaction.followUp(
-          `:information_source: **${btag.name}**:\n${await require("../../tools/textParser").parse(btag.description, interaction.member)}\n(Tag by ${btag.creator})`,
+          `${await require("../../tools/textParser").parse(btag.description, interaction.member)}`,
         );
       } else {
-        interaction.followUp(":x: Tag not found.");
+        interaction.followUp(`${this.container.emojis.error} Tag not found.`);
       }
     }
   }
@@ -287,7 +289,7 @@ class PingCommand extends Subcommand {
           `**${btag.name}** : Created by ${btag.creator} : Built-in tag\nContent: \`\`\`${btag.description}\`\`\``,
         );
       } else {
-        interaction.followUp(":x: Tag not found.");
+        interaction.followUp(`${this.container.emojis.error} Tag not found.`);
       }
     }
   }
@@ -304,11 +306,11 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         message.reply(
-          `:white_check_mark: ${option ? "locked tags. You now need to be a server manager to manage tags." : "unlocked tags."}`,
+          `${this.container.emojis.success} ${option ? "locked tags. You now need to be a server manager to manage tags." : "unlocked tags."}`,
         );
       })
       .catch((err) => {
-        message.reply(`:x: ${err}`);
+        message.reply(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -325,14 +327,14 @@ class PingCommand extends Subcommand {
     const tag = db.tags.find((t) => t.name == tagName);
     const btag = indexes.find((t) => t.name == tagName);
 
-    if (tag || btag) return message.reply(":x: Tag already exists.");
-    if (tagName.length > 12) return message.reply(":x: Tag name is too long.");
+    if (tag || btag) return message.reply(`${this.container.emojis.error} Tag already exists.`);
+    if (tagName.length > 12) return message.reply(`${this.container.emojis.error} Tag name is too long.`);
     if (tagDesc.length > 256) {
-      return message.reply(":x: Tag description is too long.");
+      return message.reply(`${this.container.emojis.error} Tag description is too long.`);
     }
     if (db.tags.length > 25) {
       return message.reply(
-        ":x: You've maxed out on the maximum of tags you can hold in the server. Limit is 25.",
+        `${this.container.emojis.error} You've maxed out on the maximum of tags you can hold in the server. Limit is 25.`,
       );
     }
 
@@ -345,11 +347,11 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         message.reply(
-          `:white_check_mark: Successfully added tag \`${tagName}\`.`,
+          `${this.container.emojis.success} Successfully added tag \`${tagName}\`.`,
         );
       })
       .catch((err) => {
-        message.reply(`:x: ${err}`);
+        message.reply(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -361,7 +363,7 @@ class PingCommand extends Subcommand {
 
     const tag = db.tags.find((t) => t.name == tagName);
 
-    if (!tag) return message.reply(":x: Tag does not exist.");
+    if (!tag) return message.reply(`${this.container.emojis.error} Tag does not exist.`);
 
     for (let i = 0; i < db.tags.length; i++) {
       if (db.tags[i].name == tagName) db.tags.splice(i, 1);
@@ -370,11 +372,11 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         message.reply(
-          `:white_check_mark: Successfully removed tag \`${tagName}\`.`,
+          `${this.container.emojis.success} Successfully removed tag \`${tagName}\`.`,
         );
       })
       .catch((err) => {
-        message.reply(`:x: ${err}`);
+        message.reply(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -418,7 +420,7 @@ class PingCommand extends Subcommand {
           `${await require("../../tools/textParser").parse(btag.description, message.member)}`,
         );
       } else {
-        message.reply(":x: Tag not found.");
+        message.reply(`${this.container.emojis.error} Tag not found.`);
       }
     }
   }
@@ -444,7 +446,7 @@ class PingCommand extends Subcommand {
           `**${btag.name}** : Created by ${btag.creator} : Built-in tag\nContent: \`\`\`${btag.description}\`\`\``,
         );
       } else {
-        messsage.reply(":x: Tag not found.");
+        messsage.reply(`${this.container.emojis.error} Tag not found.`);
       }
     }
   }

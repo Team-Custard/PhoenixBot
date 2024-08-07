@@ -86,6 +86,12 @@ class ReadyListener extends Listener {
               case "porn":
               case "hentai":
               case "sexy": {
+                if ((predictions[0].probability * 100) < db.automod.nsfwweight) {
+                  console.log(
+                    `Dirty! it's ${predictions[0].className} (${(predictions[0].probability * 100).toString().substring(0, 3)}% certain) Not executing actions as it's weighed too low.`,
+                  );
+                  break;
+                }
                 wasflagged = true;
                 flagReason = `${predictions[0].className}, ${(predictions[0].probability * 100).toString().substring(0, 3)}% certain`;
                 flaggedImages.push(images[i]);
@@ -225,7 +231,7 @@ class ReadyListener extends Listener {
           await db.save().catch(() => undefined);
           if (sendMessage == true)
             return message.channel(
-              `:white_check_mark: ${message.author} was **banned** with case id **\` ${caseid} \`**.\n**Reason:** (Automod) Nsfw image detected (${flagReason}).`,
+              `${this.container.emojis.success} ${message.author} was **banned** with case id **\` ${caseid} \`**.\n**Reason:** (Automod) Nsfw image detected (${flagReason}).`,
             );
         } else if (executions.includes("kick")) {
           if (!message.member.kickable) return;
@@ -293,7 +299,7 @@ class ReadyListener extends Listener {
           await db.save().catch(() => undefined);
           if (sendMessage == true)
             return message.channel.send(
-              `:white_check_mark: ${message.author} was **kicked** with case id **\` ${caseid} \`**.\n**Reason:** (Automod) Nsfw image detected (${flagReason}).`,
+              `${this.container.emojis.success} ${message.author} was **kicked** with case id **\` ${caseid} \`**.\n**Reason:** (Automod) Nsfw image detected (${flagReason}).`,
             );
         } else if (executions.includes("mute")) {
           if (!message.member.moderatable) return;
@@ -368,7 +374,7 @@ class ReadyListener extends Listener {
           await db.save().catch(() => undefined);
           if (sendMessage == true)
             return message.channel.send(
-              `:white_check_mark: ${message.author} was **muted** for **${require("ms")(duration, { long: true })}** with case id **\` ${caseid} \`**.\n**Reason:** (Automod) Nsfw image detected (${flagReason}).`,
+              `${this.container.emojis.success} ${message.author} was **muted** for **${require("ms")(duration, { long: true })}** with case id **\` ${caseid} \`**.\n**Reason:** (Automod) Nsfw image detected (${flagReason}).`,
             );
         } else if (executions.includes("warn")) {
           let caseid = 0;
@@ -434,11 +440,11 @@ class ReadyListener extends Listener {
           await db.save().catch(() => undefined);
           if (sendMessage == true)
             return message.channel.send(
-              `:white_check_mark: ${message.author} was **warned** with case id **\` ${caseid} \`**.\n**Reason:** (Automod) Nsfw image detected (${flagReason}).`,
+              `${this.container.emojis.success} ${message.author} was **warned** with case id **\` ${caseid} \`**.\n**Reason:** (Automod) Nsfw image detected (${flagReason}).`,
             );
         } else if (sendMessage == true)
           return message.channel.send(
-            `:warning: ${message.author} Don't send nsfw images.`,
+            `${this.container.emojis.warning} ${message.author} Don't send nsfw images.`,
           );
       }
     }

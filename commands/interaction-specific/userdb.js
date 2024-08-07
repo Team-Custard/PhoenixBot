@@ -191,7 +191,7 @@ class PingCommand extends Subcommand {
                 body: {
                   name: "Time for user",
                   type: 2,
-                  integration_types: [1],
+                  integration_types: [0, 1],
                   contexts: [0, 1, 2],
                 },
               })
@@ -251,12 +251,12 @@ class PingCommand extends Subcommand {
     ).cacheQuery();
     if (!usersettings) {
       return interaction.followUp(
-        `:x: **${member.user.username}** does not have a timezone set.`,
+        `${this.container.emojis.error} **${member.user.username}** does not have a timezone set.`,
       );
     }
     if (!usersettings.timezone) {
       return interaction.followUp(
-        `:x: **${member.user.username}** does not have a timezone set.`,
+        `${this.container.emojis.error} **${member.user.username}** does not have a timezone set.`,
       );
     }
 
@@ -282,12 +282,12 @@ class PingCommand extends Subcommand {
 
     if (!usersettings) {
       return interaction.followUp(
-        `:x: **${member.user.username}** does not have pronouns set through UserDB.`,
+        `${this.container.emojis.error} **${member.user.username}** does not have pronouns set through UserDB.`,
       );
     }
     if (!usersettings.pronouns) {
       return interaction.followUp(
-        `:x: **${member.user.username}** does not have pronouns set through UserDB.`,
+        `${this.container.emojis.error} **${member.user.username}** does not have pronouns set through UserDB.`,
       );
     }
 
@@ -299,7 +299,7 @@ class PingCommand extends Subcommand {
   async chatInputDisplay(interaction) {
     const member = await interaction.options.getMember("user");
     if (member.user.bot) {
-      return interaction.reply(":x: Bots can't be added to UserDB.");
+      return interaction.reply(`${this.container.emojis.error} Bots can't be added to UserDB.`);
     }
     await interaction.deferReply();
     const usersettings = await UserDB.findById(
@@ -311,7 +311,7 @@ class PingCommand extends Subcommand {
       embed = new EmbedBuilder()
         .setTitle(member.user.username)
         .setDescription(
-          `**ID:** ${member.user.id}\n**UserDB registered:** :white_check_mark: Yes\n\n__**UserDB info:**__\n**Timezone:** ${usersettings.timezone ? usersettings.timezone : "Unset"}\n**Pronouns:** ${usersettings.pronouns ? usersettings.pronouns : "Unset"}\n**Description:** ${usersettings.description ? usersettings.description : "Unset"}\n\n__**Socials:**__\n**Youtube:** ${usersettings.socials.youtube ? `[${usersettings.socials.youtube}](https://youtube.com/${usersettings.socials.youtube})` : "Unset"}\n**Twitter:** ${usersettings.socials.twitter ? `[${usersettings.socials.twitter}](https://twitter.com/${usersettings.socials.twitter})` : "Unset"}`,
+          `**ID:** ${member.user.id}\n**UserDB registered:** ${this.container.emojis.success} Yes\n\n__**UserDB info:**__\n**Timezone:** ${usersettings.timezone ? usersettings.timezone : "Unset"}\n**Pronouns:** ${usersettings.pronouns ? usersettings.pronouns : "Unset"}\n**Description:** ${usersettings.description ? usersettings.description : "Unset"}\n\n__**Socials:**__\n**Youtube:** ${usersettings.socials.youtube ? `[${usersettings.socials.youtube}](https://youtube.com/${usersettings.socials.youtube})` : "Unset"}\n**Twitter:** ${usersettings.socials.twitter ? `[${usersettings.socials.twitter}](https://twitter.com/${usersettings.socials.twitter})` : "Unset"}`,
         )
         .setColor(Colors.Orange)
         .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
@@ -320,7 +320,7 @@ class PingCommand extends Subcommand {
       embed = new EmbedBuilder()
         .setTitle(member.user.username)
         .setDescription(
-          `**ID:** ${member.user.id}\n**UserDB registered:** :x: No, use </userdb set:${interaction.commandId}>.`,
+          `**ID:** ${member.user.id}\n**UserDB registered:** ${this.container.emojis.error} No, use </userdb set:${interaction.commandId}>.`,
         )
         .setColor(Colors.Orange)
         .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
@@ -349,12 +349,12 @@ class PingCommand extends Subcommand {
       .save()
       .then(() => {
         interaction.followUp({
-          content: `:white_check_mark: You are now afk. To remove your afk status, simply send a message in the server.`,
+          content: `${this.container.emojis.success} You are now afk. To remove your afk status, simply send a message in the server.`,
           ephemeral: false,
         });
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -363,12 +363,12 @@ class PingCommand extends Subcommand {
     UserDB.findByIdAndDelete(interaction.member.id)
       .then(() => {
         interaction.followUp({
-          content: `:white_check_mark: Deleted your UserDB configuration successfully.`,
+          content: `${this.container.emojis.success} Deleted your UserDB configuration successfully.`,
           ephemeral: false,
         });
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 }

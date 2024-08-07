@@ -19,6 +19,13 @@ const settingsSchema = new Schema({
       creator: String,
     },
   ],
+  cc: [
+    {
+      name: String,
+      code: String,
+      creator: String,
+    },
+  ],
   lockTags: Boolean,
 
   verification: {
@@ -56,6 +63,7 @@ const settingsSchema = new Schema({
     reportchannel: String,
     pingreport: String,
     nsfwimage: [],
+    nsfwweight: Number,
   },
   starboard: {
     emoji: String,

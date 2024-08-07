@@ -50,7 +50,7 @@ class PingCommand extends Command {
       })
       .then((data) => {
         if (!data.image_results)
-          return message.reply(`:x: No similar profile pictures found.`);
+          return message.reply(`${this.container.emojis.error} No similar profile pictures found.`);
         const othermatches = data.image_results.map(
           (d) => `[[${d.position}]](<${d.link}>)`,
         );
@@ -58,7 +58,7 @@ class PingCommand extends Command {
           `Rav has found ${othermatches.length} possible matches for ${user.username}. They will be listed below. Alternative you can use the --links flag to send links to search it instead.\n**First match:** ${data.image_results[0].link}\n**All matches:** ${othermatches}`,
         );
       })
-      .catch((error) => message.reply(`:x: ${error}`));
+      .catch((error) => message.reply(`${this.container.emojis.error} ${error}`));
   }
 }
 module.exports = {

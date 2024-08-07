@@ -31,7 +31,7 @@ class PingCommand extends Command {
 
     if (infractions.length == 0) {
       return message.reply(
-        `:x: No infractions on **${user.tag}**. They're squeaky clean.`,
+        `${this.container.emojis.error} No infractions on **${user.tag}**. They're squeaky clean.`,
       );
     }
 

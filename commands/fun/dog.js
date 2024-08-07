@@ -28,7 +28,7 @@ class PingCommand extends Command {
     const getStream = await bent("https://dog.ceo");
     const stream = await getStream("/api/breeds/image/random");
 
-    if (stream.statusCode != 200) return message.reply(`:x: ${stream.status}`);
+    if (stream.statusCode != 200) return message.reply(`${this.container.emojis.error} ${stream.status}`);
 
     const obj = await stream.json();
 

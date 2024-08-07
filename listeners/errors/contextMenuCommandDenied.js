@@ -11,11 +11,11 @@ class contextMenuCommandDenied extends Listener {
   run(error, { interaction }) {
     if (interaction.deferred || interaction.replied) {
       return interaction.editReply({
-        content: `:x: ${error}`,
+        content: `${this.container.emojis.error} ${error}`,
       });
     }
     return interaction.reply({
-      content: `:x: ${error}`,
+      content: `${this.container.emojis.error} ${error}`,
       ephemeral: true,
     });
   }
