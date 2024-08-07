@@ -28,12 +28,12 @@ class PingCommand extends Command {
     ).cacheQuery();
     if (!usersettings) {
       return message.reply(
-        `:x: **${user.username}** does not have a timezone set.`,
+        `${this.container.emojis.error} **${user.username}** does not have a timezone set.`,
       );
     }
     if (!usersettings.timezone) {
       return message.reply(
-        `:x: **${user.username}** does not have a timezone set.`,
+        `${this.container.emojis.error} **${user.username}** does not have a timezone set.`,
       );
     }
 

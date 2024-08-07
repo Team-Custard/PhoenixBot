@@ -33,14 +33,14 @@ class PingCommand extends Command {
     )
       .then(async (response) => {
         if (response.status != 200) {
-          return message.reply(`:x: Not found or error occured.`);
+          return message.reply(`${this.container.emojis.error} Not found or error occured.`);
         }
         const result = await response.text();
-        if (!result) return message.reply(`:x: Not found or error occured.`);
+        if (!result) return message.reply(`${this.container.emojis.error} Not found or error occured.`);
         message.reply(`:information_source: ${result}`);
       })
       .catch((err) => {
-        message.reply(`:x: ${err}`);
+        message.reply(`${this.container.emojis.error} ${err}`);
       });
   }
 }

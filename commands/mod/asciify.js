@@ -26,25 +26,25 @@ class PingCommand extends Command {
     const member = await args.pick("member");
 
     if (message.member == member) {
-      return message.reply(`:x: Bruh. On yourself?`);
+      return message.reply(`${this.container.emojis.error} Bruh. On yourself?`);
     }
     if (
       member.roles.highest.position >=
       message.guild.members.me.roles.highest.position
     ) {
       return message.reply(
-        `:x: I'm not high enough in the role hiarchy to moderate this member.`,
+        `${this.container.emojis.error} I'm not high enough in the role hiarchy to moderate this member.`,
       );
     }
     if (
       member.roles.highest.position >= message.member.roles.highest.position
     ) {
       return message.reply(
-        `:x: You aren't high enough in the role hiarchy to moderate this member.`,
+        `${this.container.emojis.error} You aren't high enough in the role hiarchy to moderate this member.`,
       );
     }
     if (!member.manageable) {
-      return message.reply(`:x: This user is not manageable.`);
+      return message.reply(`${this.container.emojis.error} This user is not manageable.`);
     }
 
     const oldnickname = member.displayName;
@@ -52,7 +52,7 @@ class PingCommand extends Command {
 
     await member.setNickname(nickname, `(Asciify by ${message.author.tag})`);
     message.reply(
-      `:white_check_mark: Asciified **${member.user.tag}**'s nickname from \`${oldnickname}\` to \`${nickname}\` successfully.`,
+      `${this.container.emojis.success} Asciified **${member.user.tag}**'s nickname from \`${oldnickname}\` to \`${nickname}\` successfully.`,
     );
   }
 }

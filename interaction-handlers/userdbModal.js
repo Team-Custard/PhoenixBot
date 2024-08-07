@@ -53,9 +53,9 @@ class MenuHandler extends InteractionHandler {
       const moment = require("moment-timezone");
       const timezones = moment.tz.names();
       if (!timezones.includes(tzText)) {
-        finishMessage += `:warning: timezone: Incorrect timezone specified. Not setting timezone. If you'd like, you can have Phoenix automatically detect your timezone at https://phoenixbot.epicgamer.org/userdb/tzhelp\n`;
+        finishMessage += `${this.container.emojis.warning} timezone: Incorrect timezone specified. Not setting timezone. If you'd like, you can have Phoenix automatically detect your timezone at https://phoenix.sylveondev.xyz/userdb/tzhelp\n`;
       } else if (tzText.length < 4) {
-        finishMessage += `:warning: timezone: Sorry, we only support tz format timezones. Not setting timezone. If you'd like, you can have Phoenix automatically detect your timezone at https://phoenixbot.epicgamer.org/userdb/tzhelp\n`;
+        finishMessage += `${this.container.emojis.warning} timezone: Sorry, we only support tz format timezones. Not setting timezone. If you'd like, you can have Phoenix automatically detect your timezone at https://phoenix.sylveondev.xyz/userdb/tzhelp\n`;
       } else {
         usersettings.timezone = tzText;
       }
@@ -68,27 +68,27 @@ class MenuHandler extends InteractionHandler {
     }
     if (ytText) {
       if (!twtText.startsWith("@")) {
-        finishMessage += `:warning: youtube: Your handle is incorrect. Not setting social.\n`;
+        finishMessage += `${this.container.emojis.warning} youtube: Your handle is incorrect. Not setting social.\n`;
       } else {
         usersettings.socials.youtube = ytText;
       }
     }
     if (twtText) {
       if (!twtText.startsWith("@")) {
-        finishMessage += `:warning: twitter: Your handle is incorrect. Not setting social.\n`;
+        finishMessage += `${this.container.emojis.warning} twitter: Your handle is incorrect. Not setting social.\n`;
       } else {
         usersettings.socials.twitter = twtText;
       }
     }
 
-    finishMessage += `:white_check_mark: Successfully setup UserDB.`;
+    finishMessage += `${this.container.emojis.success} Successfully setup UserDB.`;
     usersettings
       .save()
       .then(() => {
         interaction.followUp({ content: finishMessage, ephemeral: true });
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 }

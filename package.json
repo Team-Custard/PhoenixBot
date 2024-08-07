@@ -17,19 +17,23 @@
   ],
   "author": "SylveonDev",
   "license": "MIT",
-  "homepage": "https://phoenixbot.epicgamer.org",
+  "homepage": "https://phoenix.sylveondev.xyz",
   "repository": {
     "type": "github",
     "url": "https://github.com/Team-Custard/PhoenixBot"
   },
   "dependencies": {
     "@discordjs/rest": "^2.2.0",
+    "@google-cloud/translate": "^8.3.0",
     "@napi-rs/canvas": "^0.1.52",
     "@sapphire/framework": "^5.2.1",
+    "@sapphire/plugin-scheduled-tasks": "^10.0.1",
     "@sapphire/plugin-subcommands": "^6.0.3",
     "@tensorflow/tfjs-node": "^4.20.0",
     "bent": "^7.3.12",
     "body-parser": "^1.20.2",
+    "bullmq": "^5.10.4",
+    "deepl-node": "^1.13.0",
     "discord-api-types": "^0.37.79",
     "discord-interactions": "^3.4.0",
     "discord-perms-array": "^1.0.4",
@@ -56,6 +60,7 @@
     "youtube-search": "^1.1.6"
   },
   "devDependencies": {
+    "@sapphire/ts-config": "^5.0.1",
     "eslint": "^8.57.0",
     "nodemon": "^3.1.0",
     "prettier": "3.3.3"

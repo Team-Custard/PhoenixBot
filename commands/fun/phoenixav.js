@@ -1,6 +1,7 @@
 const { Command } = require("@sapphire/framework");
 const { BucketScope } = require("@sapphire/framework");
 const { PermissionFlagsBits, AttachmentBuilder } = require("discord.js");
+const fs = require('fs');
 
 class PingCommand extends Command {
   constructor(context, options) {
@@ -39,16 +40,17 @@ class PingCommand extends Command {
         ctx.drawImage(img, 0, 0, canvas.height, canvas.width);
       })
       .catch((err) => {
-        return message.reply(`:x: ${err}`);
+        return message.reply(`${this.container.emojis.error} ${err}`);
       });
 
     console.log("Creating image 3");
-    await loadImage("https://phoenixbot.epicgamer.org/phoenixtrans.png")
+    const img = fs.readFileSync(__dirname+"/./../../static/phoenixtrans.png");
+    await loadImage(img.buffer)
       .then(async (img) => {
         ctx.drawImage(img, 0, 0, canvas.height, canvas.width);
       })
       .catch((err) => {
-        return message.reply(`:x: ${err}`);
+        return message.reply(`${this.container.emojis.error} ${err}`);
       });
 
     console.log("Creating image 4");

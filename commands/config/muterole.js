@@ -37,7 +37,7 @@ class PingCommand extends Command {
         const channels = await message.guild.channels
           .fetch()
           .catch(() => undefined);
-        if (!channels) return message.reply(`:x: Unable to fetch channels.`);
+        if (!channels) return message.reply(`${this.container.emojis.error} Unable to fetch channels.`);
         total = channels.size;
         const accepted = await require(`../../tools/warningEmbed`).warnMessage(
           message,
@@ -45,7 +45,7 @@ class PingCommand extends Command {
         );
         if (!accepted) return;
         const msg = await message.reply(
-          `<a:load:1253195468830146703> **Role creation started...**`,
+          `${this.container.emojis.loading} **Role creation started...**`,
         );
         const muteRole = await message.guild.roles
           .create({
@@ -55,7 +55,7 @@ class PingCommand extends Command {
             reason: `Creating mute role`,
           })
           .catch((err) => {
-            msg.edit(`:x: ${err}`);
+            msg.edit(`${this.container.emojis.error} ${err}`);
             return undefined;
           });
         if (!muteRole) return;
@@ -90,14 +90,14 @@ class PingCommand extends Command {
               db.moderation.muteRole = muteRole.id;
               await db.save();
               msg.edit(
-                `:white_check_mark: Successfully created the muted role. Applied perms to ${success}/${total} channels.`,
+                `${this.container.emojis.success} Successfully created the muted role. Applied perms to ${success}/${total} channels.`,
               );
             }
           }, 1000 * index);
         });
       } else {
         if (!db.moderation.muteRole) {
-          return message.reply(`:x: No mute role was set.`);
+          return message.reply(`${this.container.emojis.error} No mute role was set.`);
         }
         return message.reply({
           content: `The current mute role is **${message.guild.roles.cache.get(db.moderation.muteRole) ? message.guild.roles.cache.get(db.moderation.muteRole) : db.moderation.muteRole}**. This will be assigned when Discord timeouts aren't able to be used.`,
@@ -108,7 +108,7 @@ class PingCommand extends Command {
       db.moderation.muteRole = role.id;
       await db.save();
       return message.reply(
-        `:white_check_mark: Successfully set the mute role to **${role.name}**`,
+        `${this.container.emojis.success} Successfully set the mute role to **${role.name}**`,
       );
     }
   }

@@ -28,7 +28,7 @@ class PingCommand extends Command {
     const getStream = await bent("https://cataas.com/");
     const stream = await getStream("/cat/kitten");
 
-    if (stream.statusCode != 200) return message.reply(`:x: ${stream.status}`);
+    if (stream.statusCode != 200) return message.reply(`${this.container.emojis.error} ${stream.status}`);
 
     await message.reply({ files: [stream] });
   }

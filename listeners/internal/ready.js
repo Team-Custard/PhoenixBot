@@ -1,5 +1,6 @@
 const { Listener } = require("@sapphire/framework");
 const { ActivityType } = require("discord.js");
+const fs = require('fs');
 
 class ReadyListener extends Listener {
   constructor(context, options) {
@@ -24,7 +25,7 @@ class ReadyListener extends Listener {
         `Bot client successfully started as ${username} (${id})`,
       );
       client.user.setActivity({
-        name: `${require("../../config.json").process.botmode == "dev" ? "==" : require("../../config.json").process.botmode == "test" ? "+++" : "="}help || phoenix.sylveondev.xyz 🦊`,
+        name: `${require("../../config.json").process.botmode == "dev" ? "==" : require("../../config.json").process.botmode == "test" ? "===" : "="}help || phoenix.sylveondev.xyz 🦊`,
         type: ActivityType.Custom,
       });
     }

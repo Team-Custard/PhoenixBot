@@ -4,6 +4,9 @@ const { GatewayIntentBits, Partials } = require("discord.js");
 const database = require("../tools/SettingsSchema");
 const settings = require("../config.json");
 
+require('@sapphire/plugin-scheduled-tasks/register');
+const redisParse = require('./parseRedisUrl').parse();
+
 class PhoenixClient extends SapphireClient {
   constructor() {
     super({
@@ -22,6 +25,16 @@ class PhoenixClient extends SapphireClient {
       loadMessageCommandListeners: true,
       typing: true,
       partials: [Partials.Message, Partials.Reaction],
+      tasks: {
+        bull: {
+          connection: {
+            host: redisParse.host,
+            password: redisParse.password,
+            port: redisParse.port,
+            db: 2
+          }
+        }
+      }
     });
   }
 

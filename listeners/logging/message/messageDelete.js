@@ -66,7 +66,7 @@ class GuildMemberAdd extends Listener {
       if (hasStaging) return;
     }
 
-    if (message.author.bot) return;
+    if (message.author?.bot) return;
 
     const db = await ServerSettings.findById(message.guild.id).cacheQuery();
     if (db.logging.messages) {

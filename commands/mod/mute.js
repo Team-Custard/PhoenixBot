@@ -47,25 +47,25 @@ class PingCommand extends Command {
     }
 
     if (message.member == member) {
-      return message.reply(`:x: Bruh. On yourself?`);
+      return message.reply(`${this.container.emojis.error} Bruh. On yourself?`);
     }
     if (
       member.roles.highest.position >=
       message.guild.members.me.roles.highest.position
     ) {
       return message.reply(
-        `:x: I'm not high enough in the role hiarchy to moderate this member.`,
+        `${this.container.emojis.error} I'm not high enough in the role hiarchy to moderate this member.`,
       );
     }
     if (
       member.roles.highest.position >= message.member.roles.highest.position
     ) {
       return message.reply(
-        `:x: You aren't high enough in the role hiarchy to moderate this member.`,
+        `${this.container.emojis.error} You aren't high enough in the role hiarchy to moderate this member.`,
       );
     }
     if (!member.moderatable) {
-      return message.reply(`:x: This user is not moderatable.`);
+      return message.reply(`${this.container.emojis.error} This user is not moderatable.`);
     }
 
     let caseid = 0;
@@ -95,7 +95,7 @@ class PingCommand extends Command {
       } else {
         if (!db.moderation.muteRole) {
           return message.reply(
-            `:x: To mute members pernamently, a mute role needs to be assigned. Use muterole to set one.`,
+            `${this.container.emojis.error} To mute members pernamently, a mute role needs to be assigned. Use muterole to set one.`,
           );
         }
         await member.roles.add(
@@ -106,7 +106,7 @@ class PingCommand extends Command {
     } else {
       if (!db.moderation.muteRole) {
         return message.reply(
-          `:x: To mute members pernamently, a mute role needs to be assigned. Use muterole to set one.`,
+          `${this.container.emojis.error} To mute members pernamently, a mute role needs to be assigned. Use muterole to set one.`,
         );
       }
       await member.roles.add(
@@ -168,7 +168,7 @@ class PingCommand extends Command {
 
     await db.save();
     message.reply(
-      `:white_check_mark: **${member.user.tag}** was muted${!isNaN(duration) ? (duration <= 40320 * 60 * 1000 ? ` for **${require("ms")(duration, { long: true })}**` : ``) : ``} with case id **\` ${caseid} \`**. ${silentDM ? "" : dmSuccess ? `(User was notified)` : `(User was not notified)`}`,
+      `${this.container.emojis.success} **${member.user.tag}** was muted${!isNaN(duration) ? (duration <= 40320 * 60 * 1000 ? ` for **${require("ms")(duration, { long: true })}**` : ``) : ``} with case id **\` ${caseid} \`**. ${silentDM ? "" : dmSuccess ? `(User was notified)` : `(User was not notified)`}`,
     );
   }
 }

@@ -158,7 +158,7 @@ class PingCommand extends Subcommand {
       })
       .then((data) => {
         if (!data.image_results)
-          return interaction.followUp(`:x: No similar profile pictures found.`);
+          return interaction.followUp(`${this.container.emojis.error} No similar profile pictures found.`);
         const othermatches = data.image_results.map(
           (d) => `[[${d.position}]](<${d.link}>)`,
         );
@@ -166,7 +166,7 @@ class PingCommand extends Subcommand {
           `Rav has found ${othermatches.length} possible matches for ${user.username}. They will be listed below. Alternative you can use the links option to send links to search it instead.\n**First match:** ${data.image_results[0].link}\n**All matches:** ${othermatches}`,
         );
       })
-      .catch((error) => interaction.followUp(`:x: ${error}`));
+      .catch((error) => interaction.followUp(`${this.container.emojis.error} ${error}`));
   }
 
   async chatInputAvatar(interaction) {
@@ -209,16 +209,16 @@ class PingCommand extends Subcommand {
         ctx.drawImage(img, 0, 0, canvas.height, canvas.width);
       })
       .catch((err) => {
-        return interaction.followUp(`:x: ${err}`);
+        return interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
 
     console.log("Creating image 3");
-    await loadImage("https://phoenixbot.epicgamer.org/phoenixtrans.png")
+    await loadImage("https://phoenix.sylveondev.xyz/phoenixtrans.png")
       .then(async (img) => {
         ctx.drawImage(img, 0, 0, canvas.height, canvas.width);
       })
       .catch((err) => {
-        return interaction.followUp(`:x: ${err}`);
+        return interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
 
     console.log("Creating image 4");
@@ -241,16 +241,16 @@ class PingCommand extends Subcommand {
     )
       .then(async (response) => {
         if (response.status != 200) {
-          return interaction.followUp(`:x: Not found or error occured.`);
+          return interaction.followUp(`${this.container.emojis.error} Not found or error occured.`);
         }
         const result = await response.text();
         if (!result) {
-          return interaction.followUp(`:x: Not found or error occured.`);
+          return interaction.followUp(`${this.container.emojis.error} Not found or error occured.`);
         }
         interaction.followUp(`:information_source: ${result}`);
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -260,7 +260,7 @@ class PingCommand extends Subcommand {
     const stream = await getStream("/cat");
 
     if (stream.statusCode != 200) {
-      return interaction.followUp(`:x: ${stream.status}`);
+      return interaction.followUp(`${this.container.emojis.error} ${stream.status}`);
     }
 
     await interaction.followUp({ files: [stream] });
@@ -272,7 +272,7 @@ class PingCommand extends Subcommand {
     const stream = await getStream("/api/breeds/image/random");
 
     if (stream.statusCode != 200) {
-      return interaction.followUp(`:x: ${stream.status}`);
+      return interaction.followUp(`${this.container.emojis.error} ${stream.status}`);
     }
 
     const obj = await stream.json();
@@ -286,7 +286,7 @@ class PingCommand extends Subcommand {
     const stream = await getStream("/cat/kitten");
 
     if (stream.statusCode != 200) {
-      return interaction.followUp(`:x: ${stream.status}`);
+      return interaction.followUp(`${this.container.emojis.error} ${stream.status}`);
     }
 
     await interaction.followUp({ files: [stream] });
@@ -298,7 +298,7 @@ class PingCommand extends Subcommand {
     const stream = await getStream("/gimme");
 
     if (stream.statusCode != 200) {
-      return interaction.followUp(`:x: ${stream.status}`);
+      return interaction.followUp(`${this.container.emojis.error} ${stream.status}`);
     }
 
     const obj = await stream.json();

@@ -27,11 +27,11 @@ class PingCommand extends Command {
 
     const duration = require("ms")(durationString);
     if (isNaN(duration))
-      return message.reply(":x: The mute duration is invalid.");
+      return message.reply(`${this.container.emojis.error} The mute duration is invalid.`);
     if (duration > 40320 * 60 * 1000)
-      return message.reply(`:x: Mute duration can be no more than 28 days.`);
+      return message.reply(`${this.container.emojis.error} Mute duration can be no more than 28 days.`);
     if (duration < 1000)
-      return message.reply(`:x: Mute duration can be no less than 1 second.`);
+      return message.reply(`${this.container.emojis.error} Mute duration can be no less than 1 second.`);
 
     const db = await serverSettings
       .findById(message.guild.id, serverSettings.upsert)
@@ -43,11 +43,11 @@ class PingCommand extends Command {
       db.save()
         .then(() => {
           message.reply(
-            `:white_check_mark: Mute duration is now ${require("ms")(duration, { long: true })}.`,
+            `${this.container.emojis.success} Mute duration is now ${require("ms")(duration, { long: true })}.`,
           );
         })
         .catch((err) => {
-          message.reply(`:x: ${err}`);
+          message.reply(`${this.container.emojis.error} ${err}`);
         });
     } else {
       db.automod.reportchannel = "";
@@ -56,11 +56,11 @@ class PingCommand extends Command {
       db.save()
         .then(() => {
           message.reply(
-            `:white_check_mark: Automod reports channel was cleared.`,
+            `${this.container.emojis.success} Automod reports channel was cleared.`,
           );
         })
         .catch((err) => {
-          message.reply(`:x: ${err}`);
+          message.reply(`${this.container.emojis.error} ${err}`);
         });
     }
   }

@@ -33,14 +33,14 @@ class PingCommand extends Command {
       .cacheQuery();
 
     const thecase = db.infractions.find((c) => c.id == caseid);
-    if (!thecase) return message.reply(`:x: No such case found.`);
+    if (!thecase) return message.reply(`${this.container.emojis.error} No such case found.`);
     console.log(thecase);
 
     thecase.moderator = message.member.id;
     thecase.reason = reason;
     await db.save();
     message.reply(
-      `:white_check_mark: Modified reason for case  **\` ${caseid} \`**.`,
+      `${this.container.emojis.success} Modified reason for case  **\` ${caseid} \`**.`,
     );
 
     if (db.logging.infractions) {

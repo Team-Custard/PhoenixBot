@@ -35,18 +35,18 @@ class MenuHandler extends InteractionHandler {
       const db = await UserDB.findById(interaction.user.id);
       if (!db) {
         return interaction.followUp(
-          `:x: You need to configure UserDB before you can do that.`,
+          `${this.container.emojis.error} You need to configure UserDB before you can do that.`,
         );
       }
       db.ephemeral = db.ephemeral ? false : true;
       db.save()
         .then(() => {
           interaction.followUp(
-            `:white_check_mark: ${db.ephemeral ? `Enabled ephemeral output.` : `Disabled ephemeral output.`}`,
+            `${this.container.emojis.success} ${db.ephemeral ? `Enabled ephemeral output.` : `Disabled ephemeral output.`}`,
           );
         })
         .catch((err) => {
-          interaction.followUp(`:x: ${err}`);
+          interaction.followUp(`${this.container.emojis.error} ${err}`);
         });
     }
 

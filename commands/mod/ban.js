@@ -12,13 +12,14 @@ class PingCommand extends Command {
       description:
         "Bans a member. Note that temporary bans are not yet possible through Phoenix at this time.",
       detailedDescription: {
-        usage: "ban <member> [flags] [reason] ",
+        usage: "ban <member> [flags] [duration] [reason] ",
         examples: [
           "ban sylveondev Being cool",
-          "ban bill11 Being a raccoon --silent",
+          "ban bill11 5h Being a raccoon --silent",
         ],
         args: [
           "reason : The reason for the action",
+          "duration : The duration of the mute",
           "member : The member to moderate",
         ],
         flags: [
@@ -39,7 +40,17 @@ class PingCommand extends Command {
     let silentDM = args.getFlags("silent", "s");
     const hideMod = args.getFlags("hide", "h");
     const purge = args.getFlags("purge", "p");
-    const reason = await args.rest("string").catch(() => `No reason specified`);
+    const unformattedreason = await args
+      .rest("string")
+      .catch(() => `No reason specified`);
+    let reason = unformattedreason;
+
+    const duration = require("ms")(unformattedreason.replace(/ .*/, ""));
+    if (!isNaN(duration)) {
+      reason = unformattedreason.substring(
+        unformattedreason.replace(/ .*/, "").length + 1,
+      );
+    }
 
     // Run a check if the user is in the server. We need to do this to see if
     // the moderator and bot has the correct permissions to ban the member.
@@ -48,32 +59,32 @@ class PingCommand extends Command {
     const isBanned = await message.guild.bans
       .fetch(member.id)
       .catch(() => undefined);
-    if (isBanned) return message.reply(`:x: That user is already banned.`);
+    if (isBanned) return message.reply(`${this.container.emojis.error} That user is already banned.`);
     const isGuildMember = await message.guild.members
       .fetch(member.id)
       .catch(() => undefined);
     if (!isGuildMember) silentDM = true;
     else {
       if (message.member == member) {
-        return message.reply(`:x: Bruh. On yourself?`);
+        return message.reply(`${this.container.emojis.error} Bruh. On yourself?`);
       }
       if (
-        member.roles.highest.position >=
+        isGuildMember.roles.highest.position >=
         message.guild.members.me.roles.highest.position
       ) {
         return message.reply(
-          `:x: I'm not high enough in the role hiarchy to moderate this member.`,
+          `${this.container.emojis.error} I'm not high enough in the role hiarchy to moderate this member.`,
         );
       }
       if (
-        member.roles.highest.position >= message.member.roles.highest.position
+        isGuildMember.roles.highest.position >= message.member.roles.highest.position
       ) {
         return message.reply(
-          `:x: You aren't high enough in the role hiarchy to moderate this member.`,
+          `${this.container.emojis.error} You aren't high enough in the role hiarchy to moderate this member.`,
         );
       }
-      if (!member.bannable) {
-        return message.reply(`:x: This user is not bannable.`);
+      if (!isGuildMember.bannable) {
+        return message.reply(`${this.container.emojis.error} This user is not bannable.`);
       }
     }
 
@@ -105,7 +116,7 @@ class PingCommand extends Command {
       .addFields(
         {
           name: `Details:`,
-          value: `**ID: \` ${caseid} \` | Type:** ${thecase.punishment} | **Responsible moderator:** ${hideMod ? `Moderator hidden` : message.author}`,
+          value: `**ID: \` ${caseid} \` | Type:** ${thecase.punishment} | **Duration:** ${!isNaN(duration) ? `${require("ms")(duration, { long: true })}` : `Permanant`} | **Responsible moderator:** ${hideMod ? `Moderator hidden` : message.author}`,
         },
         { name: `Reason:`, value: reason },
       )
@@ -118,8 +129,11 @@ class PingCommand extends Command {
     }
     await message.guild.bans.create(member.id, {
       deleteMessageSeconds: purge ? 60 * 60 * 24 * 7 : 0,
-      reason: `(Ban by ${message.author.tag}) ${reason}`,
+      reason: `(Ban by ${message.author.tag}${isNaN(duration) ? `` : ` | ${require("ms")(duration)}`}) ${reason}`,
     });
+    if (!isNaN(duration)) {
+      this.container.tasks.create({ name: 'tempBan', payload: { guildid: message.guild.id, memberid: member.id } }, { delay: duration, customJobOptions: { removeOnComplete: true, removeOnFail: true } });
+    }
 
     if (db.logging.infractions) {
       const channel = await message.guild.channels
@@ -129,7 +143,7 @@ class PingCommand extends Command {
         const embedT = new EmbedBuilder()
           .setTitle(`${thecase.punishment} - Case ${thecase.id}`)
           .setDescription(
-            `**Offender:** ${member}\n**Moderator:** ${message.author}\n**Reason:** ${thecase.reason}`,
+            `**Offender:** ${member}\n**Moderator:** ${message.author}\n**Duration:** ${!isNaN(duration) ? `${require("ms")(duration, { long: true })}` : `Permanant`}\n**Reason:** ${thecase.reason}`,
           )
           .setColor(Colors.Orange)
           .setFooter({ text: `ID ${member.id}` })
@@ -152,7 +166,7 @@ class PingCommand extends Command {
 
     await db.save();
     message.reply(
-      `:white_check_mark: **${member.tag}** was banned with case id **\` ${caseid} \`**. ${silentDM ? "" : dmSuccess ? `(User was notified)` : `(User was not notified)`}`,
+      `${this.container.emojis.success} **${member.tag}** was banned${!isNaN(duration) ? (duration <= 40320 * 60 * 1000 ? ` for **${require("ms")(duration, { long: true })}**` : ``) : ``} with case id **\` ${caseid} \`**. ${silentDM ? "" : dmSuccess ? `(User was notified)` : `(User was not notified)`}`,
     );
   }
 }

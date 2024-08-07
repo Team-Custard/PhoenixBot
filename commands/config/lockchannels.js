@@ -81,7 +81,7 @@ class PingCommand extends Command {
             .setDisabled(true),
         );
         await msg.edit({
-          content: `:white_check_mark: Lockdown channels set successfully.`,
+          content: `${this.container.emojis.success} Lockdown channels set successfully.`,
           components: [actionRowT],
         });
       })
@@ -95,7 +95,7 @@ class PingCommand extends Command {
             .setDisabled(true),
         );
         await msg.edit({
-          content: `:x: This prompt has failed or timed out.`,
+          content: `${this.container.emojis.error} This prompt has failed or timed out.`,
           components: [actionRowT],
         });
       });

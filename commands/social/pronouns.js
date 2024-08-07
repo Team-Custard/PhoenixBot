@@ -28,12 +28,12 @@ class PingCommand extends Command {
     ).cacheQuery();
     if (!usersettings) {
       return message.reply(
-        `:x: **${user.username}** does not have pronouns set through UserDB.`,
+        `${this.container.emojis.error} **${user.username}** does not have pronouns set through UserDB.`,
       );
     }
     if (!usersettings.pronouns) {
       return message.reply(
-        `:x: **${user.username}** does not have pronouns set through UserDB.`,
+        `${this.container.emojis.error} **${user.username}** does not have pronouns set through UserDB.`,
       );
     }
 

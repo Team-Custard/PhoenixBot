@@ -6,8 +6,9 @@ const settingsSchema = new Schema({
   timers: [
     {
       id: String,
+      memberId: String,
       guildId: String,
-      expire: String,
+      expire: Number,
       punishment: String,
     },
   ],

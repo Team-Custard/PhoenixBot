@@ -1,0 +1,13 @@
+{
+  "extends": [
+    "@sapphire/ts-config"
+  ],
+  "compilerOptions": {
+    "incremental": false,
+    "noEmit": true,
+    "checkJs": false,
+    "allowJs": true
+  },
+"include": ["."],
+"exclude": ["node_modules"]
+}

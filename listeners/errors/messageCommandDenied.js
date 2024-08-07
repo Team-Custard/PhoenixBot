@@ -9,7 +9,7 @@ class MessageCommandDenied extends Listener {
     });
   }
   run(error, { message }) {
-    return message.reply({ content: `:x: ${error}` });
+    return message.reply({ content: `${this.container.emojis.error} ${error}` });
   }
 }
 module.exports = {

@@ -29,7 +29,7 @@ class PingCommand extends Command {
     const reason = await args.rest("string").catch(() => `No reason specified`);
 
     if (message.author == member) {
-      return message.reply(`:x: Bruh. On yourself?`);
+      return message.reply(`${this.container.emojis.error} Bruh. On yourself?`);
     }
 
     let caseid = 0;
@@ -50,21 +50,24 @@ class PingCommand extends Command {
       modlogID: null,
     };
 
-    const unban = await message.guild.bans.remove(member.id).catch((e) => {
+    const unban = await message.guild.bans.remove(member.id, `(Unban by ${message.author.tag}) ${reason}`).catch((e) => {
       return { id: "error", msg: e.message };
     });
     if (unban.id == `error`) {
       switch (unban.msg.toLowerCase()) {
         case "unknown ban": {
-          await message.reply(`:x: That user isn't banned.`);
-          break;
+          await message.reply(`${this.container.emojis.error} That user isn't banned.`);
+          return;
         }
         default: {
-          await message.reply(`:x: ${unban.msg}`);
+          await message.reply(`${this.container.emojis.error} ${unban.msg}`);
+          return;
         }
       }
-      return;
     }
+
+    const timer = (await this.container.tasks.list({types: ["delayed", "waiting", "prioritized"]})).find(t => t.data.guildid == message.guild.id && t.data.memberid == member.id);
+    if (timer) timer.remove();
 
     if (db.logging.infractions) {
       const channel = await message.guild.channels
@@ -97,7 +100,7 @@ class PingCommand extends Command {
 
     await db.save();
     message.reply(
-      `:white_check_mark: **${member.tag}** was unbanned with case id **\` ${caseid} \`**.`,
+      `${this.container.emojis.success} **${member.tag}** was unbanned with case id **\` ${caseid} \`**.`,
     );
   }
 }

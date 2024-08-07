@@ -9,8 +9,7 @@ class messageCommandError extends Listener {
     });
   }
   run(error, { message, command }) {
-    console.error(`Error occured while running "${command.name}"`, error);
-    message.reply({ content: `:x: ${error}` });
+    message.reply({ content: `${this.container.emojis.error} ${error}` });
   }
 }
 module.exports = {

@@ -1,4 +1,4 @@
-const { Command } = require("@sapphire/framework");
+const { Command, container } = require("@sapphire/framework");
 const {
   PermissionFlagsBits,
   ActionRowBuilder,
@@ -18,17 +18,31 @@ class PingCommand extends Command {
       detailedDescription: {
         usage: "nsfw",
         examples: ["nsfw"],
+        flags: [`disable : Disables the automod.`, `weight=num : Sets what percent to trigger automod at`]
       },
       cooldownDelay: 3_000,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
       requiredUserPermissions: [PermissionFlagsBits.ManageGuild],
+      flags: true
     });
   }
 
-  async messageRun(message) {
+  async messageRun(message, args) {
+    const disable = args.getFlags('disable', 'd');
+    let weight = args.getFlags('weight', 'w');
+    if (isNaN(weight)) weight = 50;
     const db = await serverSettings
       .findById(message.guild.id, serverSettings.upsert)
       .cacheQuery();
+
+    if (disable) {
+      db.automod.nsfwimage = [];
+      await db.save();
+      await message.reply({
+        content: `${this.container.emojis.success} Automod setting disabled successfully.`
+      });
+      return;
+    }
 
     const actionRow = new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
@@ -67,6 +81,7 @@ class PingCommand extends Command {
       .then(async function (interaction) {
         interaction.deferUpdate();
         db.automod.nsfwimage = interaction.values;
+        db.automod.nsfwweight = weight;
         const comp = actionRow;
         comp.components[0].setDisabled(true);
         comp.components[0].options.forEach((o) =>
@@ -74,7 +89,7 @@ class PingCommand extends Command {
         );
         await db.save();
         await msg.edit({
-          content: `:white_check_mark: Automod setting set successfully.`,
+          content: `${container.emojis.success} Nsfw automod set successfully. Will flag images that are deemed ${weight}% likely nsfw.`,
           components: [comp],
         });
       })
@@ -85,7 +100,7 @@ class PingCommand extends Command {
           o.setDefault(db.automod.nsfwimage.includes(o.data.value)),
         );
         await msg.edit({
-          content: `:x: This prompt has failed or timed out.`,
+          content: `${container.emojis.error} This prompt has failed or timed out.`,
           components: [comp],
         });
       });

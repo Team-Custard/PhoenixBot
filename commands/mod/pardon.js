@@ -28,7 +28,7 @@ class PingCommand extends Command {
       .cacheQuery();
 
     const thecase = db.infractions.find((c) => c.id == caseid);
-    if (!thecase) return message.reply(`:x: No such case found.`);
+    if (!thecase) return message.reply(`${this.container.emojis.error} No such case found.`);
 
     for (let i = 0; i < db.infractions.length; i++) {
       if (db.infractions[i].id == caseid) db.infractions.splice(i, 1);
@@ -36,7 +36,7 @@ class PingCommand extends Command {
 
     await db.save();
     message.reply(
-      `:white_check_mark: Pardoned case  **\` ${caseid} \`** for **${this.container.client.users.cache.get(thecase.member) ? this.container.client.users.cache.get(thecase.member).tag : thecase.member}**'s ${thecase.punishment}.`,
+      `${this.container.emojis.success} Pardoned case  **\` ${caseid} \`** for **${this.container.client.users.cache.get(thecase.member) ? this.container.client.users.cache.get(thecase.member).tag : thecase.member}**'s ${thecase.punishment}.`,
     );
 
     if (db.logging.infractions) {
@@ -47,7 +47,7 @@ class PingCommand extends Command {
         const embed = new EmbedBuilder()
           .setTitle(`${thecase.punishment} - Pardoned`)
           .setDescription(
-            `**Offender:** <@${thecase.member}>\n**Moderator:** ${thecase.moderator}\n**Reason:** ${thecase.reason}`,
+            `**Offender:** <@${thecase.member}>\n**Moderator:** <@${thecase.moderator}>\n**Reason:** ${thecase.reason}`,
           )
           .setColor(Colors.Orange)
           .setFooter({ text: `ID ${thecase.member}` })

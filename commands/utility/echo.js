@@ -48,7 +48,7 @@ class PingCommand extends Command {
     channel.send(
       `${await require("../../tools/textParser").parse(msg, interaction.member)}`,
     );
-    interaction.followUp(":white_check_mark: Successfully sent the message.");
+    interaction.followUp(`${this.container.emojis.success} Successfully sent the message.`);
   }
 
   async messageRun(message, args) {

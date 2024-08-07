@@ -88,7 +88,7 @@ class PingCommand extends Subcommand {
       .cacheQuery();
 
     if (!db.goodbyes.channel) {
-      return interaction.followUp(`:x: Goodbyes is not setup.`);
+      return interaction.followUp(`${this.container.emojis.error} Goodbyes is not setup.`);
     }
 
     interaction.followUp(
@@ -112,10 +112,10 @@ class PingCommand extends Subcommand {
 
     db.save()
       .then(() => {
-        interaction.followUp(`:white_check_mark: Successfully setup goodbye.`);
+        interaction.followUp(`${this.container.emojis.success} Successfully setup goodbye.`);
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -131,11 +131,11 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         interaction.followUp(
-          `:white_check_mark: Successfully cleared goodbye settings.`,
+          `${this.container.emojis.success} Successfully cleared goodbye settings.`,
         );
       })
       .catch((err) => {
-        interaction.followUp(`:x: ${err}`);
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -145,7 +145,7 @@ class PingCommand extends Subcommand {
       .cacheQuery();
 
     if (!db.goodbyes.channel) {
-      return message.reply(`:x: Goodbyes is not setup.`);
+      return message.reply(`${this.container.emojis.error} Goodbyes is not setup.`);
     }
 
     message.reply(
@@ -168,10 +168,10 @@ class PingCommand extends Subcommand {
 
     db.save()
       .then(() => {
-        message.reply(`:white_check_mark: Successfully setup goodbye.`);
+        message.reply(`${this.container.emojis.success} Successfully setup goodbye.`);
       })
       .catch((err) => {
-        message.reply(`:x: ${err}`);
+        message.reply(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -186,11 +186,11 @@ class PingCommand extends Subcommand {
     db.save()
       .then(() => {
         message.reply(
-          `:white_check_mark: Successfully cleared goodbye settings.`,
+          `${this.container.emojis.success} Successfully cleared goodbye settings.`,
         );
       })
       .catch((err) => {
-        message.reply(`:x: ${err}`);
+        message.reply(`${this.container.emojis.error} ${err}`);
       });
   }
 }

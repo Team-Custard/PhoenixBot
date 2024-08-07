@@ -29,21 +29,21 @@ class PingCommand extends Command {
 
     if (newprefix) {
       if (newprefix > 6) {
-        return message.reply(`:x: Prefix can be no more than 6 characters.`);
+        return message.reply(`${this.container.emojis.error} Prefix can be no more than 6 characters.`);
       }
       if (newprefix < 1) {
-        return message.reply(`:x: Prefix can be no less than 0 characters.`);
+        return message.reply(`${this.container.emojis.error} Prefix can be no less than 0 characters.`);
       }
       db.prefix = newprefix;
 
       db.save()
         .then(() => {
           message.reply(
-            `:white_check_mark: Prefix is now set to **${newprefix}**.`,
+            `${this.container.emojis.success} Prefix is now set to **${newprefix}**.`,
           );
         })
         .catch((err) => {
-          message.reply(`:x: ${err}`);
+          message.reply(`${this.container.emojis.error} ${err}`);
         });
     } else {
       message.reply(`The current prefix is **${db.prefix}**`);
