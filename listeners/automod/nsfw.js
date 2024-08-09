@@ -86,7 +86,7 @@ class ReadyListener extends Listener {
               case "porn":
               case "hentai":
               case "sexy": {
-                if ((predictions[0].probability * 100) < db.automod.nsfwweight) {
+                if ((predictions[0].probability * 100) < (db.automod?.nsfwweight || 50)) {
                   console.log(
                     `Dirty! it's ${predictions[0].className} (${(predictions[0].probability * 100).toString().substring(0, 3)}% certain) Not executing actions as it's weighed too low.`,
                   );
