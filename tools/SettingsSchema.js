@@ -63,7 +63,7 @@ const settingsSchema = new Schema({
     reportchannel: String,
     pingreport: String,
     nsfwimage: [],
-    nsfwweight: Number,
+    nsfwweight: {type: Number, default: 50},
   },
   starboard: {
     emoji: String,

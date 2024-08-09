@@ -23,14 +23,16 @@ class PingCommand extends Command {
       cooldownDelay: 3_000,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
       requiredUserPermissions: [PermissionFlagsBits.ManageGuild],
-      flags: true
+      flags: true,
+      options: true
     });
   }
 
   async messageRun(message, args) {
     const disable = args.getFlags('disable', 'd');
-    let weight = args.getFlags('weight', 'w');
+    let weight = args.getOption('weight', 'w');
     if (isNaN(weight)) weight = 50;
+    if (!weight) weight = 50;
     const db = await serverSettings
       .findById(message.guild.id, serverSettings.upsert)
       .cacheQuery();
