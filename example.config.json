@@ -1,27 +1,28 @@
 {
   "prefix": "=",
-  "stagingprefix": "==",
-  "testingprefix": "===",
+  "stagingprefix" : "==",
+  "testingprefix" : "===",
   "ownerId": "",
-  "process": {
-    "noIntro": false,
-    "botclient": true,
-    "dashboard": false,
-    "botmode": "prod"
+  "process":{
+      "noIntro": true,
+      "botclient": true,
+      "dashboard": true,
+      "errorwebhook": false,
+      "botmode": "test"
   },
   "dashboard": {
-    "fullredirecturl": "",
-    "clientid": "",
-    "stageid": "",
-    "serverport": 8080,
-    "devmode": false
+      "fullredirecturl": "",
+      "clientid": "",
+      "stageid": "",
+      "serverport": 8080,
+      "devmode": true
   },
 
-  "translator": {
-    "targetLang": "en"
+  "translator":{
+      "targetLang": "en"
   },
-  "userdb": {
-    "global": true,
-    "afkEnabled": true
+  "userdb":{
+      "global": true,
+      "afkEnabled": true
   }
 }
