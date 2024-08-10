@@ -171,32 +171,14 @@ class ReadyListener extends Listener {
             punishment: "Ban",
             member: message.member.id,
             moderator: this.container.client.user.id,
-            reason: `(Automod) Nsfw image detected (${flagReason})`,
+            reason: `(Automod) Nsfw image detected`,
             expiretime: 0,
             expired: false,
             hidden: false,
             modlogID: null,
           };
 
-          const embed = new EmbedBuilder()
-            .setAuthor({
-              name: message.guild.name,
-              iconURL: message.guild.iconURL({ dynamic: true }),
-            })
-            .setTitle(`Your infractions has been updated`)
-            .addFields(
-              {
-                name: `Details:`,
-                value: `**ID: \` ${caseid} \` | Type:** ${thecase.punishment} | **Responsible moderator:** ${this.container.client.user}`,
-              },
-              {
-                name: `Reason:`,
-                value: `(Automod) Nsfw image detected (${flagReason})`,
-              },
-            )
-            .setColor(Colors.Orange)
-            .setTimestamp(new Date());
-          message.member.send({ embeds: [embed] }).catch(() => undefined);
+          message.member.send({ content: `${this.container.emojis.warning} You were banned from **${message.guild.id}** ${!isNaN(duration) ? `for ${require("ms")(duration, { long: true })}` : `permanently`} for the following reason: ${thecase.reason}\n-# Automatic action • case id \`${thecase.id}\`` }).catch(() => undefined);
 
           if (db.logging.infractions) {
             const channel = await message.guild.channels
@@ -231,7 +213,7 @@ class ReadyListener extends Listener {
           await db.save().catch(() => undefined);
           if (sendMessage == true)
             return message.channel(
-              `${this.container.emojis.success} ${message.author} was **banned** with case id **\` ${caseid} \`**.\n**Reason:** (Automod) Nsfw image detected (${flagReason}).`,
+              `${this.container.emojis.success} Automatically banned ${message.author}.\n**Reason:** (Automod) Nsfw image detected.`,
             );
         } else if (executions.includes("kick")) {
           if (!message.member.kickable) return;
@@ -249,25 +231,7 @@ class ReadyListener extends Listener {
             modlogID: null,
           };
 
-          const embed = new EmbedBuilder()
-            .setAuthor({
-              name: message.guild.name,
-              iconURL: message.guild.iconURL({ dynamic: true }),
-            })
-            .setTitle(`Your infractions has been updated`)
-            .addFields(
-              {
-                name: `Details:`,
-                value: `**ID: \` ${caseid} \` | Type:** ${thecase.punishment} | **Responsible moderator:** ${this.container.client.user}`,
-              },
-              {
-                name: `Reason:`,
-                value: `(Automod) Nsfw image detected (${flagReason})`,
-              },
-            )
-            .setColor(Colors.Orange)
-            .setTimestamp(new Date());
-          message.member.send({ embeds: [embed] }).catch(() => undefined);
+          message.member.send({ content: `${this.container.emojis.warning} You were kicked from **${message.guild.id}** ${!isNaN(duration) ? `for ${require("ms")(duration, { long: true })}` : `permanently`} for the following reason: ${thecase.reason}\n-# Automatic action • case id \`${thecase.id}\`` }).catch(() => undefined);
 
           if (db.logging.infractions) {
             const channel = await message.guild.channels
@@ -299,7 +263,7 @@ class ReadyListener extends Listener {
           await db.save().catch(() => undefined);
           if (sendMessage == true)
             return message.channel.send(
-              `${this.container.emojis.success} ${message.author} was **kicked** with case id **\` ${caseid} \`**.\n**Reason:** (Automod) Nsfw image detected (${flagReason}).`,
+              `${this.container.emojis.success} Automatically kicked ${message.author}.\n**Reason:** (Automod) Nsfw image detected.`,
             );
         } else if (executions.includes("mute")) {
           if (!message.member.moderatable) return;
@@ -321,25 +285,8 @@ class ReadyListener extends Listener {
             modlogID: null,
           };
 
-          const embed = new EmbedBuilder()
-            .setAuthor({
-              name: message.guild.name,
-              iconURL: message.guild.iconURL({ dynamic: true }),
-            })
-            .setTitle(`Your infractions has been updated`)
-            .addFields(
-              {
-                name: `Details:`,
-                value: `**ID: \` ${caseid} \` | Type:** ${thecase.punishment} | **Duration:** ${require("ms")(duration, { long: true })} | **Responsible moderator:** ${this.container.client.user}`,
-              },
-              {
-                name: `Reason:`,
-                value: `(Automod) Nsfw image detected (${flagReason})`,
-              },
-            )
-            .setColor(Colors.Orange)
-            .setTimestamp(new Date());
-          message.member.send({ embeds: [embed] }).catch(() => undefined);
+          message.member.send({ content: `${this.container.emojis.warning} You were banned from **${message.guild.id}** ${!isNaN(duration) ? `for ${require("ms")(duration, { long: true })}` : `permanently`} for the following reason: ${thecase.reason}\n-# Automatic action • case id \`${thecase.id}\`` }).catch(() => undefined);
+
 
           if (db.logging.infractions) {
             const channel = await message.guild.channels
@@ -373,8 +320,9 @@ class ReadyListener extends Listener {
           db.infractions.push(thecase);
           await db.save().catch(() => undefined);
           if (sendMessage == true)
+            
             return message.channel.send(
-              `${this.container.emojis.success} ${message.author} was **muted** for **${require("ms")(duration, { long: true })}** with case id **\` ${caseid} \`**.\n**Reason:** (Automod) Nsfw image detected (${flagReason}).`,
+              `${this.container.emojis.success} Automatically muted ${message.author} for ${require("ms")(duration, { long: true })}.\n**Reason:** (Automod) Nsfw image detected.`,
             );
         } else if (executions.includes("warn")) {
           let caseid = 0;
@@ -391,25 +339,8 @@ class ReadyListener extends Listener {
             modlogID: null,
           };
 
-          const embed = new EmbedBuilder()
-            .setAuthor({
-              name: message.guild.name,
-              iconURL: message.guild.iconURL({ dynamic: true }),
-            })
-            .setTitle(`Your infractions has been updated`)
-            .addFields(
-              {
-                name: `Details:`,
-                value: `**ID: \` ${caseid} \` | Type:** ${thecase.punishment} | **Responsible moderator:** ${this.container.client.user}`,
-              },
-              {
-                name: `Reason:`,
-                value: `(Automod) Nsfw image detected (${flagReason})`,
-              },
-            )
-            .setColor(Colors.Orange)
-            .setTimestamp(new Date());
-          message.member.send({ embeds: [embed] }).catch(() => undefined);
+          message.member.send({ content: `${this.container.emojis.warning} You were warned in **${message.guild.id}** for the following reason: ${thecase.reason}\n-# Automatic action • case id \`${thecase.id}\`` }).catch(() => undefined);
+
 
           if (db.logging.infractions) {
             const channel = await message.guild.channels
@@ -440,7 +371,7 @@ class ReadyListener extends Listener {
           await db.save().catch(() => undefined);
           if (sendMessage == true)
             return message.channel.send(
-              `${this.container.emojis.success} ${message.author} was **warned** with case id **\` ${caseid} \`**.\n**Reason:** (Automod) Nsfw image detected (${flagReason}).`,
+              `${this.container.emojis.success} Automatically warned ${message.author}.\n**Reason:** (Automod) Nsfw image detected.`,
             );
         } else if (sendMessage == true)
           return message.channel.send(
