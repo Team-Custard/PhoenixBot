@@ -95,26 +95,9 @@ class PingCommand extends Command {
     }
 
     let dmSuccess = true;
-    const embed = new EmbedBuilder()
-      .setAuthor({
-        name: message.guild.name,
-        iconURL: message.guild.iconURL({ dynamic: true }),
-      })
-      .setTitle(`Your infractions has been updated`)
-      .addFields(
-        {
-          name: `Details:`,
-          value: `**ID: \` ${caseid} \` | Type:** ${thecase.punishment} | **Responsible moderator:** ${hideMod ? `Moderator hidden` : message.author}`,
-        },
-        { name: `Reason:`, value: reason },
-      )
-      .setColor(Colors.Orange)
-      .setTimestamp(new Date());
-    if (!silentDM) {
-      member.send({ embeds: [embed] }).catch(function () {
-        dmSuccess = false;
-      });
-    }
+    member.send({ content: `${this.container.emojis.success} You were unmuted in **${message.guild.id}** for the following reason: ${thecase.reason}\n-# Action by ${message.member} • case id \`${thecase.id}\`` }).catch(function () {
+      dmSuccess = false;
+    });
 
     if (db.logging.infractions) {
       const channel = await message.guild.channels
@@ -147,7 +130,7 @@ class PingCommand extends Command {
 
     await db.save();
     message.reply(
-      `${this.container.emojis.success} **${member.user.tag}** was unmuted with case id **\` ${caseid} \`**. ${silentDM ? "" : dmSuccess ? `(User was notified)` : `(User was not notified)`}`,
+      `${this.container.emojis.success} Unmuted **${member.user.tag}**. ${silentDM ? "" : dmSuccess ? `` : `User was not notified.`}`,
     );
   }
 }

@@ -107,26 +107,9 @@ class PingCommand extends Command {
     };
 
     let dmSuccess = true;
-    const embed = new EmbedBuilder()
-      .setAuthor({
-        name: message.guild.name,
-        iconURL: message.guild.iconURL({ dynamic: true }),
-      })
-      .setTitle(`Your infractions has been updated`)
-      .addFields(
-        {
-          name: `Details:`,
-          value: `**ID: \` ${caseid} \` | Type:** ${thecase.punishment} | **Duration:** ${!isNaN(duration) ? `${require("ms")(duration, { long: true })}` : `Permanant`} | **Responsible moderator:** ${hideMod ? `Moderator hidden` : message.author}`,
-        },
-        { name: `Reason:`, value: reason },
-      )
-      .setColor(Colors.Orange)
-      .setTimestamp(new Date());
-    if (!silentDM) {
-      member.send({ embeds: [embed] }).catch(function () {
-        dmSuccess = false;
-      });
-    }
+    member.send({ content: `${this.container.emojis.warning} You were banned from **${message.guild.id}** ${!isNaN(duration) ? `for ${require("ms")(duration, { long: true })}` : `permanently`} for the following reason: ${thecase.reason}\n-# Action by ${message.member} • case id \`${thecase.id}\`` }).catch(function () {
+      dmSuccess = false;
+    });
     await message.guild.bans.create(member.id, {
       deleteMessageSeconds: purge ? 60 * 60 * 24 * 7 : 0,
       reason: `(Ban by ${message.author.tag}${isNaN(duration) ? `` : ` | ${require("ms")(duration)}`}) ${reason}`,
@@ -166,7 +149,7 @@ class PingCommand extends Command {
 
     await db.save();
     message.reply(
-      `${this.container.emojis.success} **${member.tag}** was banned${!isNaN(duration) ? (duration <= 40320 * 60 * 1000 ? ` for **${require("ms")(duration, { long: true })}**` : ``) : ``} with case id **\` ${caseid} \`**. ${silentDM ? "" : dmSuccess ? `(User was notified)` : `(User was not notified)`}`,
+      `${this.container.emojis.success} Banned **${member.tag}**${!isNaN(duration) ? `for ${require("ms")(duration, { long: true })}` : ``}. ${silentDM ? "" : dmSuccess ? `` : `User was not notified.`}${isGuildMember ? `` : `\n${this.container.emojis.warning} User may not be ip banned.`}`,
     );
   }
 }
