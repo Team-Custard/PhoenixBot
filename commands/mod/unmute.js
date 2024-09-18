@@ -26,6 +26,7 @@ class PingCommand extends Command {
       requiredUserPermissions: [PermissionFlagsBits.ModerateMembers],
       requiredClientPermissions: [PermissionFlagsBits.ModerateMembers],
       flags: true,
+      preconditions: ["module"]
     });
   }
 
@@ -95,7 +96,7 @@ class PingCommand extends Command {
     }
 
     let dmSuccess = true;
-    member.send({ content: `${this.container.emojis.success} You were unmuted in **${message.guild.id}** for the following reason: ${thecase.reason}\n-# Action by ${message.member} • case id \`${thecase.id}\`` }).catch(function () {
+    member.send({ content: `${this.container.emojis.success} You were unmuted in **${message.guild.name}** for the following reason: ${thecase.reason}\n-# Action by ${message.member} • case id \`${thecase.id}\`` }).catch(function () {
       dmSuccess = false;
     });
 

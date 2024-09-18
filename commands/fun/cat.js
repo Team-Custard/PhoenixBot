@@ -21,6 +21,7 @@ class PingCommand extends Command {
         PermissionFlagsBits.SendMessages,
         PermissionFlagsBits.AttachFiles,
       ],
+      preconditions: ["module"]
     });
   }
 

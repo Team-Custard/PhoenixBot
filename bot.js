@@ -1,24 +1,24 @@
+const { ShardingManager } = require("discord.js");
+
 const { PhoenixClient } = require("./tools/PhoenixClient");
 const fs = require("fs");
 const { fork } = require("child_process");
-const clients = [];
+
+require("./tools/database").connect();
 
 switch (require("./config.json").process.botmode) {
   case "prod": {
-    clients.push(new PhoenixClient());
-    const client = clients[0];
+    const client = new PhoenixClient();
     client.login(process.env.TOKEN);
     break;
   }
   case "dev": {
-    clients.push(new PhoenixClient());
-    const client = clients[0];
+    const client = new PhoenixClient();
     client.login(process.env.STAGINGTOKEN);
     break;
   }
   case "test": {
-    clients.push(new PhoenixClient());
-    const client = clients[0];
+    const client = new PhoenixClient();
     client.login(process.env.TESTTOKEN);
     break;
   }
@@ -41,6 +41,3 @@ switch (require("./config.json").process.botmode) {
     }
   }
 }
-
-exports.client = clients[0];
-exports.clients = clients;

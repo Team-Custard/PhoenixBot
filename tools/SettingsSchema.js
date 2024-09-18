@@ -11,7 +11,16 @@ const settingsSchema = new Schema({
   stagingprefix: { type: String, required: false, default: "==" },
   enablePrefix: { type: Boolean, required: false, default: true },
   donatorUser: String,
+  utilities: Boolean,
   customBot: Boolean,
+  modules: {
+    utilityPlugin: {type: Boolean, default: true},
+    funPlugin: {type: Boolean, default: true},
+    modPlugin: {type: Boolean, default: true},
+    automodPlugin: {type: Boolean, default: true},
+    socialPlugin: {type: Boolean, default: true},
+    interactionSpecificPlugin: {type: Boolean, default: true}
+  },
   tags: [
     {
       name: String,
@@ -36,6 +45,7 @@ const settingsSchema = new Schema({
   welcomer: {
     channel: String,
     message: String,
+    dmtext: String,
   },
   goodbyes: {
     channel: String,

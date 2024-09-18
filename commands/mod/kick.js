@@ -29,6 +29,7 @@ class PingCommand extends Command {
       requiredUserPermissions: [PermissionFlagsBits.KickMembers],
       requiredClientPermissions: [PermissionFlagsBits.KickMembers],
       flags: true,
+      preconditions: ["module"]
     });
   }
 
@@ -81,7 +82,7 @@ class PingCommand extends Command {
     let dmSuccess = true;
     
     if (!silentDM) {
-      member.send({ content: `${this.container.emojis.warning} You were kicked from **${message.guild.id}** for the following reason: ${thecase.reason}\n-# Action by ${message.member} • case id \`${thecase.id}\`` }).catch(function () {
+      member.send({ content: `${this.container.emojis.warning} You were kicked from **${message.guild.name}** for the following reason: ${thecase.reason}\n-# Action by ${message.member} • case id \`${thecase.id}\`` }).catch(function () {
         dmSuccess = false;
       });
     }

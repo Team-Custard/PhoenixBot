@@ -1,3 +1,4 @@
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 const { Listener } = require("@sapphire/framework");
 const ServerSettings = require("../../tools/SettingsSchema");
 
@@ -28,6 +29,25 @@ class GuildMemberAdd extends Listener {
           )
           .catch(() => undefined);
       }
+    }
+    if (db.welcomer.dmtext) {
+      const actionRow = new ActionRowBuilder()
+      .addComponents([
+        new ButtonBuilder()
+        .setCustomId("dmServerInfo")
+        .setDisabled(true)
+        .setStyle(ButtonStyle.Primary)
+        .setLabel(`Sent from: ${member.guild.name}`),
+        /*new ButtonBuilder()
+        .setCustomId(`reportServer-${member.guild.id}`)
+        .setLabel(`Report abuse`)
+        .setStyle(ButtonStyle.Danger)*/
+      ])
+
+      member.send({
+        content: db.welcomer.dmtext,
+        components: [actionRow]
+      }).catch(() => {})
     }
   }
 }

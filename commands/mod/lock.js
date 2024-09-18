@@ -1,8 +1,10 @@
-const { Command } = require("@sapphire/framework");
-const { PermissionFlagsBits } = require("discord.js");
+const { Subcommand } = require("@sapphire/plugin-subcommands");
+const { ApplicationCommandRegistry, BucketScope } = require("@sapphire/framework");
+const { PermissionFlagsBits, ChatInputCommandInteraction, PermissionsBitField } = require("discord.js");
 const serverSettings = require("../../tools/SettingsSchema");
+const { setTimeout } = require("timers/promises");
 
-class PingCommand extends Command {
+class PingCommand extends Subcommand {
   constructor(context, options) {
     super(context, {
       ...options,
@@ -11,21 +13,279 @@ class PingCommand extends Command {
       description: "Locks a channel.",
       detailedDescription: {
         usage: "lock [flags]",
-        examples: ["lock", "lock --end"],
-        flags: [
-          `--all : Locks all the defined lockdown channels.`,
-          `--end : Unlocks the channel.`,
-          `--endall : Unlocks all the channels.`,
-        ],
+        examples: ["lock", "lock server"]
       },
-      cooldownDelay: 60_000,
+      cooldownDelay: 30_000,
+      cooldownScope: BucketScope.Guild,
       requiredUserPermissions: [PermissionFlagsBits.ManageChannels],
-      requiredClientPermissions: [PermissionFlagsBits.ManageChannels],
-      flags: true,
+      requiredClientPermissions: [PermissionFlagsBits.ManageChannels, PermissionFlagsBits.ManageRoles],
+      subcommands: [{
+        name: "channel",
+        chatInputRun: "chatInputLockChannel",
+        messageRun: "messageLockChannel",
+        default: true
+      }, {
+        name: "all",
+        chatInputRun: "chatInputLockServer",
+        messageRun: "messageLockServer"
+      }, {
+        name: "server",
+        chatInputRun: "chatInputLockServer",
+        messageRun: "messageLockServer"
+      }, {
+        name: "end",
+        chatInputRun: "chatInputEnd",
+        messageRun: "messageEnd"
+      }, 
+      {
+        name: "unlock",
+        chatInputRun: "chatInputEnd",
+        messageRun: "messageEnd"
+      }, {
+        name: "fixperms",
+        chatInputRun: "chatInputFixperms",
+        messageRun: "messageFixperms",
+        requiredUserPermissions: [PermissionFlagsBits.ManageRoles]
+      }],
+      preconditions: ["module"]
     });
   }
 
-  async messageRun(message, args) {
+  /**
+   * @param {ApplicationCommandRegistry} registry 
+   */
+  registerApplicationCommands(registry) {
+    registry.registerChatInputCommand(command => 
+      command.setName("lockdown")
+      .setDescription("Locks the channels")
+      .addSubcommand(subcommand => 
+        subcommand.setName("channel")
+        .setDescription("Locks a channel")
+        .addChannelOption(input =>
+          input.setName("channel")
+          .setDescription("The channel to lock")
+        )
+      )
+      .addSubcommand(subcommand => 
+        subcommand.setName("server")
+        .setDescription("Locks the server")
+      )
+      .addSubcommand(subcommand => 
+        subcommand.setName("unlock")
+        .setDescription("Unlocks the server")
+      )
+      .addSubcommand(subcommand => 
+        subcommand.setName("fixperms")
+        .setDescription("Checks and fixes all your server roles if there are conflicts with server lockdowns.")
+      )
+    )
+  }
+
+  /**
+   * @param {ChatInputCommandInteraction} interaction
+   */
+  async chatInputFixperms(interaction) {
+    const reply = await interaction.reply(`${this.container.emojis.loading} **Please wait...**`);
+
+    const roles = await interaction.guild.roles.fetch();
+    let successes = 0;
+    for (let i = 0; i < roles.size; i++) {
+      if (/* roles.at(i).permissions.has("SendMessages") && */roles.at(i).id != interaction.guild.roles.everyone.id) {
+        const permissions = new PermissionsBitField(roles.at(i).permissions);
+        await permissions.remove("SendMessages");
+        await permissions.remove("SendMessagesInThreads");
+        await permissions.remove("CreatePrivateThreads");
+        await permissions.remove("CreatePublicThreads");
+        await permissions.remove("AddReactions");
+        await permissions.remove("Connect");
+        await permissions.remove("Speak");
+        const result = await roles.at(i).setPermissions(permissions, `Fixing role permissions for lockdown`).catch(() => undefined);
+        if (result) successes++;
+        await setTimeout(1000);
+      }
+    }
+    await reply.edit(`${this.container.emojis.success} Successfully fixed the permissions for ${successes} roles.`)
+  }
+
+  async messageFixperms(message) {
+    const reply = await message.reply(`${this.container.emojis.loading} **Please wait...**`);
+
+    const roles = await message.guild.roles.fetch();
+    let successes = 0;
+    for (let i = 0; i < roles.size; i++) {
+      if (/* roles.at(i).permissions.has("SendMessages") && */roles.at(i).id != message.guild.roles.everyone.id) {
+        const permissions = new PermissionsBitField(roles.at(i).permissions);
+        await permissions.remove("SendMessages");
+        await permissions.remove("SendMessagesInThreads");
+        await permissions.remove("CreatePrivateThreads");
+        await permissions.remove("CreatePublicThreads");
+        await permissions.remove("AddReactions");
+        await permissions.remove("Connect");
+        await permissions.remove("Speak");
+        const result = await roles.at(i).setPermissions(permissions, `Fixing role permissions for lockdown`).catch(() => undefined);
+        if (result) successes++;
+        await setTimeout(1000);
+      }
+    }
+    await reply.edit(`${this.container.emojis.success} Successfully fixed the permissions for ${successes} roles.`)
+  }
+
+  /**
+   * @param {ChatInputCommandInteraction} interaction 
+   */
+  async chatInputLockServer(interaction) {
+    await interaction.deferReply();
+    if (!interaction.guild.roles.everyone.permissions.has(PermissionsBitField.resolve("SendMessages"))) return interaction.followUp(`${this.container.emojis.error} The server is already locked.`);
+    const permissions = new PermissionsBitField(interaction.guild.roles.everyone.permissions);
+    await permissions.remove("SendMessages");
+    await permissions.remove("SendMessagesInThreads");
+    await permissions.remove("CreatePrivateThreads");
+    await permissions.remove("CreatePublicThreads");
+    await permissions.remove("AddReactions");
+    await permissions.remove("Connect");
+    await permissions.remove("Speak");
+    await interaction.guild.roles.everyone.setPermissions(permissions, `(Lock by ${interaction.user.tag})`);
+    return interaction.followUp(`${this.container.emojis.success} The server has been locked until \`lock end\` is used.`);
+  }
+
+  async messageServer(message) {
+    if (!message.guild.roles.everyone.permissions.has(PermissionsBitField.resolve("SendMessages"))) return message.reply(`${this.container.emojis.error} The server is already locked.`);
+    const permissions = new PermissionsBitField(message.guild.roles.everyone.permissions);
+    await permissions.remove("SendMessages");
+    await permissions.remove("SendMessagesInThreads");
+    await permissions.remove("CreatePrivateThreads");
+    await permissions.remove("CreatePublicThreads");
+    await permissions.remove("AddReactions");
+    await permissions.remove("Connect");
+    await permissions.remove("Speak");
+    await message.guild.roles.everyone.setPermissions(permissions, `(Lock by ${message.author.tag})`);
+    return message.reply(`${this.container.emojis.success} The server has been locked until \`lock end\` is used.`);
+  }
+
+  /**
+   * @param {ChatInputCommandInteraction} interaction 
+   */
+  async chatInputLockChannel(interaction) {
+    await interaction.deferReply();
+    let channel = interaction.options.getChannel("channel");
+    if (!channel) channel = interaction.channel;
+    if (!channel.permissionsFor(interaction.guild.roles.everyone).has(PermissionFlagsBits.SendMessages)) return interaction.followUp(`${this.container.emojis.error} This channel is already locked.`);
+
+    await channel.permissionOverwrites
+    .edit(
+      interaction.guild.roles.everyone,
+      {
+        SendMessages: false,
+        SendMessagesInThreads: false,
+        CreatePublicThreads: false,
+        CreatePrivateThreads: false,
+        AddReactions: false,
+        Connect: false,
+        Speak: false,
+      },
+      `(Lock by ${interaction.user.tag})`,
+    )
+    .then(() => interaction.followUp(`${this.container.emojis.success} **${channel.name}** has been locked until \`lock end\` is used.`))
+    .catch((err) => interaction.followUp(`${this.container.emojis.error} ${err}`));
+  }
+
+  async messageLockChannel(message, args) {
+    let channel = await args.pick("channel").catch(() => undefined);
+    if (!channel) channel = message.channel;
+    if (!channel.permissionsFor(message.guild.roles.everyone).has(PermissionFlagsBits.SendMessages)) return message.reply(`${this.container.emojis.error} This channel is already locked.`);
+
+    await channel.permissionOverwrites
+    .edit(
+      message.guild.roles.everyone,
+      {
+        SendMessages: false,
+        SendMessagesInThreads: false,
+        CreatePublicThreads: false,
+        CreatePrivateThreads: false,
+        AddReactions: false,
+        Connect: false,
+        Speak: false,
+      },
+      `(Lock by ${message.author.tag})`,
+    )
+    .then(() => message.reply(`${this.container.emojis.success} **${channel.name}** has been locked until \`lock end\` is used.`))
+    .catch((err) => message.reply(`${this.container.emojis.error} ${err}`));
+  }
+
+  /**
+   * @param {ChatInputCommandInteraction} interaction 
+   */
+  async chatInputEnd(interaction) {
+    await interaction.deferReply();
+    if (!interaction.guild.roles.everyone.permissions.has(PermissionsBitField.resolve(PermissionFlagsBits.SendMessages))) {
+      const permissions = new PermissionsBitField(interaction.guild.roles.everyone.permissions);
+      await permissions.add("SendMessages");
+      await permissions.add("SendMessagesInThreads");
+      await permissions.add("CreatePrivateThreads");
+      await permissions.add("CreatePublicThreads");
+      await permissions.add("AddReactions");
+      await permissions.add("Connect");
+      await permissions.add("Speak");
+      await interaction.guild.roles.everyone.setPermissions(permissions, `(Unlock by ${interaction.user.tag})`);
+      return interaction.followUp(`${this.container.emojis.success} The server lockdown has ended.`);
+    }
+    
+    if (interaction.channel.permissionsFor(interaction.guild.roles.everyone).has(PermissionFlagsBits.SendMessages)) return interaction.followUp(`${this.container.emojis.error} There is no active lockdown.`);
+
+    await interaction.channel.permissionOverwrites
+    .edit(
+      interaction.guild.roles.everyone,
+      {
+        SendMessages: null,
+        SendMessagesInThreads: null,
+        CreatePublicThreads: null,
+        CreatePrivateThreads: null,
+        AddReactions: null,
+        Connect: null,
+        Speak: null,
+      },
+      `(Unlock by ${interaction.user.tag})`,
+    )
+    .then(() => interaction.followUp(`${this.container.emojis.success} **${interaction.channel.name}** lockdown has ended.`))
+    .catch((err) => interaction.followUp(`${this.container.emojis.error} ${err}`));
+  }
+
+  async messageEnd(message) {
+    if (!message.guild.roles.everyone.permissions.has(PermissionsBitField.resolve(PermissionFlagsBits.SendMessages))) {
+      const permissions = new PermissionsBitField(message.guild.roles.everyone.permissions);
+      await permissions.add("SendMessages");
+      await permissions.add("SendMessagesInThreads");
+      await permissions.add("CreatePrivateThreads");
+      await permissions.add("CreatePublicThreads");
+      await permissions.add("AddReactions");
+      await permissions.add("Connect");
+      await permissions.add("Speak");
+      await message.guild.roles.everyone.setPermissions(permissions, `(Unlock by ${message.author.tag})`);
+      return message.reply(`${this.container.emojis.success} The server lockdown has ended.`);
+    }
+    
+    if (message.channel.permissionsFor(message.guild.roles.everyone).has(PermissionFlagsBits.SendMessages)) return message.reply(`${this.container.emojis.error} There is no active lockdown.`);
+
+    await message.channel.permissionOverwrites
+    .edit(
+      message.guild.roles.everyone,
+      {
+        SendMessages: null,
+        SendMessagesInThreads: null,
+        CreatePublicThreads: null,
+        CreatePrivateThreads: null,
+        AddReactions: null,
+        Connect: null,
+        Speak: null,
+      },
+      `(Unlock by ${message.author.tag})`,
+    )
+    .then(() => message.reply(`${this.container.emojis.success} **${message.channel.name}** lockdown has ended.`))
+    .catch((err) => message.reply(`${this.container.emojis.error} ${err}`));
+  }
+
+  // Legacy lockdown channels code
+  /* async messageRun(message, args) {
     const all = args.getFlags("all", "a");
     const end = args.getFlags("end", "e");
     const endAll = args.getFlags("endall", "ea");
@@ -180,7 +440,7 @@ class PingCommand extends Command {
           message.reply(`${this.container.emojis.error} ${err}`);
         });
     }
-  }
+  } */
 }
 module.exports = {
   PingCommand,

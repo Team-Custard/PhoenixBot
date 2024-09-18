@@ -1,5 +1,5 @@
 const { Listener } = require("@sapphire/framework");
-const { ActivityType } = require("discord.js");
+const { ActivityType, Client } = require("discord.js");
 const fs = require('fs');
 
 class ReadyListener extends Listener {
@@ -10,6 +10,10 @@ class ReadyListener extends Listener {
       event: "ready",
     });
   }
+  /**
+   * 
+   * @param {Client} client 
+   */
   run(client) {
     if (require("../../config.json").process.botmode == "custom") {
       const bots = JSON.parse(

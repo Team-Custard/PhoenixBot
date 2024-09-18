@@ -19,13 +19,14 @@ class PingCommand extends Command {
       cooldownDelay: 3_000,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
       requiredUserPermissions: [PermissionFlagsBits.ManageGuild],
+      preconditions: ["module"]
     });
   }
 
   async messageRun(message, args) {
     const durationString = await args.pick("string");
 
-    const duration = require("ms")(durationString);
+    const duration = await require("pretty-ms")(durationString, {verbose: true});
     if (isNaN(duration))
       return message.reply(`${this.container.emojis.error} The mute duration is invalid.`);
     if (duration > 40320 * 60 * 1000)

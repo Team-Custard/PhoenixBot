@@ -34,7 +34,8 @@ class PhoenixClient extends SapphireClient {
             db: 2
           }
         }
-      }
+      },
+      allowedMentions: { parse: ['everyone', 'roles', 'users'], repliedUser: false }
     });
   }
 

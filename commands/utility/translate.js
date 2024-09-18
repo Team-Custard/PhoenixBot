@@ -18,7 +18,8 @@ class UserCommand extends Command {
       },
       cooldownDelay: 3_000,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
-      flags: true
+      flags: true,
+      preconditions: ["module"]
     });
   }
 

@@ -239,61 +239,12 @@ class PingCommand extends Subcommand {
     interaction.showModal(modal);
   }
 
-  async chatInputTimefor(interaction) {
-    await interaction.deferReply();
-    let member = await interaction.options.getMember("user");
-
-    if (!member) member = interaction.member;
-
-    const usersettings = await UserDB.findById(
-      member.user.id,
-      UserDB.upsert,
-    ).cacheQuery();
-    if (!usersettings) {
-      return interaction.followUp(
-        `${this.container.emojis.error} **${member.user.username}** does not have a timezone set.`,
-      );
-    }
-    if (!usersettings.timezone) {
-      return interaction.followUp(
-        `${this.container.emojis.error} **${member.user.username}** does not have a timezone set.`,
-      );
-    }
-
-    const moment = require("moment-timezone");
-    const date = new Date();
-    const strTime = moment(date).tz(usersettings.timezone).format("hh:mm:ss");
-    const strDate = moment(date).tz(usersettings.timezone).format("MM-DD-YYYY");
-    await interaction.followUp(
-      `**${member.user.username}**'s time is **${strTime}** (${strDate}).`,
-    );
+  async chatInputTimefor(interaction, context) {
+    await this.container.stores.get("commands").get("timefor").chatInputRun(interaction, context);
   }
 
-  async chatInputPronouns(interaction) {
-    await interaction.deferReply();
-    let member = await interaction.options.getMember("user");
-
-    if (!member) member = interaction.member;
-
-    const usersettings = await UserDB.findById(
-      member.user.id,
-      UserDB.upsert,
-    ).cacheQuery();
-
-    if (!usersettings) {
-      return interaction.followUp(
-        `${this.container.emojis.error} **${member.user.username}** does not have pronouns set through UserDB.`,
-      );
-    }
-    if (!usersettings.pronouns) {
-      return interaction.followUp(
-        `${this.container.emojis.error} **${member.user.username}** does not have pronouns set through UserDB.`,
-      );
-    }
-
-    await interaction.followUp(
-      `**${member.user.username}**'s pronouns are **${usersettings.pronouns}**.`,
-    );
+  async chatInputPronouns(interaction, context) {
+    await this.container.stores.get("commands").get("pronouns").chatInputRun(interaction, context);
   }
 
   async chatInputDisplay(interaction) {
@@ -331,31 +282,8 @@ class PingCommand extends Subcommand {
     interaction.followUp({ embeds: [embed] });
   }
 
-  async chatInputAfk(interaction) {
-    await interaction.deferReply();
-    let usersettings = await UserDB.findById(
-      interaction.member.id,
-      UserDB.upsert,
-    ).cacheQuery();
-    if (!usersettings) {
-      usersettings = new UserDB({ _id: interaction.member.id });
-    }
-    const reason = await interaction.options.getString("reason");
-
-    usersettings.afk.since = Math.floor(new Date().getTime() / 1000);
-    usersettings.afk.status = reason;
-
-    usersettings
-      .save()
-      .then(() => {
-        interaction.followUp({
-          content: `${this.container.emojis.success} You are now afk. To remove your afk status, simply send a message in the server.`,
-          ephemeral: false,
-        });
-      })
-      .catch((err) => {
-        interaction.followUp(`${this.container.emojis.error} ${err}`);
-      });
+  async chatInputAfk(interaction, context) {
+    await this.container.stores.get("commands").get("afk").chatInputRun(interaction, context);
   }
 
   async chatInputClear(interaction) {

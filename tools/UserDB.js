@@ -13,6 +13,15 @@ const settingsSchema = new Schema({
     reddit: String,
     server: String,
   },
+
+  blacklist: {
+    reportBlacklist: Boolean,
+    reportReason: String,
+    botBlacklist: Boolean,
+    blackReason: String,
+  },
+  reportedServers: [],
+  
   afk: {
     since: String,
     status: String,

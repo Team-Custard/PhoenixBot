@@ -1,7 +1,7 @@
 [
   {
     "name": "placeholders",
-    "description": "Phoenix supports using placeholders in your tags and other settings which utilize text. To use placeholders, use the placeholder name braced like this, {{placeholder}}.\nValid placeholders:\n* `mention`: Ping of the user : {{mention}}\n* `username`: Username of the user : {{username}}\n* `userid`: The id of the user : {{userid}}\n* `membercount`: Number of members in the server : {{membercount}}\n* `servername`: Name of the server : {{servername}}",
+    "description": "Phoenix supports using placeholders in your tags and other settings which utilize text. To use placeholders, use the placeholder name braced like this, {{placeholder}}.\nValid placeholders:\n* `mention`: Ping of the user : {{mention}}\n* `displayname`: Display name of the user : {{displayname}}\n* `nickname`: Nickname of the user, or display name if empty : {{nickname}}\n* `userid`: The id of the user : {{userid}}\n* `servername`: Name of the server : {{servername}}\n* `serverid`: ID of the server : {{serverid}}\n* `membercount`: Number of members in the server : {{membercount}}",
     "creator": "PhoenixBot"
   },
   {

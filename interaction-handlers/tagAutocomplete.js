@@ -35,14 +35,14 @@ const serverSettings = require("../tools/SettingsSchema");
   
           // Map the search results to the structure required for Autocomplete
           if (focusedOption.value) {
-            const items = db?.tags.filter(tag => tag.name?.includes(focusedOption.value));
+            const items = db?.tags.concat(require("../tools/infoStuff.json")).filter(tag => tag.name?.includes(focusedOption.value));
             if (items)
                 return this.some(items.map((match) => ({ name: match.name, value: match.name })));
             else
                 return this.none();
           }
           else {
-            return this.some(db?.tags.map((match) => ({ name: match.name, value: match.name })));
+            return this.some(db?.tags.concat(require("../tools/infoStuff.json")).map((match) => ({ name: match.name, value: match.name })));
           }
           
         }

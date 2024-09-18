@@ -6,44 +6,206 @@ body {
   background-attachment: fixed;
   background-size: cover;
 }
-.container {
+.col {
     background-color: white;
 }
 </style> 
 <br>
-<div class="container rounded-4 text-center">
-    <br><img src="https://cdn.discordapp.com/icons/<%= server.id %>/<%= server.icon %>.png?size=128" style="padding: 0.5%; background-color: black; border-radius: 100%;"/>
-    <p><h1><%= server.name %></h1><br>The configuration for this server is below.<br>This dashboard is a work in progress, so some things maybe buggy.</p><br>
-</div>
-<br>
-<div class="container rounded-4">
-    <% if (subStat == "error") { %>
-        <h4 id="bannerMessage" style="background-color: darkred; color: white;"><button class="btn" style="color: white;" onclick="document.getElementById('bannerMessage').style.display = 'NONE';">X</button> The setting has failed to save. Try again.</h4>
-    <% } %>
-    <% if (subStat == "okay") { %>
-        <h4 id="bannerMessage" style="background-color: green; color: white;"><button class="btn" style="color: white;" onclick="document.getElementById('bannerMessage').style.display = 'NONE';">X</button> The setting has saved. Horray!</h4>
-    <% } %>
-    <h1>Configuration</h1>
-    <p>The settings below are everything for configuring Phoenix. Submitted text longer than the maximum allowed will be truncated.</p>
-    <form class="configs" method="post">
-        <h3>Prefix settings</h3>
-        <div class="mb-3">
-            <label for="prefix" class="form-label">Server prefix</label>
-            <input id="prefix" class="form-control" type="text" name="prefix" value="<%= config.prefix %>">
+<div class="container">
+    <div class="row justify-content-md-center">
+        <div class="col col-md-auto rounded-4 border text-center border-secondary border-2">
+            <h5>Config</h5>
+            <hr>
+            <button class="btn mx-auto" onclick="changePanel('gen')" style="width: 100%;">General</button><br>
+            <button class="btn mx-auto" onclick="changePanel('module')" style="width: 100%;">Modules</button><br>
+            <hr>    
+            <button class="btn mx-auto" onclick="changePanel('welcome')" style="width: 100%;">Welcomer</button><br>
+            <button class="btn mx-auto" onclick="changePanel('logging')" style="width: 100%;">Logging</button><br>
+            <button class="btn mx-auto" onclick="changePanel('mod')" style="width: 100%;">Moderation</button><br>
+            <button class="btn mx-auto" onclick="changePanel('automod')" style="width: 100%;">Automod</button><br>
+            <button class="btn mx-auto" onclick="changePanel('starboard')" style="width: 100%;">Starboard</button><br>
+            <button class="btn mx-auto" onclick="changePanel('verification')" style="width: 100%;">Verification</button><br>
+            <hr>
+            <button class="btn mx-auto" onclick="changePanel('tags')" style="width: 100%;" id="tagBtn">Tags</button><br>
+            <button class="btn mx-auto" onclick="changePanel('infraction')" style="width: 100%;" id="infBtn">Infractions</button><br>
         </div>
-        <h3>Tagging</h3>
-        <p>You are using <%= config.tags.length %> tags. The limit is 25 for free users and 50 for donators.<br>To manage tags, you can do so with the tags command.</p>
-        <div style="background-color: lightgray;"><br><p> ID | NAME | DESCRIPTION | CREATOR</p><hr><% if (config.tags.length > 0) { config.tags.forEach((tag, index)=> { %> <p style="font-size: 16px;"> <%= `${index+1} | ${tag.name} | ${tag.description} | ${tag.creator}` %></p><hr> <% })} else { %> <p>No tags to display.</p><hr> <% } %></div>
-        <div class="mb-3 form-check">
-            <input type="checkbox" class="form-check-input" id="locktags" name="lockTags" <% if (config.lockTags) { %> checked <% } %>>
-            <label class="form-check-label" for="locktags">Lock tags to managers only</label>        
+        <div id="genTab" class="serverpanel col col-md-auto rounded-4 text-center border border-secondary border-2">
+            <br><img src="https://cdn.discordapp.com/icons/<%= server.id %>/<%= server.icon %>.png?size=128" style="padding: 0.5%; background-color: black; border-radius: 100%;"/>
+            <p><h1><%= server.name %></h1><sub><%= server.approximate_member_count %> members</sub><br><br>The configuration for this server is below.<br>Use the buttons on the side to navigate the dashboard.</p><br>
+            <hr class="border border-secondary border-1 opacity-50">
+            <% if (subStat == "error") { %>
+                <h4 id="bannerMessage" style="background-color: darkred; color: white;"><button class="btn" style="color: white;" onclick="document.getElementById('bannerMessage').style.display = 'NONE';">X</button> The setting has failed to save. Try again.</h4>
+            <% } %>
+            <% if (subStat == "okay") { %>
+                <h4 id="bannerMessage" style="background-color: green; color: white;"><button class="btn" style="color: white;" onclick="document.getElementById('bannerMessage').style.display = 'NONE';">X</button> The setting has saved. Horray!</h4>
+            <% } %>
+            <form class="configs" method="post">
+                <h3>General</h3>
+                <p>The main settings for the Phoenix bot. Note the main bot and staging uses different prefixes.</p>
+                <div class="mb-3">
+                    <label for="prefix" class="form-label">Server prefix</label>
+                    <input id="prefix" class="form-control" type="text" name="prefix" value="<%= config.prefix %>">
+                </div>
+                <button class="btn btn-secondary" type="submit">Submit</button>
+            </form>
         </div>
-        <button class="btn btn-secondary" type="submit">Submit</button>
-    </form>
-    
+        <div id="moduleTab" class="serverpanel col col-md-auto rounded-4 text-center border border-secondary border-2">
+            <form class="configs" method="post">
+                <h3>Modules</h3>
+                <p>Check the command modules you want enabled.</p>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="utilityPlugin" name="utilityPlugin" <% if (config.modules.utilityPlugin) { %> checked <% } %>>
+                    <label class="form-check-label" for="utilityPlugin">Utility</label>
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="funPlugin" name="funPlugin" <% if (config.modules.funPlugin) { %> checked <% } %>>
+                    <label class="form-check-label" for="funPlugin">Fun</label>
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="modPlugin" name="modPlugin" <% if (config.modules.modPlugin) { %> checked <% } %>>
+                    <label class="form-check-label" for="modPlugin">Moderation</label>
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="automodPlugin" name="automodPlugin" <% if (config.modules.automodPlugin) { %> checked <% } %>>
+                    <label class="form-check-label" for="automodPlugin">Automod</label>
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="socialPlugin" name="socialPlugin" <% if (config.modules.socialPlugin) { %> checked <% } %>>
+                    <label class="form-check-label" for="socialPlugin">Social</label>
+                </div>
+                <hr>
+                <p><sub>Note that this only disables prefixed commands and some slash commands, it does not disable modules entirely.<br>To disable slash commands not disabled by the modules setting, go to the integrations menu in server settings and disable the commands.<br>This can only be done on the desktop or web client. Admins may still be able to see the slash commands regardless of permissions.<br>This is a discord limitation that we will not fix. Sorry for any inconvenience.</sub></p>
+                <button class="btn btn-secondary" type="submit">Submit</button>
+            </form>
+        </div>
+        <div id="welcomeTab" class="serverpanel col col-md-auto rounded-4 text-center border border-secondary border-2">
+            <form class="configs" method="post">
+                <h3>Welcomer</h3>
+                <p>The welcomer greets members when they join the server. Configure your welcomer below.</p>
+                <div class="mb-3">
+                    <label for="welcomerChannel" class="form-label">Welcomer channel</label>
+                    <select id="welcomerChannel" class="selectpicker" aria-label="Default select" name="welcomerChannel">
+                        <option value="disabled">Disabled</option>
+                        <% guildObj.channels.cache.forEach((channel, index) => { %>
+                        <% if (channel.isTextBased() && !channel.isThread()) { %> <option value="<%= channel.id %>" <% if (config.welcomer.channel == channel.id) { %> selected <% } %>>#<%= channel.name %></option> <% } %>
+                        <% }) %>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="welcomerText" class="form-label">Welcomer channel content</label>
+                    <textarea id="welcomerText" name="welcomerText" type="text" class="form-control" placeholder="Welcome {{mention}} to **{{servername}}**!" maxlength="1024"><%= config.welcomer.message %></textarea><br>
+                </div>
+
+                <div class="mb-3">
+                    <label for="welcomerDMText" class="form-label">Welcomer dm content</label>
+                    <textarea id="welcomerDMText" name="welcomerDMText" type="text" class="form-control" placeholder="Welcome {{mention}} to **{{servername}}**!" maxlength="1024"><%= config.welcomer.dmtext %></textarea><br>
+                </div>
+
+                <h3>Goodbyes</h3>
+                <p>The goodbyes bids a member farewell when they leave the server. Configure your goodbyes below.</p>
+                <div class="mb-3">
+                    <label for="goodbyesChannel" class="form-label">Goodbyes channel</label>
+                    <select id="goodbyesChannel" class="selectpicker" aria-label="Default select" name="goodbyesChannel">
+                        <option value="disabled">Disabled</option>
+                        <% guildObj.channels.cache.forEach((channel, index) => { %>
+                        <% if (channel.isTextBased() && !channel.isThread()) { %> <option value="<%= channel.id %>" <% if (config.goodbyes.channel == channel.id) { %> selected <% } %>>#<%= channel.name %></option> <% } %>
+                        <% }) %>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="goodbyesText" class="form-label">Goodbyes channel content</label>
+                    <textarea id="goodbyesText" name="goodbyesText" type="text" class="form-control" placeholder="**{{username}}** left the server, see you later." maxlength="1024"><%= config.goodbyes.message %></textarea><br>
+                </div>
+                
+                <button class="btn btn-secondary" type="submit">Submit</button>
+                <hr>
+                <div class="mb-3">
+                    <h5>Placeholder reference</h5>
+                    <p>
+                        <code>{{mention}}</code> : The member mention.<br>
+                        <code>{{username}}</code> : The member's username.<br>
+                        <code>{{displayname}}</code> : The member's display name.<br>
+                        <code>{{nickname}}</code> : The member's nickname, or display name if none.<br>
+                        <code>{{userid}}</code> : The id of the member.<br>
+                        <code>{{servername}}</code> : The name of the server.<br>
+                        <code>{{serverid}}</code> : The id of the server.<br>
+                        <code>{{membercount}}</code> : The amount of members in the server.<br>
+                    </p>
+                </div>
+            </form>
+        </div>
+        <div id="loggingTab" class="serverpanel col col-md-auto rounded-4 text-center border border-secondary border-2">
+            <form class="configs" method="post">
+                <h3>Logging</h3>
+                <p>The audit log sends a webhook message whenever a member does an action</p>
+                <h6>Message log</h6>
+                <div class="mb-3">
+                    <label for="msglogChannel" class="form-label">Log channel</label>
+                    <select id="msglogChannel" class="selectpicker" aria-label="Default select" name="msglogChannel">
+                        <option value="disabled">Disabled</option>
+                        <% guildObj.channels.cache.forEach((channel, index) => { %>
+                        <% if (channel.isTextBased() && !channel.isThread()) { %> <option value="<%= channel.id %>" <% if (config.logging.messages == channel.id) { %> selected <% } %>>#<%= channel.name %></option> <% } %>
+                        <% }) %>
+                    </select><br>
+                    <label for="msglogignoreChannel" class="form-label">Ignore channels</label>
+                    <select id="msglogignoreChannel" class="selectpicker" aria-label="Default select" multiple name="msglogignoreChannel" title="None selected">
+                        <% guildObj.channels.cache.forEach((channel, index) => { %>
+                        <% if (channel.isTextBased() && !channel.isThread()) { %> <option value="<%= channel.id %>" >#<%= channel.name %></option> <% } %>
+                        <% }) %>
+                    </select><br>
+                    <sub>Channels in this dropdown will be ignored by message logs.</sub><br>
+                </div>
+                
+                <button class="btn btn-secondary" type="submit">Submit</button>
+            </form>
+        </div>
+        <div id="modTab" class="serverpanel col col-md-auto rounded-4 text-center border border-secondary border-2">
+            
+        </div>
+        <div id="automodTab" class="serverpanel col col-md-auto rounded-4 text-center border border-secondary border-2">
+            
+        </div>
+        <div id="starboardTab" class="serverpanel col col-md-auto rounded-4 text-center border border-secondary border-2">
+            
+        </div>
+        <div id="verificationTab" class="serverpanel col col-md-auto rounded-4 text-center border border-secondary border-2">
+            
+        </div>
+        <div id="tagsTab" class="serverpanel col col-md-auto rounded-4 text-center border border-secondary border-2">
+            <form class="configs" method="post">
+                <h3>Tags</h3>
+                <p>You are using <%= config.tags.length %> tags. The limit is 25 for free users and 100 for donators.<br>To manage tags, you can do so with the tags command.</p>
+                <div style="background-color: lightgray;"><br><p> ID | NAME | DESCRIPTION | CREATOR</p><hr><% if (config.tags.length > 0) { config.tags.forEach((tag, index)=> { %> <p style="font-size: 16px;"> <%= `${index+1} | ${tag.name} | ${tag.description} | ${tag.creator}` %></p><hr> <% })} else { %> <p>No tags to display.</p><hr> <% } %></div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="locktags" name="lockTags" <% if (config.lockTags) { %> checked <% } %>>
+                    <label class="form-check-label" for="locktags">Don't allow members to add or remove tags</label>        
+                </div>
+                <button class="btn btn-secondary" type="submit">Submit</button>
+            </form>
+        </div>
+        <div id="infractionTab" class="serverpanel col col-md-auto rounded-4 text-center border border-secondary border-2">
+            <h3>Infractions</h3>
+            <p>There are <%= config.infractions.length %> infractions in the server. Infractions are created when a moderator executes an action on someone.<br>Only the latest 50 warnings are shown right now.</p>
+            <div style="background-color: lightgray;"><br><p> ID | ACTION | VICTIM | REASON | MODERATOR</p><hr><% if (config.infractions.length > 0) { config.infractions.slice(-50).reverse().forEach((inf, index)=> { %> <p style="font-size: 16px;"> <%= `${inf.id} | ${inf.punishment} | ${memberCache.get(inf.member) ? memberCache.get(inf.member).tag : inf.member} | ${inf.reason} | ${memberCache.get(inf.moderator) ? memberCache.get(inf.moderator).tag : inf.moderator}` %></p><hr> <% })} else { %> <p>No infractions to display.</p><hr> <% } %></div>
+            <p>To remove an infraction, use the pardon command.</p>
+        </div>
 </div>
 
 <script>
+    function changePanel(panel) {
+        const panels = document.getElementsByClassName("serverpanel");
+        for (let i = 0; i < panels.length; i++) {
+            panels.item(i).setAttribute("style", "display: none;");
+        }
+        panels.namedItem(panel+"Tab").setAttribute("style", "display: block;")
+    }
+    
+    const panels = document.getElementsByClassName("serverpanel");
+    for (let i = 0; i < panels.length; i++) {
+        panels.item(i).setAttribute("style", "display: none;");
+    }
+    panels.namedItem("genTab").setAttribute("style", "display: block;")
+
     const forms = document.getElementsByClassName("configs");
     for (let i = 0; i < forms.length; i++) {
         forms[i].setAttribute("action", window.location);

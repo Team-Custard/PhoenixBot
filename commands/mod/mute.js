@@ -27,6 +27,7 @@ class PingCommand extends Command {
       requiredUserPermissions: [PermissionFlagsBits.ModerateMembers],
       requiredClientPermissions: [PermissionFlagsBits.ModerateMembers],
       flags: true,
+      preconditions: ["module"]
     });
   }
 
@@ -116,7 +117,7 @@ class PingCommand extends Command {
     }
 
     let dmSuccess = true;
-    member.send({ content: `${this.container.emojis.warning} You were muted in **${message.guild.id}** ${!isNaN(duration) ? `for ${require("ms")(duration, { long: true })}` : `permanently`} for the following reason: ${thecase.reason}\n-# Action by ${message.member} • case id \`${thecase.id}\`` }).catch(function () {
+    member.send({ content: `${this.container.emojis.warning} You were muted in **${message.guild.name}** ${!isNaN(duration) ? `for ${await require("pretty-ms")(duration, { verbose: true })}` : `permanently`} for the following reason: ${thecase.reason}\n-# Action by ${message.member} • case id \`${thecase.id}\`` }).catch(function () {
       dmSuccess = false;
     });
 
@@ -125,10 +126,10 @@ class PingCommand extends Command {
         .fetch(db.logging.infractions)
         .catch(() => undefined);
       if (channel) {
-        embed = new EmbedBuilder()
+        const embed = new EmbedBuilder()
           .setTitle(`${thecase.punishment} - Case ${thecase.id}`)
           .setDescription(
-            `**Offender:** ${member}\n**Moderator:** ${message.author}\n**Duration:** ${!isNaN(duration) ? `${require("ms")(duration, { long: true })}` : `Permanant`}\n**Reason:** ${thecase.reason}`,
+            `**Offender:** ${member}\n**Moderator:** ${message.author}\n**Duration:** ${!isNaN(duration) ? `${await require("pretty-ms")(duration, { verbose: true })}` : `Permanant`}\n**Reason:** ${thecase.reason}`,
           )
           .setColor(Colors.Orange)
           .setFooter({ text: `ID ${member.id}` })
@@ -151,7 +152,7 @@ class PingCommand extends Command {
 
     await db.save();
     message.reply(
-      `${this.container.emojis.success} Muted **${member.user.tag}**${!isNaN(duration) ? (duration <= 40320 * 60 * 1000 ? ` for ${require("ms")(duration, { long: true })}` : ``) : ``}. ${silentDM ? "" : dmSuccess ? `` : `User was not notified.`}`,
+      `${this.container.emojis.success} Muted **${member.user.tag}**${!isNaN(duration) ? (duration <= 40320 * 60 * 1000 ? ` for ${await require("pretty-ms")(duration, { verbose: true })}` : ``) : ``}. ${silentDM ? "" : dmSuccess ? `` : `User was not notified.`}`,
     );
   }
 }
