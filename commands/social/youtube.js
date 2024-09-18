@@ -37,6 +37,7 @@ class PingCommand extends Subcommand {
       cooldownDelay: 60_000,
       cooldownLimit: 6,
       cooldownScope: BucketScope.Guild,
+      preconditions: ["module"]
     });
   }
 

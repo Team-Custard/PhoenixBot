@@ -24,7 +24,8 @@ class PingCommand extends Command {
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
       requiredUserPermissions: [PermissionFlagsBits.ManageGuild],
       flags: true,
-      options: true
+      options: true,
+      preconditions: ["module"]
     });
   }
 

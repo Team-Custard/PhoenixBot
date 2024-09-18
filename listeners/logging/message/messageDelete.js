@@ -1,7 +1,7 @@
 const { Listener } = require("@sapphire/framework");
 const { isGuildBasedChannel } = require("@sapphire/discord.js-utilities");
 const ServerSettings = require("../../../tools/SettingsSchema");
-const { EmbedBuilder, Colors } = require("discord.js");
+const { EmbedBuilder, Colors, AuditLogEvent } = require("discord.js");
 const webhookFetch = require("../../../tools/webhookFetch");
 
 class GuildMemberAdd extends Listener {
@@ -33,9 +33,10 @@ class GuildMemberAdd extends Listener {
             console.log("Welp didn't find a webhook, sry.");
             return;
           }
+
           const embed = new EmbedBuilder()
             .setDescription(
-              `A message was deleted in ${recoveredchannel} but I was unable to find out what the message was.`,
+              `A message was deleted in ${recoveredchannel} but I was unable to display info on the message.`,
             )
             .setColor(Colors.Orange)
             .setTimestamp(new Date());
@@ -80,6 +81,7 @@ class GuildMemberAdd extends Listener {
           console.log("Welp didn't find a webhook, sry.");
           return;
         }
+
         const embed = new EmbedBuilder()
           .setAuthor({
             name: message.author.username,
@@ -93,6 +95,27 @@ class GuildMemberAdd extends Listener {
           )
           .setColor(Colors.Orange)
           .setTimestamp(new Date());
+
+        const fetchedLogs = await message.guild.fetchAuditLogs({
+          type: AuditLogEvent.MessageDelete,
+          limit: 1,
+        });
+        const firstEntry = fetchedLogs.entries.first();
+        if (firstEntry.targetId == message.author.id && ((Date.now() - firstEntry.createdTimestamp) < 5000)) {
+          const executor = await this.container.client.users.fetch(
+            firstEntry.executorId,
+          ).catch(() => undefined);
+          if (executor) embed.setDescription(
+            `${executor} deleted ${message.author}'s message in ${message.channel}\n**Message:**\n${message.content}`,
+          ).setAuthor({
+            name: executor.username,
+            iconURL: executor.displayAvatarURL({
+              dynamic: true,
+              size: 256,
+            }),
+          })
+        }
+
 
         await webhook
           .send({

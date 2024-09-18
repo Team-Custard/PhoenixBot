@@ -25,8 +25,10 @@ class PingCommand extends Subcommand {
           "verification clear",
         ],
         args: [
-          "name: The name of the emoji to use.",
-          "emoji: The emoji, or url",
+          "subcommand: The subcommand",
+          "role: The verified role",
+          "messagetext: The text of the verification panel",
+          "verifiedtext: The successfully verified response text",
         ],
       },
       subcommands: [

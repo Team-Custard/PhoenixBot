@@ -46,7 +46,7 @@ class messageSubcommandError extends Listener {
     }
     else console.error(error);
 
-    message.reply({ content: `${this.container.emojis.error} ${error}` });
+    message.reply({ content: `${this.container.emojis.error} ${error}\n-# This error was logged. [Need help?](<https://discord.gg/PnUYnBbxER> "Invite link to the support server")` });
   }
 }
 module.exports = {

@@ -32,6 +32,7 @@ class PingCommand extends Command {
       requiredUserPermissions: [PermissionFlagsBits.BanMembers],
       requiredClientPermissions: [PermissionFlagsBits.BanMembers],
       flags: true,
+      preconditions: ["module"]
     });
   }
 
@@ -107,7 +108,7 @@ class PingCommand extends Command {
     };
 
     let dmSuccess = true;
-    member.send({ content: `${this.container.emojis.warning} You were banned from **${message.guild.id}** ${!isNaN(duration) ? `for ${require("ms")(duration, { long: true })}` : `permanently`} for the following reason: ${thecase.reason}\n-# Action by ${message.member} • case id \`${thecase.id}\`` }).catch(function () {
+    member.send({ content: `${this.container.emojis.warning} You were banned from **${message.guild.name}** ${!isNaN(duration) ? `for ${await require("pretty-ms")(duration, { verbose: true })}` : `permanently`} for the following reason: ${thecase.reason}\n-# Action by ${message.member} • case id \`${thecase.id}\`` }).catch(function () {
       dmSuccess = false;
     });
     await message.guild.bans.create(member.id, {
@@ -126,7 +127,7 @@ class PingCommand extends Command {
         const embedT = new EmbedBuilder()
           .setTitle(`${thecase.punishment} - Case ${thecase.id}`)
           .setDescription(
-            `**Offender:** ${member}\n**Moderator:** ${message.author}\n**Duration:** ${!isNaN(duration) ? `${require("ms")(duration, { long: true })}` : `Permanant`}\n**Reason:** ${thecase.reason}`,
+            `**Offender:** ${member}\n**Moderator:** ${message.author}\n**Duration:** ${!isNaN(duration) ? `${await require("pretty-ms")(duration, { verbose: true })}` : `Permanant`}\n**Reason:** ${thecase.reason}`,
           )
           .setColor(Colors.Orange)
           .setFooter({ text: `ID ${member.id}` })
@@ -149,7 +150,7 @@ class PingCommand extends Command {
 
     await db.save();
     message.reply(
-      `${this.container.emojis.success} Banned **${member.tag}**${!isNaN(duration) ? `for ${require("ms")(duration, { long: true })}` : ``}. ${silentDM ? "" : dmSuccess ? `` : `User was not notified.`}${isGuildMember ? `` : `\n${this.container.emojis.warning} User may not be ip banned.`}`,
+      `${this.container.emojis.success} Banned **${member.tag}**${!isNaN(duration) ? `for ${await require("pretty-ms")(duration, { verbose: true })}` : ``}. ${silentDM ? "" : dmSuccess ? `` : `User was not notified.`}${isGuildMember ? `` : `\n${this.container.emojis.warning} User may not be ip banned.`}`,
     );
   }
 }

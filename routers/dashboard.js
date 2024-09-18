@@ -1,6 +1,7 @@
 const settings = require("../config.json");
 const express = require("express");
 const { request } = require("undici");
+const { container } = require("@sapphire/framework");
 
 const router = express.Router();
 
@@ -59,6 +60,7 @@ router.get("/dash/login", async function (req, res) {
           tokenType: oauthData["token_type"],
           guilds: null,
           users: null,
+          fetchedGuilds: []
         });
       }
       // Clear the cache after half an hour for security and to free ram usage.
@@ -87,12 +89,12 @@ router.get("/dash/login", async function (req, res) {
           // And now we actually remove it from the cache since everything passed.
           for (let i = 0, j = tempStorage.length; i < j; i++) {
             if (tempStorage[i]) {
-              if (tempStorage.hostname == req.ip + req.hostname) {
+              if (tempStorage[i].hostname == req.ip + req.hostname) {
                 tempStorage.splice(i, 1);
+                console.log("Dash cache cleared for a member. gg devs.");
               }
             }
           }
-          console.log("Dash cache cleared for a member. gg devs.");
         } catch (err) {
           console.error(err);
         }
@@ -131,12 +133,13 @@ router.get("/dash/end", async function (req, res) {
     // And now we actually remove it from the cache since everything passed.
     for (let i = 0, j = tempStorage.length; i < j; i++) {
       if (tempStorage[i]) {
-        if (tempStorage.hostname == req.ip + req.hostname) {
+        if (tempStorage[i].hostname == req.ip + req.hostname) {
           tempStorage.splice(i, 1);
+          console.log("Dash cache cleared for a member. gg devs.");
         }
       }
     }
-    console.log("Dash cache cleared for a member. gg devs.");
+    
 
     return res.redirect("/");
   } catch (err) {
@@ -173,7 +176,7 @@ router.get("/dash", async function (req, res) {
   }
   if (!foundHost.guilds) {
     const guildResult = await request(
-      "https://discord.com/api/users/@me/guilds",
+      "https://discord.com/api/users/@me/guilds?with_counts=true",
       {
         headers: {
           authorization: `${foundHost.tokenType} ${foundHost.accessToken}`,
@@ -219,7 +222,7 @@ router.post(
     let guildinfo;
     if (!foundHost.guilds) {
       const guildResult = await request(
-        "https://discord.com/api/users/@me/guilds",
+        "https://discord.com/api/users/@me/guilds?with_counts=true",
         {
           headers: {
             authorization: `${foundHost.tokenType} ${foundHost.accessToken}`,
@@ -266,12 +269,65 @@ router.post(
                 db.stagingprefix = newprefix;
                 break;
               }
+
+              case "welcomerChannel": {
+                let channel = req.body[param];
+                db.welcomer.channel = channel;
+                break;
+              }
+              case "welcomerText": {
+                let message = req.body[param];
+                db.welcomer.message = message.substring(0, 1024) || "Welcome {{mention}} to **{{servername}}**";
+                break;
+              }
+              case "welcomerDMText": {
+                let message = req.body[param];
+                db.welcomer.dmtext = message.substring(0, 1024);
+                break;
+              }
+              case "goodbyesChannel": {
+                let channel = req.body[param];
+                db.goodbyes.channel = channel;
+                break;
+              }
+              case "goodbyesText": {
+                let message = req.body[param];
+                db.goodbyes.message = message.substring(0, 1024) || "**{{username}}** has left the server";
+                break;
+              }
+
+              // Logging
+              case "msglogChannel": {
+                let channel = req.body[param];
+                db.logging.messages = channel;
+                break;
+              }
+              case "msglogignoreChannel": {
+                let channels = req.body[param];
+                console.log(channels);
+                break;
+              }
             }
           }
 
           // Checkboxes must be set outside for loop as disabled checkboxes don't send anything.
+
+          // Tags
           const newlock = req.body["lockTags"] == "on" ? true : false;
           db.lockTags = newlock;
+
+          // Modules
+          const moduleA = req.body["utilityPlugin"] == "on" ? true : false;
+          const moduleB = req.body["funPlugin"] == "on" ? true : false;
+          const moduleC = req.body["modPlugin"] == "on" ? true : false;
+          const moduleD = req.body["automodPlugin"] == "on" ? true : false;
+          const moduleE = req.body["socialPlugin"] == "on" ? true : false;
+
+          db.modules.utilityPlugin = moduleA;
+          db.modules.funPlugin = moduleB;
+          db.modules.modPlugin = moduleC;
+          db.modules.automodPlugin = moduleD;
+          db.modules.socialPlugin = moduleE;
 
           await db
             .save()
@@ -298,7 +354,7 @@ router.get("/dash/servers/:server", async function (req, res) {
   let guildinfo;
   if (!foundHost.guilds) {
     const guildResult = await request(
-      "https://discord.com/api/users/@me/guilds",
+      "https://discord.com/api/users/@me/guilds?with_counts=true",
       {
         headers: {
           authorization: `${foundHost.tokenType} ${foundHost.accessToken}`,
@@ -325,34 +381,40 @@ router.get("/dash/servers/:server", async function (req, res) {
         const db = await serverSettings.findById(chosenguild.id).cacheQuery();
 
         let invitebanner;
-        if (require("../config.json").process.botclient) {
-          const fetchedguild = await require("../bot")
-            .client.guilds.fetch(chosenguild.id)
+        if (!require("../config.json").process.botclient) return res.status(500).send('Bot is offline');
+        let fetchedguild;
+        const iscached = foundHost.fetchedGuilds.find(n => n.id == chosenguild.id)
+        if (iscached) fetchedguild = iscached;
+        else fetchedguild = await container.client.guilds.fetch(chosenguild.id)
             .catch(() => undefined);
-          if (!fetchedguild) {
-            return res.redirect(
-              `https://discord.com/oauth2/authorize?client_id=${settings.process.botmode == "prod" ? settings.dashboard.clientid : settings.dashboard.stageid}&permissions=52224&response_type=code&redirect_uri=${settings.dashboard.devmode ? "http://localhost:8080" : settings.dashboard.fullredirecturl}/dash&scope=bot+applications.commands&guild_id=${chosenguild.id}&disable_guild_select=true`,
-            );
-          }
+        
+        // There still is no guild. Throw user to the oauth2 menu.
+        if (!fetchedguild) {
+          return res.redirect(
+            `https://discord.com/oauth2/authorize?client_id=${settings.process.botmode == "prod" ? settings.dashboard.clientid : settings.dashboard.stageid}&permissions=52224&response_type=code&redirect_uri=${settings.dashboard.devmode ? "http://localhost:8080" : settings.dashboard.fullredirecturl}/dash&scope=bot+applications.commands&guild_id=${chosenguild.id}&disable_guild_select=true`,
+          );
+        }
 
           invitebanner = fetchedguild.splashURL({
             size: 4096,
             extension: "png",
           });
-        }
+        
 
         if (!db) {
           return res.redirect(
             `/dash?errormsg=Aw shucks, you caught a rare bug. There's a problem with the database to ${chosenguild.name}. It usually happens if you invite the bot while it is offline. In your server, run /stats dbfix to attempt to fix the database and try again.`,
           );
         }
-
+        
         res.render("pages/serverconf", {
           title: "Server config",
           config: db,
           server: chosenguild,
+          guildObj: fetchedguild,
           background: invitebanner,
           subStat: req.query.status ? req.query.status : "",
+          memberCache: container.client.users.cache
         });
       } else {
         res.redirect(

@@ -19,8 +19,7 @@ class UserCommand extends Command {
         usage: "userinfo [user]",
         examples: ["userinfo sylveondev"],
         args: [
-          "name: The name of the emoji to use.",
-          "emoji: The emoji, or url",
+          "user: The user to get info on.",
         ],
       },
       cooldownDelay: 3_000,
@@ -28,6 +27,7 @@ class UserCommand extends Command {
         PermissionFlagsBits.SendMessages,
         PermissionFlagsBits.EmbedLinks,
       ],
+      preconditions: ["module"]
     });
   }
 

@@ -48,12 +48,12 @@ class chatInputCommandError extends Listener {
 
     if (interaction.deferred || interaction.replied) {
       return interaction.editReply({
-        content: `${this.container.emojis.error} ${error}`,
+        content: `${this.container.emojis.error} ${error}\n-# This error was logged. [Need help?](<https://discord.gg/PnUYnBbxER> "Invite link to the support server")`,
       });
     }
 
     return interaction.reply({
-      content: `${this.container.emojis.error} ${error}`,
+      content: `${this.container.emojis.error} ${error}\n-# This error was logged. [Need help?](<https://discord.gg/PnUYnBbxER> "Invite link to the support server")`,
       ephemeral: true,
     });
   }

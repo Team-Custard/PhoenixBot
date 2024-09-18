@@ -21,6 +21,7 @@ class PingCommand extends Command {
       cooldownDelay: 3_000,
       requiredUserPermissions: [PermissionFlagsBits.BanMembers],
       requiredClientPermissions: [PermissionFlagsBits.BanMembers],
+      preconditions: ["module"]
     });
   }
 

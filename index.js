@@ -1,4 +1,5 @@
 const settings = require("./config.json");
+const { ShardingManager } = require('discord.js');
 require("dotenv").config();
 
 if (settings.process.noIntro == false) {
@@ -21,13 +22,16 @@ if (settings.process.noIntro == false) {
   );
 }
 
-require("./tools/database").connect();
-
-global.bottype = require("./config.json").process.botmode;
-
 if (settings.process.botclient == true) {
-  require("./bot");
+  if (settings.process.botmode != "custom") {
+  const manager = new ShardingManager('./bot.js', { totalShards: 'auto',  token: process.env[(settings.process.botmode == "prod" ? "TOKEN" : (settings.process.botmode == "dev" ? "STAGINGTOKEN" : "TESTTOKEN"))] })
+    .on('shardCreate', shard => console.log(`Launched shard ${shard.id}`))
+    .spawn();
+  } else {
+    require("./bot");
+  }
 }
-if (settings.process.dashboard == true) {
+else if (settings.process.dashboard == true) {
+  require("./tools/database").connect();
   require("./server");
 }

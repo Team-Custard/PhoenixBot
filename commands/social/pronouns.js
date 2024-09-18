@@ -16,7 +16,35 @@ class PingCommand extends Command {
       },
       cooldownDelay: 3_000,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
+      preconditions: ["module"]
     });
+  }
+
+  async chatInputRun(interaction) {
+    await interaction.deferReply();
+    let member = await interaction.options.getMember("user");
+
+    if (!member) member = interaction.member;
+
+    const usersettings = await UserDB.findById(
+      member.user.id,
+      UserDB.upsert,
+    ).cacheQuery();
+
+    if (!usersettings) {
+      return interaction.followUp(
+        `${this.container.emojis.error} **${member.user.username}** does not have pronouns set through UserDB.`,
+      );
+    }
+    if (!usersettings.pronouns) {
+      return interaction.followUp(
+        `${this.container.emojis.error} **${member.user.username}** does not have pronouns set through UserDB.`,
+      );
+    }
+
+    await interaction.followUp(
+      `**${member.user.username}**'s pronouns are **${usersettings.pronouns}**.`,
+    );
   }
 
   async messageRun(message, args) {

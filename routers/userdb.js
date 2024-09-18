@@ -1,5 +1,6 @@
 const express = require("express");
 const UserDB = require("../tools/UserDB");
+const { container } = require("@sapphire/framework");
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ router.get("/u/:id", async function (req, res) {
     });
   }
 
-  const user = await require("../bot").client.users.fetch(member);
+  const user = await container.client.users.fetch(member);
   if (!user) {
     return res.status(404).render(`errors/userdb`, {
       title: "Error",

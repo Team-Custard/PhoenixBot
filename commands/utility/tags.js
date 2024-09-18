@@ -33,7 +33,7 @@ class PingCommand extends Subcommand {
           name: "add",
           chatInputRun: "chatInputAdd",
           messageRun: "messageAdd",
-          preconditions: ["tagLock"],
+          preconditions: ["tagLock", "module"],
         },
         {
           name: "remove",
@@ -63,6 +63,7 @@ class PingCommand extends Subcommand {
       cooldownLimit: 3,
       cooldownScope: BucketScope.Guild,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
+      preconditions: ["module"]
     });
   }
 

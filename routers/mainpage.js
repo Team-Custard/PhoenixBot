@@ -1,5 +1,5 @@
 const express = require("express");
-
+const settings = require("../config.json");
 const router = express.Router();
 
 router.get("/", function (req, res) {
@@ -26,7 +26,7 @@ router.get("/sexy", function (req, res) {
 
 router.get("/invite", function (req, res) {
   res.redirect(
-    "https://discord.com/oauth2/authorize?client_id=1171286616967479377",
+    `https://discord.com/oauth2/authorize?client_id=1239263616025493504&permissions=${settings.dashboard.clientid}&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fapi%2Flogin&integration_type=0&scope=applications.commands+bot${settings.process.botmode == "test" ? `&branch=test` : ``}`,
   );
 });
 router.get("/server", function (req, res) {
@@ -47,5 +47,10 @@ router.get("/privacy", function (req, res) {
 router.get("/errors/:id", function (req, res) {
   res.render(`errors/${req.params.id}`, { title: "Error page" });
 });
+
+router.get("/success", function (req, res) {
+  res.render(`pages/success`, { title: "Invited" });
+
+})
 
 module.exports = router;

@@ -3,6 +3,42 @@ const ServerSettings = require("../../../tools/SettingsSchema");
 const { EmbedBuilder, Colors } = require("discord.js");
 const webhookFetch = require("../../../tools/webhookFetch");
 
+// Code: https://stackoverflow.com/questions/6108819/javascript-timestamp-to-relative-time
+function timeDifference(current, previous) {
+
+  var msPerMinute = 60 * 1000;
+  var msPerHour = msPerMinute * 60;
+  var msPerDay = msPerHour * 24;
+  var msPerMonth = msPerDay * 30;
+  var msPerYear = msPerDay * 365;
+
+  var elapsed = current - previous;
+
+  if (elapsed < msPerMinute) {
+       return Math.round(elapsed/1000) + ' seconds';   
+  }
+
+  else if (elapsed < msPerHour) {
+       return Math.round(elapsed/msPerMinute) + ' minutes';   
+  }
+
+  else if (elapsed < msPerDay ) {
+       return Math.round(elapsed/msPerHour ) + ' hours';   
+  }
+
+  else if (elapsed < msPerMonth) {
+      return 'About ' + Math.round(elapsed/msPerDay) + ' days';   
+  }
+
+  else if (elapsed < msPerYear) {
+      return 'About ' + Math.round(elapsed/msPerMonth) + ' months';   
+  }
+
+  else {
+      return 'About ' + Math.round(elapsed/msPerYear ) + ' years';   
+  }
+}
+
 class GuildMemberAdd extends Listener {
   constructor(context, options) {
     super(context, {
@@ -38,7 +74,7 @@ class GuildMemberAdd extends Listener {
             iconURL: member.user.displayAvatarURL({ dynamic: true, size: 256 }),
           })
           .setDescription(
-            `${member} left\nMember since <t:${Math.floor(member.joinedTimestamp / 1000)}:R>\nCreated <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`,
+            `${member} left\nMember for: **${await timeDifference(new Date(), member.joinedAt)}**\nCreated <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`,
           )
           .setThumbnail(
             member.user.displayAvatarURL({ dynamic: true, size: 1024 }),

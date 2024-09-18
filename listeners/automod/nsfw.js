@@ -17,7 +17,6 @@ let model; // Will be loaded later when automod runs.
 function timeout(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
 class ReadyListener extends Listener {
   constructor(context, options) {
     super(context, {
@@ -178,7 +177,7 @@ class ReadyListener extends Listener {
             modlogID: null,
           };
 
-          message.member.send({ content: `${this.container.emojis.warning} You were banned from **${message.guild.id}** ${!isNaN(duration) ? `for ${require("ms")(duration, { long: true })}` : `permanently`} for the following reason: ${thecase.reason}\n-# Automatic action • case id \`${thecase.id}\`` }).catch(() => undefined);
+          message.member.send({ content: `${this.container.emojis.warning} You were banned from **${message.guild.name}** ${!isNaN(duration) ? `for ${await require("pretty-ms")(duration, { verbose: true })}` : `permanently`} for the following reason: ${thecase.reason}\n-# Automatic action • case id \`${thecase.id}\`` }).catch(() => undefined);
 
           if (db.logging.infractions) {
             const channel = await message.guild.channels
@@ -231,7 +230,7 @@ class ReadyListener extends Listener {
             modlogID: null,
           };
 
-          message.member.send({ content: `${this.container.emojis.warning} You were kicked from **${message.guild.id}** ${!isNaN(duration) ? `for ${require("ms")(duration, { long: true })}` : `permanently`} for the following reason: ${thecase.reason}\n-# Automatic action • case id \`${thecase.id}\`` }).catch(() => undefined);
+          message.member.send({ content: `${this.container.emojis.warning} You were kicked from **${message.guild.name}** for the following reason: ${thecase.reason}\n-# Automatic action • case id \`${thecase.id}\`` }).catch(() => undefined);
 
           if (db.logging.infractions) {
             const channel = await message.guild.channels
@@ -285,7 +284,7 @@ class ReadyListener extends Listener {
             modlogID: null,
           };
 
-          message.member.send({ content: `${this.container.emojis.warning} You were banned from **${message.guild.id}** ${!isNaN(duration) ? `for ${require("ms")(duration, { long: true })}` : `permanently`} for the following reason: ${thecase.reason}\n-# Automatic action • case id \`${thecase.id}\`` }).catch(() => undefined);
+          message.member.send({ content: `${this.container.emojis.warning} You were banned from **${message.guild.name}** ${!isNaN(duration) ? `for ${await require("pretty-ms")(duration, { verbose: true })}` : `permanently`} for the following reason: ${thecase.reason}\n-# Automatic action • case id \`${thecase.id}\`` }).catch(() => undefined);
 
 
           if (db.logging.infractions) {
@@ -296,7 +295,7 @@ class ReadyListener extends Listener {
               const embedT = new EmbedBuilder()
                 .setTitle(`${thecase.punishment} - Case ${thecase.id}`)
                 .setDescription(
-                  `**Offender:** ${message.member}\n**Moderator:** ${this.container.client.user}\n**Duration:** ${require("ms")(duration, { long: true })}\n**Reason:** ${thecase.reason}`,
+                  `**Offender:** ${message.member}\n**Moderator:** ${this.container.client.user}\n**Duration:** ${await require("pretty-ms")(duration, { verbose: true })}\n**Reason:** ${thecase.reason}`,
                 )
                 .setColor(Colors.Orange)
                 .setFooter({ text: `ID ${message.member.id}` })
@@ -322,7 +321,7 @@ class ReadyListener extends Listener {
           if (sendMessage == true)
             
             return message.channel.send(
-              `${this.container.emojis.success} Automatically muted ${message.author} for ${require("ms")(duration, { long: true })}.\n**Reason:** (Automod) Nsfw image detected.`,
+              `${this.container.emojis.success} Automatically muted ${message.author} for ${await require("pretty-ms")(duration, { verbose: true })}.\n**Reason:** (Automod) Nsfw image detected.`,
             );
         } else if (executions.includes("warn")) {
           let caseid = 0;
@@ -339,7 +338,7 @@ class ReadyListener extends Listener {
             modlogID: null,
           };
 
-          message.member.send({ content: `${this.container.emojis.warning} You were warned in **${message.guild.id}** for the following reason: ${thecase.reason}\n-# Automatic action • case id \`${thecase.id}\`` }).catch(() => undefined);
+          message.member.send({ content: `${this.container.emojis.warning} You were warned in **${message.guild.name}** for the following reason: ${thecase.reason}\n-# Automatic action • case id \`${thecase.id}\`` }).catch(() => undefined);
 
 
           if (db.logging.infractions) {

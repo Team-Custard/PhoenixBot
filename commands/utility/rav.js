@@ -20,6 +20,7 @@ class PingCommand extends Command {
       requiredClientPermissions: [PermissionFlagsBits.AttachFiles],
       requiredUserPermissions: [PermissionFlagsBits.ManageChannels],
       flags: true,
+      preconditions: ["module"]
     });
   }
 
