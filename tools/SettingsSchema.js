@@ -54,6 +54,7 @@ const settingsSchema = new Schema({
   logging: {
     members: String,
     messages: String,
+    msgignorechannels: [String],
     moderation: String,
     infractions: String,
     roles: String,

@@ -150,7 +150,7 @@ class PingCommand extends Command {
 
     await db.save();
     message.reply(
-      `${this.container.emojis.success} Banned **${member.tag}**${!isNaN(duration) ? `for ${await require("pretty-ms")(duration, { verbose: true })}` : ``}. ${silentDM ? "" : dmSuccess ? `` : `User was not notified.`}${isGuildMember ? `` : `\n${this.container.emojis.warning} User may not be ip banned.`}`,
+      `${this.container.emojis.success} Banned **${member.tag}**${!isNaN(duration) ? `for ${await require("pretty-ms")(duration, { verbose: true })}` : ``}. ${!silentDM && dmSuccess ? `` : `User was not notified.`}`,
     );
   }
 }

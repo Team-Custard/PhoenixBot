@@ -152,7 +152,7 @@ class PingCommand extends Command {
 
     await db.save();
     message.reply(
-      `${this.container.emojis.success} Muted **${member.user.tag}**${!isNaN(duration) ? (duration <= 40320 * 60 * 1000 ? ` for ${await require("pretty-ms")(duration, { verbose: true })}` : ``) : ``}. ${silentDM ? "" : dmSuccess ? `` : `User was not notified.`}`,
+      `${this.container.emojis.success} Muted **${member.user.tag}**${!isNaN(duration) ? (duration <= 40320 * 60 * 1000 ? ` for ${await require("pretty-ms")(duration, { verbose: true })}` : ``) : ``}. ${!silentDM && dmSuccess ? `` : `User was not notified.`}`,
     );
   }
 }

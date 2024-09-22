@@ -36,7 +36,9 @@ class PingCommand extends Command {
             .setName("channel")
             .setDescription("The channel to send the message in")
             .setRequired(false),
-        ),
+        )
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(32),
     );
   }
 

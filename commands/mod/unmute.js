@@ -131,7 +131,7 @@ class PingCommand extends Command {
 
     await db.save();
     message.reply(
-      `${this.container.emojis.success} Unmuted **${member.user.tag}**. ${silentDM ? "" : dmSuccess ? `` : `User was not notified.`}`,
+      `${this.container.emojis.success} Unmuted **${member.user.tag}**. ${!silentDM && dmSuccess ? `` : `User was not notified.`}`,
     );
   }
 }

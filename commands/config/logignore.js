@@ -12,13 +12,13 @@ class PingCommand extends Command {
   constructor(context, options) {
     super(context, {
       ...options,
-      name: "lockchannels",
-      aliases: ["lockdownchannels"],
+      name: "logignore",
+      aliases: ["msglogignore"],
       description:
-        "Configures which channels the bot will lock with the lock --all command.",
+        "Configures which channels the message log will ignore.",
       detailedDescription: {
-        usage: "lockall",
-        examples: ["lockall"],
+        usage: "logignore",
+        examples: ["logignore"],
       },
       cooldownDelay: 3_000,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
@@ -33,8 +33,8 @@ class PingCommand extends Command {
 
     const actionRow = new ActionRowBuilder().addComponents(
       new ChannelSelectMenuBuilder()
-        .setCustomId("lockdownChannels")
-        .addDefaultChannels(db.moderation.lockdownChannels)
+        .setCustomId("ignoreChannels")
+        .addDefaultChannels(db.logging.msgignorechannels)
         .setChannelTypes([
           ChannelType.GuildAnnouncement,
           ChannelType.GuildDirectory,
@@ -45,27 +45,27 @@ class PingCommand extends Command {
           ChannelType.GuildVoice,
           ChannelType.GuildText,
         ])
-        .setPlaceholder("Select channels to lock")
+        .setPlaceholder("Select channels to ignore")
         .setMaxValues(25),
     );
 
     const msg = await message.reply({
-      content: `Select the channels you want to set as lockdown channels. Channels in this list will be locked when a lockall is triggered.`,
+      content: `Select the channels you want the message log to ignore. Channels in this list will not log message events.`,
       components: [actionRow],
     });
     const filter = (interaction) =>
-      interaction.customId === "lockdownChannels" &&
+      interaction.customId === "ignoreChannels" &&
       interaction.user.id === message.author.id;
     await msg
       .awaitMessageComponent({ filter, time: 30_000 })
       .then(async function (interaction) {
         interaction.deferUpdate();
         const channels = interaction.channels.map((c) => c.id);
-        db.moderation.lockdownChannels = channels;
+        db.logging.msgignorechannels = channels;
         await db.save();
         const actionRowT = new ActionRowBuilder().addComponents(
           new ChannelSelectMenuBuilder()
-            .setCustomId("lockdownChannels")
+            .setCustomId("ignoreChannels")
             .addDefaultChannels(channels)
             .setChannelTypes([
               ChannelType.GuildAnnouncement,
@@ -76,26 +76,26 @@ class PingCommand extends Command {
               ChannelType.GuildVoice,
               ChannelType.GuildText,
             ])
-            .setPlaceholder("Select channels to lock")
+            .setPlaceholder("Select channels to ignore")
             .setMaxValues(25)
             .setDisabled(true),
         );
         await msg.edit({
-          content: `${this.container.emojis.success} Lockdown channels set successfully.`,
+          content: `${container.emojis.success} Ignore channels set successfully.`,
           components: [actionRowT],
         });
       })
       .catch(async function () {
         const actionRowT = new ActionRowBuilder().addComponents(
           new ChannelSelectMenuBuilder()
-            .setCustomId("lockdownChannels")
-            .addDefaultChannels(db.moderation.lockdownChannels)
-            .setPlaceholder("Select channels to lock")
+            .setCustomId("ignoreChannels")
+            .addDefaultChannels(db.logging.msgignorechannels)
+            .setPlaceholder("Select channels to ignore")
             .setMaxValues(25)
             .setDisabled(true),
         );
         await msg.edit({
-          content: `${this.container.emojis.error} This prompt has failed or timed out.`,
+          content: `${container.emojis.error} This prompt has failed or timed out.`,
           components: [actionRowT],
         });
       });
