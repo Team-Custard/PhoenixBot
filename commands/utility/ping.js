@@ -21,7 +21,8 @@ class PingCommand extends Command {
 
   registerApplicationCommands(registry) {
     registry.registerChatInputCommand((builder) =>
-      builder.setName("ping").setDescription("Ping bot to see if it is alive"),
+      builder.setName("ping").setDescription("Ping bot to see if it is alive")
+      .setDMPermission(false)
     );
   }
 

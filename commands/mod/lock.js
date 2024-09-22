@@ -78,6 +78,8 @@ class PingCommand extends Subcommand {
         subcommand.setName("fixperms")
         .setDescription("Checks and fixes all your server roles if there are conflicts with server lockdowns.")
       )
+      .setDMPermission(false)
+      .setDefaultMemberPermissions(1024),
     )
   }
 

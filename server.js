@@ -21,7 +21,7 @@ if (settings.dashboard.devmode == "on") {
 app.use(require("./routers/mainpage"));
 app.use(require("./routers/api"));
 app.use(require("./routers/userdb"));
-app.use(require("./routers/dashboard"));
+//app.use(require("./routers/dashboard"));
 
 // app.use(require("./routers/interactions"));
 

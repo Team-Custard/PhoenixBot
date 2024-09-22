@@ -101,7 +101,7 @@ class PingCommand extends Command {
 
     await db.save();
     message.reply(
-      `${this.container.emojis.success} **${member.tag}** was unbanned with case id **\` ${caseid} \`**.`,
+      `${this.container.emojis.success} Unbanned **${member.tag}**.`,
     );
   }
 }
