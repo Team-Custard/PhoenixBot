@@ -1,5 +1,3 @@
-const { ShardingManager } = require("discord.js");
-
 const { PhoenixClient } = require("./tools/PhoenixClient");
 const fs = require("fs");
 const { fork } = require("child_process");

@@ -60,6 +60,15 @@ const settingsSchema = new Schema({
     roles: String,
     voice: String,
   },
+  rolesMenu: [{
+    id: String,
+    name: String,
+    menutype: String,
+    roles: [{
+      emoji: String,
+      role: String
+    }]
+  }],
   moderation: {
     muteRole: String,
     defaultMuteTime: String,

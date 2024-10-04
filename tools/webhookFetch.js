@@ -1,3 +1,5 @@
+const { container } = require("@sapphire/framework");
+
 async function createWebhook(channel) {
   const wb = await channel
     .createWebhook({
@@ -19,6 +21,8 @@ async function createWebhook(channel) {
 }
 
 exports.find = async (channel) => {
+  if (!channel?.id) channel = await container.client.channels.fetch(channel).catch(() => undefined);
+  if (!channel) return;
   try {
     const webhooks = await channel.fetchWebhooks().catch(() => undefined);
     if (!webhooks) return;

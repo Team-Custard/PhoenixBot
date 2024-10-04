@@ -126,9 +126,13 @@ class PingCommand extends Subcommand {
     else threshold = Math.round(threshold); // Round the number to the nearest int in case someone specifies a decimal
     if (!baseemoji) baseemoji = "⭐";
 
-    const emojis = baseemoji.match(
-      /<a?:.+?:\d{18}>|\p{Extended_Pictographic}/gu,
+    const unicodeemoji = baseemoji.match(
+      /\p{Extended_Pictographic}/gu
     );
+    const customemoji = baseemoji.match(
+      /<:.+?:\d+>/gu,
+    );
+    const emojis = new Array().concat(unicodeemoji, customemoji).filter(item => item);
     if (emojis.length == 0)
       return interaction.followUp(`${this.container.emojis.error} Invalid emoji specified.`);
 
