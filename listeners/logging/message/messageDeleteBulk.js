@@ -32,7 +32,7 @@ class GuildMemberAdd extends Listener {
         .fetch(db.logging.messages)
         .catch(() => undefined);
       if (channel) {
-        if (db.logging.msgignorechannels.includes(gchannel.id)) return;
+        if (db.logging.msgignorechannels.includes(gchannel.id) || db.logging.msgignorechannels.includes(gchannel.parent?.id)) return;
 
         const webhook = await webhookFetch.find(channel);
 

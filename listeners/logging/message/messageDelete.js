@@ -1,7 +1,7 @@
 const { Listener } = require("@sapphire/framework");
 const { isGuildBasedChannel } = require("@sapphire/discord.js-utilities");
 const ServerSettings = require("../../../tools/SettingsSchema");
-const { EmbedBuilder, Colors, AuditLogEvent } = require("discord.js");
+const { EmbedBuilder, Colors, AuditLogEvent, Message } = require("discord.js");
 const webhookFetch = require("../../../tools/webhookFetch");
 
 class GuildMemberAdd extends Listener {
@@ -12,6 +12,9 @@ class GuildMemberAdd extends Listener {
       event: "messageDelete",
     });
   }
+  /**
+   * @param {Message} message
+   */
   async run(message) {
     if (message.partial) {
       // The message is a partial. Attempt to log it anyway.
@@ -75,7 +78,7 @@ class GuildMemberAdd extends Listener {
         .fetch(db.logging.messages)
         .catch(() => undefined);
       if (channel) {
-        if (db.logging.msgignorechannels.includes(message.channel.id)) return;
+        if (db.logging.msgignorechannels.includes(message.channel.id) || db.logging.msgignorechannels.includes(message.channel.parent?.id)) return;
 
         const webhook = await webhookFetch.find(channel);
 
