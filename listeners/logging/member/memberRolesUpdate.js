@@ -41,7 +41,7 @@ class GuildMemberAdd extends Listener {
 
         let embeds = [];
 
-        if (oldMember.roles != member.roles) {
+        if (oldMember.roles.cache.size != member.roles.cache.size) {
             const fetchedLogs = await member.guild.fetchAuditLogs({
               type: AuditLogEvent.MemberRoleUpdate,
               limit: 1,
@@ -66,8 +66,8 @@ class GuildMemberAdd extends Listener {
               ).catch(() => undefined);
               if (executor) embed.setDescription(
                 `${executor} update ${member}'s roles\n${addRoles.size ? '**Added:** '+ addRoles.map(r => r) + '\n' : ``}${removedRoles.size ? '**Removed:** '+ removedRoles.map(r => r) : ``}`,
-              ).setAuthor({
-                name: executor.username,
+              ).setFooter({
+                text: executor.username,
                 iconURL: executor.displayAvatarURL({
                   dynamic: true,
                   size: 256,

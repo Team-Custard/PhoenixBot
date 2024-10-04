@@ -109,8 +109,8 @@ class GuildMemberAdd extends Listener {
           ).catch(() => undefined);
           if (executor) embed.setDescription(
             `${executor} deleted ${message.author}'s message in ${message.channel}\n**Message:**\n${message.content}`,
-          ).setAuthor({
-            name: executor.username,
+          ).setFooter({
+            text: executor.username,
             iconURL: executor.displayAvatarURL({
               dynamic: true,
               size: 256,

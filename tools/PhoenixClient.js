@@ -22,6 +22,7 @@ class PhoenixClient extends SapphireClient {
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildModeration,
         GatewayIntentBits.DirectMessages,
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessageReactions,
@@ -29,7 +30,10 @@ class PhoenixClient extends SapphireClient {
       loadDefaultErrorListeners: true,
       loadMessageCommandListeners: true,
       typing: true,
-      partials: [Partials.Message, Partials.Reaction],
+      partials: [
+        Partials.Message,
+        Partials.Reaction
+      ],
       tasks: {
         bull: {
           connection: {
