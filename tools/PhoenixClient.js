@@ -4,12 +4,17 @@ const { GatewayIntentBits, Partials } = require("discord.js");
 const database = require("../tools/SettingsSchema");
 const settings = require("../config.json");
 
+const { ClusterClient, getInfo } = require('discord-hybrid-sharding');
+
 require('@sapphire/plugin-scheduled-tasks/register');
 const redisParse = require('./parseRedisUrl').parse();
 
 class PhoenixClient extends SapphireClient {
   constructor() {
     super({
+      shards: getInfo().SHARD_LIST,
+      shardCount: getInfo().TOTAL_SHARDS,
+
       caseInsensitiveCommands: true,
       caseInsensitivePrefixes: true,
       defaultPrefix: settings.prefix,
@@ -38,6 +43,8 @@ class PhoenixClient extends SapphireClient {
       allowedMentions: { parse: ['everyone', 'roles', 'users'], repliedUser: false }
     });
   }
+
+  cluster = new ClusterClient(this);
 
   async login(token) {
     return super.login(token);

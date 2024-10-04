@@ -1,5 +1,5 @@
 const settings = require("./config.json");
-const { ShardingManager } = require('discord.js');
+const { ClusterManager } = require('discord-hybrid-sharding');
 require("dotenv").config();
 
 if (settings.process.noIntro == false) {
@@ -24,9 +24,15 @@ if (settings.process.noIntro == false) {
 
 if (settings.process.botclient == true) {
   if (settings.process.botmode != "custom") {
-  const manager = new ShardingManager('./bot.js', { totalShards: 'auto',  token: process.env[(settings.process.botmode == "prod" ? "TOKEN" : (settings.process.botmode == "dev" ? "STAGINGTOKEN" : "TESTTOKEN"))] })
-    .on('shardCreate', shard => console.log(`Launched shard ${shard.id}`))
-    .spawn();
+    new ClusterManager(`${__dirname}/bot.js`, {
+      totalShards: 'auto',
+      shardsPerClusters: 4,
+      // totalClusters: 7,
+      mode: 'process',
+      token: process.env[(settings.process.botmode == "prod" ? "TOKEN" : (settings.process.botmode == "dev" ? "STAGINGTOKEN" : "TESTTOKEN"))],
+    })
+    .on('clusterCreate', cluster => console.log(`Launched Cluster ${cluster.id}`))
+    .spawn({ timeout: -1 });
   } else {
     require("./bot");
   }

@@ -73,6 +73,7 @@ class UserCommand extends Command {
         `**Owner:** <@${guild.ownerId}>\n`+
         `**Created:** <t:${Math.floor(guild.createdTimestamp / 1000)}:R>\n`+
         `**Shard:** ${guild.shardId}\n`+
+        `**Premium:** ${await require("../../tools/premiumCheck")(guild) ? this.container.emojis.success : this.container.emojis.error}\n` +
         `\n**Users:** ${guild.memberCount} / ${guild.maximumMembers}\n`+
         `**Roles:** ${guild.roles.cache.size} / 250\n`+
         `**Channels:** ${guild.channels.cache.size} / 250\n`+
@@ -92,7 +93,33 @@ class UserCommand extends Command {
 
   async messageRun(message, args) {
     const guild = await args.pick("guild").catch(() => message.guild);
-    
+
+    const embed = new EmbedBuilder()
+    .setAuthor({
+        name: guild.name,
+        iconURL: guild.iconURL({dynamic:true, size: 512})
+    })
+    .setDescription(`**Name:** ${guild.name}\n`+
+        `**ID:** ${guild.id}\n`+
+        `**Owner:** <@${guild.ownerId}>\n`+
+        `**Created:** <t:${Math.floor(guild.createdTimestamp / 1000)}:R>\n`+
+        `**Shard:** ${guild.shardId}\n`+
+        `**Premium:** ${await require("../../tools/premiumCheck")(guild) ? this.container.emojis.success : this.container.emojis.error}\n` +
+        `\n**Users:** ${guild.memberCount} / ${guild.maximumMembers}\n`+
+        `**Roles:** ${guild.roles.cache.size} / 250\n`+
+        `**Channels:** ${guild.channels.cache.size} / 250\n`+
+        `**Emojis:** ${guild.emojis.cache.filter(e => e.animated == false).size} / ${guild.premiumTier == 3 ? 250 : (guild.premiumTier == 2 ? 150 : (guild.premiumTier == 3 ? 100 : 50))}\n`+
+        `**Boosts:** ${guild.premiumSubscriptionCount} (Level ${guild.premiumTier})\n`+
+        `\n**Verification:** ${guild.verificationLevel} / 4\n`+
+        `**Explicit filter:** ${guild.explicitContentFilter} / 2\n`+
+        `**Notifications:** ${guild.defaultMessageNotifications == 1 ? `@mention` : `all`}`
+    )
+    .setThumbnail(guild.iconURL({dynamic:true, size: 512}))
+    .setColor(Colors.Orange)
+    .setFooter({ text: `Triggered` })
+    .setTimestamp(new Date());
+
+    message.reply({ embeds: [embed] });
   }
 }
 module.exports = {

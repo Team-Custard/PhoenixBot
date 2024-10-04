@@ -7,23 +7,19 @@ class ReadyListener extends Listener {
     super(context, {
       ...options,
       once: true,
-      event: "shardReady",
+      event: "clusterReady",
     });
   }
-  /**
-   * 
-   * @param {Client} shard 
-   * @param {Set} unavailableGuilds
-   */
-  run(id, unavailableGuilds) {
+
+  run(id) {
     if (require("../../config.json").process.botmode == "custom") return;
-    
+
     if (require("../../config.json").process.dashboard == true && id === 0) {
         global.bottype = require("../../config.json").process.botmode;
         require("../../server");
     }
 
-    this.container.logger.info(`Shard ${id} is ready.`)
+    this.container.logger.info(`Cluster ${id} is ready.`);
   }
 }
 module.exports = {
