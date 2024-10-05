@@ -1,4 +1,4 @@
-const { Command } = require("@sapphire/framework");
+const { Command, container } = require("@sapphire/framework");
 const { Colors, PermissionFlagsBits } = require("discord.js");
 const serverSettings = require("../../tools/SettingsSchema");
 
@@ -90,7 +90,7 @@ class PingCommand extends Command {
               db.moderation.muteRole = muteRole.id;
               await db.save();
               msg.edit(
-                `${this.container.emojis.success} Successfully created the muted role. Applied perms to ${success}/${total} channels.`,
+                `${container.emojis?.success} Successfully created the muted role. Applied perms to ${success}/${total} channels.`,
               );
             }
           }, 1000 * index);
