@@ -71,12 +71,17 @@ const settingsSchema = new Schema({
   }],
   moderation: {
     muteRole: String,
+    shadowBannedRole: String,
     defaultMuteTime: String,
     autoDelete: String,
     modRole: String,
     alwaysConfirm: Boolean,
     reasonRequired: Boolean,
     lockdownChannels: [String],
+    shadowbannedUsers: [{
+      user: String,
+      roles: [String]
+    }]
   },
   automod: {
     muteduration: String,

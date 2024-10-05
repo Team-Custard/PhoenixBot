@@ -19,6 +19,7 @@ class GuildMemberAdd extends Listener {
    * @returns 
    */
   async run(oldMember, member) {
+    if (member.partial) member = await member.fetch();
     if (this.container.client.id == "1239263616025493504") {
       const hasStaging = await member.guild.members
         .fetch("1227318291475730443")

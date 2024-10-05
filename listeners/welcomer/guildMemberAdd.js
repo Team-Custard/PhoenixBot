@@ -12,6 +12,7 @@ class GuildMemberAdd extends Listener {
     });
   }
   async run(member) {
+    if (member.partial) member = await member.fetch();
     if (member.user.bot) return;
     const db = await ServerSettings.findById(member.guild.id).cacheQuery();
     if (!db) return;

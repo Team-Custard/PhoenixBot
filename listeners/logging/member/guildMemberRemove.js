@@ -49,6 +49,7 @@ class GuildMemberAdd extends Listener {
     });
   }
   async run(member) {
+    if (member.partial) member = await member.fetch();
     if (this.container.client.id == "1239263616025493504") {
       const hasStaging = await member.guild.members
         .fetch("1227318291475730443")
@@ -57,6 +58,7 @@ class GuildMemberAdd extends Listener {
     }
 
     const db = await ServerSettings.findById(member.guild.id).cacheQuery();
+
     if (db.logging.members) {
       const channel = await member.guild.channels
         .fetch(db.logging.members)
