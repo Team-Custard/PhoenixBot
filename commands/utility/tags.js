@@ -9,7 +9,7 @@ class PingCommand extends Subcommand {
     super(context, {
       ...options,
       name: "tags",
-      aliases: ["tag"],
+      aliases: ["t", "tag"],
       description: "Displays legacy tags settings.",
       detailedDescription: {
         usage: "tag [subcommand] <name>",

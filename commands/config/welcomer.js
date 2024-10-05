@@ -34,6 +34,11 @@ class PingCommand extends Subcommand {
           messageRun: "messageSet",
         },
         {
+          name: "dm",
+          chatInputRun: "chatInputSetDM",
+          messageRun: "messageSetDM",
+        },
+        {
           name: "clear",
           chatInputRun: "chatInputClear",
           messageRun: "messageClear",
@@ -66,6 +71,17 @@ class PingCommand extends Subcommand {
                 .setDescription("The welcomer channel")
                 .setRequired(true),
             )
+            .addStringOption((option) =>
+              option
+                .setName("text")
+                .setDescription("The welcomer message to use")
+                .setRequired(false),
+            ),
+        )
+        .addSubcommand((command) =>
+          command
+            .setName("dm")
+            .setDescription("Configures the welcomer dm settings")
             .addStringOption((option) =>
               option
                 .setName("text")
@@ -119,6 +135,27 @@ class PingCommand extends Subcommand {
       });
   }
 
+  async chatInputSetDM(interaction) {
+    await interaction.deferReply();
+    const db = await serverSettings
+      .findById(interaction.guild.id, serverSettings.upsert)
+      .cacheQuery();
+
+    let messagetext = await interaction.options.getString("text");
+
+    if (!messagetext) messagetext = `Welcome to the server {{mention}}!`;
+
+    db.welcomer.dmtext = messagetext;
+
+    db.save()
+      .then(() => {
+        interaction.followUp(`${this.container.emojis.success} Successfully setup welcomer dm.`);
+      })
+      .catch((err) => {
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
+      });
+  }
+
   async chatInputClear(interaction) {
     await interaction.deferReply();
     const db = await serverSettings
@@ -161,7 +198,7 @@ class PingCommand extends Subcommand {
     const channel = await args.pick("channel");
     let messagetext = await args.rest("string").catch(() => undefined);
 
-    if (!messagetext) messagetext = `Welcome to the server {{mention}}!`;
+    if (!messagetext) messagetext = `Welcome to the **{{servername}}**, {{mention}}!`;
 
     db.welcomer.channel = channel.id;
     db.welcomer.message = messagetext;
@@ -175,12 +212,33 @@ class PingCommand extends Subcommand {
       });
   }
 
+  async messageSetDM(message, args) {
+    const db = await serverSettings
+      .findById(message.guild.id, serverSettings.upsert)
+      .cacheQuery();
+
+    let messagetext = await args.rest("string").catch(() => undefined);
+
+    if (!messagetext) messagetext = `Welcome to the **{{servername}}**, {{mention}}!`;
+
+    db.welcomer.dmtext = messagetext;
+
+    db.save()
+      .then(() => {
+        message.reply(`${this.container.emojis.success} Successfully setup welcomer dm.`);
+      })
+      .catch((err) => {
+        message.reply(`${this.container.emojis.error} ${err}`);
+      });
+  }
+
   async messageClear(message) {
     const db = await serverSettings
       .findById(message.guild.id, serverSettings.upsert)
       .cacheQuery();
 
     db.welcomer.channel = "";
+    db.welcomer.dmtext = "";
     db.welcomer.message = "";
 
     db.save()

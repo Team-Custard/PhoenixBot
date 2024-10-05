@@ -8,7 +8,7 @@ class PingCommand extends Command {
     super(context, {
       ...options,
       name: "infractions",
-      aliases: [`infractions`],
+      aliases: [`inf`, `cases`],
       description: "Displays a user's infractions.",
       detailedDescription: {
         usage: "infractions <user>",

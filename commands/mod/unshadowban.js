@@ -78,6 +78,8 @@ class PingCommand extends Command {
       modlogID: null,
     };
 
+    if (!db.moderation.shadowBannedRole) return message.reply(`${this.container.emojis.error} Shadowbanning is not setup.`);
+
     const foundRoles = db.moderation.shadowbannedUsers.find(m => m.user == member.id);
     if (foundRoles) {
         await member.roles.set(foundRoles.roles, `(unshadowban by ${message.author.tag}) ${reason}`).catch(() => undefined);
