@@ -8,7 +8,7 @@ class PingCommand extends Command {
     super(context, {
       ...options,
       name: "asciify",
-      aliases: [`ascii`, `decancer`, `nofancyletters`],
+      aliases: [`asc`, `ascii`, `decancer`, `nofancyletters`],
       description: "Removes special characters from a member's nickname.",
       detailedDescription: {
         usage: "asciify <member>",

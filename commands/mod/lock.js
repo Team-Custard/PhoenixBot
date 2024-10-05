@@ -9,7 +9,7 @@ class PingCommand extends Subcommand {
     super(context, {
       ...options,
       name: "lock",
-      aliases: [`lockdown`],
+      aliases: [`l`, `lockdown`],
       description: "Locks a channel.",
       detailedDescription: {
         usage: "lock [flags]",

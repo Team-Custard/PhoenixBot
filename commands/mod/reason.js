@@ -8,7 +8,7 @@ class PingCommand extends Command {
     super(context, {
       ...options,
       name: "reason",
-      aliases: [`setreason`],
+      aliases: [`re`, `setreason`],
       description:
         "Changes the reason of an infraction. Note changing infractions makes you the responsible moderator.",
       detailedDescription: {

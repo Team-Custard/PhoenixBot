@@ -82,6 +82,8 @@ class PingCommand extends Command {
       modlogID: null,
     };
 
+    if (!db.moderation.shadowBannedRole) return message.reply(`${this.container.emojis.error} Shadowbanning is not setup.`);
+
     const previousRoles = member.roles.cache.map(r => r);
 
     db.moderation.shadowbannedUsers.push({

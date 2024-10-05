@@ -14,7 +14,7 @@ class UserCommand extends Command {
     super(context, {
       ...options,
       name: "serverinfo",
-      aliases: ["server", "guildinfo"],
+      aliases: ["si", "server", "guildinfo"],
       description: "Displays info on the server.",
       detailedDescription: {
         usage: "serverinfo [id]",

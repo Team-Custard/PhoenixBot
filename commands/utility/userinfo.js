@@ -13,7 +13,7 @@ class UserCommand extends Command {
     super(context, {
       ...options,
       name: "userinfo",
-      aliases: ["info", "whois"],
+      aliases: ["i", "info", "whois"],
       description: "Displays info on a user.",
       detailedDescription: {
         usage: "userinfo [user]",

@@ -8,7 +8,7 @@ class PingCommand extends Command {
     super(context, {
       ...options,
       name: "pardon",
-      aliases: [`removewarn`, `excuse`],
+      aliases: [`pd`, `removewarn`, `excuse`],
       description: "Deletes an infraction from a user.",
       detailedDescription: {
         usage: "pardon <caseid>",

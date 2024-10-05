@@ -6,7 +6,7 @@ class PingCommand extends Command {
     super(context, {
       ...options,
       name: "help",
-      aliases: ["helpme"],
+      aliases: ["h", "helpme"],
       description:
         "Displays help info. Displays the list of commands if no command ",
       detailedDescription: {
@@ -95,13 +95,13 @@ class PingCommand extends Command {
     } else {
       const cmd = this.container.client.stores
         .get("commands")
-        .find((i) => i.name === option);
+        .find((i) => (i.name === option || i.aliases.includes(option)));
       if (cmd == null) {
         return message.reply({ content: `${this.container.emojis.error} No such command was found.` });
       }
       const embed = new EmbedBuilder()
         .setTitle(
-          `${cmd.name} ${cmd.aliases.length > 0 ? cmd.aliases.join(", ") : ""}`,
+          `${cmd.name} ${cmd.aliases.length > 0 ? ` - ` + cmd.aliases.join(", ") : ""}`,
         )
         .setDescription(
           `Category: ${cmd.fullCategory}\nUsage: ${cmd.detailedDescription.usage}\n${cmd.description}`,

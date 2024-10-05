@@ -46,7 +46,10 @@ class GuildMemberAdd extends Listener {
       ])
 
       member.send({
-        content: db.welcomer.dmtext,
+        content: await require("../../tools/textParser").parse(
+          db.welcomer.dmtext,
+          member,
+        ),
         components: [actionRow]
       }).catch(() => {})
     }
