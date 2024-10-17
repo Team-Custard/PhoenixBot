@@ -83,7 +83,7 @@ class PingCommand extends Subcommand {
       type: "video",
     };
 
-    search(query, opts, function (err, results) {
+    search(query, opts, (err, results) => {
       if (err) return interaction.followUp(`${this.container.emojis.error} Not found.`);
       interaction.followUp(`${results[0].link}`);
     });
@@ -99,7 +99,7 @@ class PingCommand extends Subcommand {
       type: "channel",
     };
 
-    search(query, opts, function (err, results) {
+    search(query, opts, (err, results) => {
       if (err) return interaction.followUp(`${this.container.emojis.error} Not found.`);
       interaction.followUp(`${results[0].link}`);
     });
@@ -114,7 +114,7 @@ class PingCommand extends Subcommand {
       type: "video",
     };
 
-    search(query, opts, function (err, results) {
+    search(query, opts, (err, results) => {
       if (err) return message.reply(`${this.container.emojis.error} Not found.`);
       message.reply(`${results[0].link}`);
     });
