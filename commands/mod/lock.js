@@ -150,7 +150,7 @@ class PingCommand extends Subcommand {
     return interaction.followUp(`${this.container.emojis.success} The server has been locked until \`lock end\` is used.`);
   }
 
-  async messageServer(message) {
+  async messageLockServer(message) {
     if (!message.guild.roles.everyone.permissions.has(PermissionsBitField.resolve("SendMessages"))) return message.reply(`${this.container.emojis.error} The server is already locked.`);
     const permissions = new PermissionsBitField(message.guild.roles.everyone.permissions);
     await permissions.remove("SendMessages");

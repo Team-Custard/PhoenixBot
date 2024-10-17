@@ -45,6 +45,7 @@
     "dotenv": "^16.4.5",
     "ejs": "^3.1.9",
     "express": "^4.19.2",
+    "google-auth-library": "^9.14.2",
     "install": "^0.13.0",
     "jquery": "^3.7.1",
     "languagedetect": "^2.0.0",

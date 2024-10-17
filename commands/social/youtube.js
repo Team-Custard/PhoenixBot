@@ -129,7 +129,7 @@ class PingCommand extends Subcommand {
       type: "channel",
     };
 
-    search(query, opts, function (err, results) {
+    search(query, opts, (err, results) => {
       if (err) return message.reply(`${this.container.emojis.error} Not found.`);
       message.reply(`${results[0].link}`);
     });
