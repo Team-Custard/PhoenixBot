@@ -30,6 +30,8 @@ class PingCommand extends Command {
   }
 
   async messageRun(message, args) {
+    if (require("../../config.json").process.botmode == "custom") return message.reply(`${this.container.emojis.error} Sorry, custom bots can't use the nsfw automod at this time.`);
+
     const disable = args.getFlags('disable', 'd');
     let weight = args.getOption('weight', 'w');
     if (isNaN(weight)) weight = 50;
