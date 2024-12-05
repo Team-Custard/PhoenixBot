@@ -107,6 +107,7 @@ const settingsSchema = new Schema({
       expired: Boolean,
       hidden: Boolean,
       modlogID: String,
+      creationDate: String,
     },
   ],
 }).plugin(SpeedGooseCacheAutoCleaner);

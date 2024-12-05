@@ -30,6 +30,7 @@ class PingCommand extends Command {
   }
 
   async messageRun(message, args) {
+    /*
     if (require("../../config.json").process.botmode == "custom") return message.reply(`${this.container.emojis.error} Sorry, custom bots can't use the nsfw automod at this time.`);
 
     const disable = args.getFlags('disable', 'd');
@@ -109,6 +110,8 @@ class PingCommand extends Command {
           components: [comp],
         });
       });
+      */
+     message.reply(`${this.container.emojis.info} Sorry, the nsfw automod has been removed and is no longer available. Join the [support server](https://discord.gg/PnUYnBbxER "the support server to Phoenix") for more information and alternatives.`)
   }
 }
 module.exports = {

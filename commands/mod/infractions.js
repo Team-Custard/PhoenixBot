@@ -1,3 +1,5 @@
+const { PaginatedMessage } = require("@sapphire/discord.js-utilities");
+
 const { Command } = require("@sapphire/framework");
 const { PermissionFlagsBits, EmbedBuilder, Colors } = require("discord.js");
 const serverSettings = require("../../tools/SettingsSchema");
@@ -28,7 +30,7 @@ class PingCommand extends Command {
       .findById(message.guild.id, serverSettings.upsert)
       .cacheQuery();
 
-    const infractions = db.infractions.filter((c) => c.member == user.id);
+    let infractions = db.infractions.filter((c) => c.member == user.id);
 
     if (infractions.length == 0) {
       return message.reply(
@@ -36,12 +38,35 @@ class PingCommand extends Command {
       );
     }
 
-    const list = infractions.map(
+    infractions = infractions.reverse();
+
+    const paginated = new PaginatedMessage();
+
+    // If this doesn't work I'm jumping off a bridge.
+    // It's cached btw, so new infractions may not show up right away.
+    for (let i = 0; i < infractions.length; i += 5) {
+      console.log(i)
+      await paginated.addPageBuilder(page => page
+        .setEmbeds([new EmbedBuilder()
+          .setAuthor({
+            name: user.tag,
+            iconURL: user.displayAvatarURL({ dynamic: true })
+          })
+          .setDescription(`${infractions.slice(i, i+5).map(inf => `\` ${inf.id} \` **${inf.punishment} by ${inf.hidden ? "hidden moderator" : `<@!${inf.moderator}>`}**\n* **Created:** ${inf.creationDate ? `<t:${inf.creationDate}>` : `Unknown`}\n* **Reason:** ${inf.reason}${inf.expiretime != 0 ? `\n* **Expires:** <t:${inf.expiretime}:R>` : ``}`).join(`\n`)}`)
+          .setColor(Colors.Orange)
+          .setTimestamp(new Date())
+        ])
+      )
+    }
+
+    await paginated.run(message, message.author);
+    
+    /* const list = infractions.map(
       (m, i) =>
         `${i + 1}: ${m.punishment} | ${m.id} | ${m.hidden ? `Hidden` : this.container.client.users.cache.get(m.moderator) ? this.container.client.users.cache.get(m.moderator).tag : m.moderator} | ${m.reason} | ${m.expiretime == 0 ? `Permanent` : m.expiretime} | ${m.expired ? `Expired` : `Active`}`,
     );
 
-    message.reply(`\`\`\`${list.join("\n")}\`\`\``);
+    message.reply(`\`\`\`${list.join("\n")}\`\`\``); */
   }
 }
 module.exports = {

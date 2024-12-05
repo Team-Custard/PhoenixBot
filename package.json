@@ -27,6 +27,7 @@
     "@discordjs/rest": "^2.2.0",
     "@google-cloud/translate": "^8.3.0",
     "@napi-rs/canvas": "^0.1.52",
+    "@sapphire/discord.js-utilities": "^7.3.0",
     "@sapphire/framework": "^5.2.1",
     "@sapphire/plugin-scheduled-tasks": "^10.0.1",
     "@sapphire/plugin-subcommands": "^6.0.3",

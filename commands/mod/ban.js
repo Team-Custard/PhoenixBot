@@ -25,7 +25,9 @@ class PingCommand extends Command {
         flags: [
           `--silent : Don't send a dm to the member.`,
           `--hide : Don't show yourself as the moderator in user dm.`,
-          `--purge : Purges the user's messages up to 7 days`,
+          `--purge : Deletes 7 days worth of the user's messages.`,
+          `--mass : Bans multiple specified members at once. They will not recieve a dm if this is used.`,
+          `--link : Bans the member from all servers your server is affiliated with (shareban).`
         ],
       },
       cooldownDelay: 3_000,
@@ -101,16 +103,25 @@ class PingCommand extends Command {
       member: member.id,
       moderator: message.member.id,
       reason: reason,
-      expiretime: 0,
+      expiretime: (isNaN(duration) ? 0 : Math.round(Date.now() / 1000) + Math.round(duration / 1000)),
       expired: false,
       hidden: hideMod,
       modlogID: null,
+      creationDate: (Math.round(Date.now() / 1000))
     };
 
     let dmSuccess = true;
-    member.send({ content: `${this.container.emojis.warning} You were banned from **${message.guild.name}** ${!isNaN(duration) ? `for ${await require("pretty-ms")(duration, { verbose: true })}` : `permanently`} for the following reason: ${thecase.reason}\n-# Action by ${message.member} • case id \`${thecase.id}\`` }).catch(function () {
-      dmSuccess = false;
-    });
+      if (!silentDM) member.send({ embeds: [new EmbedBuilder()
+        .setTitle(`${this.container.emojis.error} You were banned!`)
+        .setDescription(`You have been banned from **${message.guild.name}**.\n**Case: \` ${thecase.id} \`**\n**Moderator:** ${hideMod ? 'Hidden' : `<@!${thecase.moderator}>`}\n**Duration:** ${!isNaN(duration) ? (duration <= 40320 * 60 * 1000 ? ` for ${await require("pretty-ms")(duration, { verbose: true })}` : `Permanent`) : `Permanent`}\n**Reason:** ${thecase.reason || 'No reason was provided'}`)
+        .setFooter({
+          text: message.guild.name,
+          iconURL: message.guild.iconURL({ dynamic: true })
+        })
+        .setColor(Colors.Orange)
+      ]}).catch(function () {
+        dmSuccess = false;
+      });
     await message.guild.bans.create(member.id, {
       deleteMessageSeconds: purge ? 60 * 60 * 24 * 7 : 0,
       reason: `(Ban by ${message.author.tag}${isNaN(duration) ? `` : ` | ${require("ms")(duration)}`}) ${reason}`,

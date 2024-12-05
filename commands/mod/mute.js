@@ -81,10 +81,11 @@ class PingCommand extends Command {
       member: member.id,
       moderator: message.member.id,
       reason: reason,
-      expiretime: 0,
+      expiretime: (isNaN(duration) ? 0 : Math.round(Date.now() / 1000) + Math.round(duration / 1000)),
       expired: false,
       hidden: hideMod,
       modlogID: null,
+      creationDate: (Math.round(Date.now() / 1000))
     };
 
     if (!isNaN(duration)) {
@@ -117,9 +118,17 @@ class PingCommand extends Command {
     }
 
     let dmSuccess = true;
-    member.send({ content: `${this.container.emojis.warning} You were muted in **${message.guild.name}** ${!isNaN(duration) ? `for ${await require("pretty-ms")(duration, { verbose: true })}` : `permanently`} for the following reason: ${thecase.reason}\n-# Action by ${message.member} • case id \`${thecase.id}\`` }).catch(function () {
-      dmSuccess = false;
-    });
+      if (!silentDM) member.send({ embeds: [new EmbedBuilder()
+        .setTitle(`${this.container.emojis.warning} You were muted!`)
+        .setDescription(`You have been muted in **${message.guild.name}**.\n**Case: \` ${thecase.id} \`**\n**Moderator:** ${hideMod ? 'Hidden' : `<@!${thecase.moderator}>`}\n**Duration:** ${!isNaN(duration) ? (duration <= 40320 * 60 * 1000 ? ` for ${await require("pretty-ms")(duration, { verbose: true })}` : `Permanent`) : `Permanent`}\n**Reason:** ${thecase.reason || 'No reason was provided'}`)
+        .setFooter({
+          text: message.guild.name,
+          iconURL: message.guild.iconURL({ dynamic: true })
+        })
+        .setColor(Colors.Orange)
+      ]}).catch(function () {
+        dmSuccess = false;
+      });
 
     if (db.logging.infractions) {
       const channel = await message.guild.channels
