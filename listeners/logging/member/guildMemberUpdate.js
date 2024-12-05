@@ -75,7 +75,7 @@ class GuildMemberAdd extends Listener {
                 firstEntry.executorId,
               ).catch(() => undefined);
               if (executor) embed.setDescription(
-                    `${executor} updated ${member}'s nickname\n**New name:** ${member.nickname}\n**Old name:** ${oldMember.nickname}`
+                    `${executor} updated ${member}'s nickname\n**New name:** ${member.nickname}\n**Old name:** ${oldMember.nickname}\n**Reason:** ${firstEntry.reason || `No reason specified.`}`
                 )
                 .setFooter({
                   text: executor.username,

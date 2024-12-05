@@ -76,6 +76,7 @@ class PingCommand extends Command {
       expired: false,
       hidden: hideMod,
       modlogID: null,
+      creationDate: (Math.round(Date.now() / 1000))
     };
 
     if (!db.moderation.shadowBannedRole) return message.reply(`${this.container.emojis.error} Shadowbanning is not setup.`);
@@ -87,9 +88,17 @@ class PingCommand extends Command {
     }
 
     let dmSuccess = true;
-    member.send({ content: `${this.container.emojis.success} You were unshadowbanned in **${message.guild.name}** for the following reason: ${thecase.reason}\n-# Action by ${message.member} • case id \`${thecase.id}\`` }).catch(function () {
-      dmSuccess = false;
-    });
+      if (!silentDM) member.send({ embeds: [new EmbedBuilder()
+        .setTitle(`${this.container.emojis.success} You were unshadowbanned!`)
+        .setDescription(`You have been unshadowbanned in **${message.guild.name}**.\n**Case: \` ${thecase.id} \`**\n**Moderator:** ${hideMod ? 'Hidden' : `<@!${thecase.moderator}>`}\n**Reason:** ${thecase.reason || 'No reason was provided'}`)
+        .setFooter({
+          text: message.guild.name,
+          iconURL: message.guild.iconURL({ dynamic: true })
+        })
+        .setColor(Colors.Orange)
+      ]}).catch(function () {
+        dmSuccess = false;
+      });
 
     if (db.logging.infractions) {
       const channel = await message.guild.channels

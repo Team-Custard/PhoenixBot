@@ -32,7 +32,10 @@ class PingCommand extends Command {
     if (!thecase) return message.reply(`${this.container.emojis.error} No such case found.`);
 
     for (let i = 0; i < db.infractions.length; i++) {
-      if (db.infractions[i].id == caseid) db.infractions.splice(i, 1);
+      if (db.infractions[i].id == caseid) {
+        db.infractions[i].punishment = db.infractions[i].punishment + " (pardoned)"
+        db.infractions[i].expired = true
+      }
     }
 
     await db.save();
@@ -46,7 +49,7 @@ class PingCommand extends Command {
         .catch(() => undefined);
       if (channel) {
         const embed = new EmbedBuilder()
-          .setTitle(`${thecase.punishment} - Pardoned`)
+          .setTitle(`${thecase.punishment} - Case ${thecase.id}`)
           .setDescription(
             `**Offender:** <@${thecase.member}>\n**Moderator:** <@${thecase.moderator}>\n**Reason:** ${thecase.reason}`,
           )

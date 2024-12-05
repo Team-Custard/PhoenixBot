@@ -57,7 +57,7 @@ class GuildMemberAdd extends Listener {
               name: member.user.username,
               iconURL: member.user.displayAvatarURL({ dynamic: true, size: 256 }),
             })
-            .setDescription(`${member} roles updated\n${addRoles.size ? '**Added:** '+ addRoles.map(r => r) + '\n' : ``}${removedRoles.size ? '**Removed:** '+ removedRoles.map(r => r) : ``}`)
+            .setDescription(`${member} roles updated\n${addRoles.size ? '**Added:** '+ addRoles.map(r => r) : ``}${removedRoles.size ? '\n**Removed:** '+ removedRoles.map(r => r) : ``}`)
             .setColor(Colors.Orange)
             .setTimestamp(new Date());
 
@@ -66,7 +66,7 @@ class GuildMemberAdd extends Listener {
                 firstEntry.executorId,
               ).catch(() => undefined);
               if (executor) embed.setDescription(
-                `${executor} update ${member}'s roles\n${addRoles.size ? '**Added:** '+ addRoles.map(r => r) + '\n' : ``}${removedRoles.size ? '**Removed:** '+ removedRoles.map(r => r) : ``}`,
+                `${executor} updated ${member}'s roles\n${addRoles.size ? '**Added:** '+ addRoles.map(r => r) : ``}${removedRoles.size ? '\n**Removed:** '+ removedRoles.map(r => r) : ``}\n**Reason:** ${firstEntry.reason || `No reason specified.`}`,
               ).setFooter({
                 text: executor.username,
                 iconURL: executor.displayAvatarURL({

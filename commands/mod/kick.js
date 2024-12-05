@@ -77,15 +77,21 @@ class PingCommand extends Command {
       expired: false,
       hidden: hideMod,
       modlogID: null,
+      creationDate: (Math.round(Date.now() / 1000))
     };
 
     let dmSuccess = true;
-    
-    if (!silentDM) {
-      member.send({ content: `${this.container.emojis.warning} You were kicked from **${message.guild.name}** for the following reason: ${thecase.reason}\n-# Action by ${message.member} • case id \`${thecase.id}\`` }).catch(function () {
+      if (!silentDM) member.send({ embeds: [new EmbedBuilder()
+        .setTitle(`${this.container.emojis.warning} You've been kicked!`)
+        .setDescription(`You have been kicked from **${message.guild.name}**.\n**Case: \` ${thecase.id} \`**\n**Moderator:** ${hideMod ? 'Hidden' : `<@!${thecase.moderator}>`}\n**Reason:** ${thecase.reason || 'No reason was provided'}`)
+        .setFooter({
+          text: message.guild.name,
+          iconURL: message.guild.iconURL({ dynamic: true })
+        })
+        .setColor(Colors.Orange)
+      ]}).catch(function () {
         dmSuccess = false;
       });
-    }
     await member.kick(`(Kick by ${message.author.tag}) ${reason}`);
 
     if (db.logging.infractions) {

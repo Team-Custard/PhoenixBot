@@ -49,6 +49,7 @@ class PingCommand extends Command {
       expired: false,
       hidden: false,
       modlogID: null,
+      creationDate: (Math.round(Date.now() / 1000))
     };
 
     const unban = await message.guild.bans.remove(member.id, `(Unban by ${message.author.tag}) ${reason}`).catch((e) => {
