@@ -22,6 +22,7 @@
     "type": "github",
     "url": "https://github.com/Team-Custard/PhoenixBot"
   },
+  "type": "commonjs",
   "dependencies": {
     "@discordjs/discord.js": "github:discordjs/discord.js",
     "@discordjs/rest": "^2.2.0",
@@ -45,6 +46,7 @@
     "discord.js": "^14.16.0",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.9",
+    "emoji-progressbar": "^2.0.2",
     "express": "^4.19.2",
     "google-auth-library": "^9.14.2",
     "install": "^0.13.0",

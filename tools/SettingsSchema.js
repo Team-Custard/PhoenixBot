@@ -110,6 +110,26 @@ const settingsSchema = new Schema({
       creationDate: String,
     },
   ],
+  leveling: {
+    enable: {type: Boolean, default: false},
+    users: [{
+      id: String,
+      xp: {type: Number, default: 0},
+      level: {type: Number, default: 0},
+    }],
+    blacklistRole: [String],
+    blacklistChannels: [String],
+    stackRoles: {type: Boolean, default: true},
+    rates: {
+      minimum: {type: Number, default: 5},
+      maximum: {type: Number, default: 15}
+    },
+    levelRoles: [{
+      level: String,
+      roleId: String,
+    }],
+    message: {type: String, default: `Congrats {{mention}}, you've reached level **{{level}}**!`}
+  }
 }).plugin(SpeedGooseCacheAutoCleaner);
 
 const settings = model(

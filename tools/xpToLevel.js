@@ -1,0 +1,1 @@
+module.exports = (level) => 42 * level || 1;
