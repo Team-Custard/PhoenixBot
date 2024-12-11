@@ -128,7 +128,8 @@ const settingsSchema = new Schema({
       level: String,
       roleId: String,
     }],
-    message: {type: String, default: `Congrats {{mention}}, you've reached level **{{level}}**!`}
+    message: {type: String, default: `Congrats {{mention}}, you've reached level **{{level}}**!`},
+    announceChannel: String,
   }
 }).plugin(SpeedGooseCacheAutoCleaner);
 

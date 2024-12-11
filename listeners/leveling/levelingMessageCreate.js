@@ -42,6 +42,8 @@ class ReadyListener extends Listener {
     const db = await ServerSettings.findById(message.guild.id).cacheQuery();
     if (!db.leveling.enable) return;
 
+    if (message.content.startsWith(db.prefix)) return;
+
     const xpToGive = generateXP(5, 15);
     const level = db.leveling.users.find(u => u.id == message.author.id);
 
@@ -52,9 +54,21 @@ class ReadyListener extends Listener {
             level.xp = 0;
             level.level += 1;
 
-            message.channel.send(await require('../../tools/textParser').parse(db.leveling.message, message.member, {
-                level: level.level
-            })).catch(() => undefined);
+            if (db.leveling.message) {
+                if (db.leveling.announceChannel) {
+                    await message.guild.channels.fetch(db.leveling.announceChannel)
+                    .then(async (channel) => {
+                        channel.send(await require('../../tools/textParser').parse(db.leveling.message, message.member, {
+                            level: level.level
+                        })).catch(() => undefined);
+                    })
+                    .catch(() => undefined);
+                } 
+                else message.channel.send(await require('../../tools/textParser').parse(db.leveling.message, message.member, {
+                    level: level.level
+                }))
+                .catch(() => undefined);
+            }
         }
 
         await db.save();
