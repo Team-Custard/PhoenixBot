@@ -39,13 +39,22 @@ class PingCommand extends Subcommand {
         },
         {
             name: "set_level",
-            chatInputRun: "chatInputModify",
-            messageRun: "messageModify"
+            chatInputRun: "chatInputSetLevel",
+            messageRun: "messageSetLevel"
         },
         {
-          name: "set_multiplier",
-          chatInputRun: "chatInputMultiplier",
-          messageRun: "messageMultiplier"
+          name: "set_message",
+          chatInputRun: "chatInputSetMessage",
+          messageRun: "messageSetMessage"
+        },
+        {
+          name: "reward",
+          type: "group",
+          entries: [
+            {name: `list`, chatInputRun: `chatInputListReward`, messageRun: `messageListReward`},
+            {name: `add`, chatInputRun: `chatInputAddReward`, messageRun: `messageAddReward`},
+            {name: `remove`, chatInputRun: `chatInputRemoveReward`, messageRun: `messageRemoveReward`},
+          ]
         },
         {
           name: "clear",
@@ -60,7 +69,7 @@ class PingCommand extends Subcommand {
       cooldownDelay: 30_000,
       cooldownLimit: 6,
       cooldownScope: BucketScope.Guild,
-      preconditions: ["module"]
+      preconditions: ["module"],
     });
   }
 
@@ -77,7 +86,7 @@ class PingCommand extends Subcommand {
         .addSubcommand((command) =>
           command
             .setName("toggle")
-            .setDescription("Enables/disables leveling in the server")
+            .setDescription("This toggles if users should gain levels in the server")
         )
         .addSubcommand((command) =>
           command
@@ -102,16 +111,53 @@ class PingCommand extends Subcommand {
             )
             .addIntegerOption((option) => option.setName("level").setDescription("The level to assign").setRequired(true))
           )
-          .addSubcommand((command) =>
-            command
-              .setName("set_multiplier")
-              .setDescription("Sets the main multiplier for everyone.")
-              .addNumberOption((option) =>
-                option
-                  .setName("multiplier")
-                  .setDescription("The decimal-based number to set. Minimum 0.1, max 5.0")
-                  .setRequired(true),
+        .addSubcommand((command) =>
+          command
+            .setName("set_message")
+            .setDescription("Sets the level up message")
+            .addStringOption((option) =>
+              option
+                .setName("message")
+                .setDescription("The message to set as the level up message. Leave empty to disable.")
+                .setRequired(true),
+            )
+            .addChannelOption((option) =>
+              option
+                .setName("channel")
+                .setDescription("The channel to post level up messages to. Leave blank to post in the current channel.")
+                .setRequired(false),
+            )
+          )
+          .addSubcommandGroup((group) => group
+            .setName(`rewards`)
+            .setDescription(`Level role management`)
+            .addSubcommand(command => command
+              .setName(`list`)
+              .setDescription(`Shows all the current level roles in the server.`)
+            )
+            .addSubcommand(command => command
+              .setName(`add`)
+              .setDescription(`Creates a level role`)
+              .addRoleOption(option => option
+                .setName("role")
+                .setDescription("The role to assign.")
+                .setRequired(true)
               )
+              .addIntegerOption(option => option
+                .setName("level")
+                .setDescription("The level to give the role at.")
+                .setRequired(true)
+              )
+            )
+            .addSubcommand(command => command
+              .setName(`remove`)
+              .setDescription(`Removes a level role`)
+              .addRoleOption(option => option
+                .setName("role")
+                .setDescription("The role to remove.")
+                .setRequired(true)
+              )
+            )
           )
           .addSubcommandGroup((group) => group
             .setName(`clear`)
@@ -189,6 +235,77 @@ class PingCommand extends Subcommand {
     await db.save();
     message.reply(`${this.container.emojis.success} ${db.leveling.enable ? `Enabled leveling. Users will now start leveling up.` : `Disabled leveling. Users won't gain any new xp from chatting.`}`);
   }
+
+  /**
+   * @param {ChatInputCommandInteraction} interaction 
+   */
+  async chatInputSetLevel(interaction) {
+    if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) return interaction.reply({content: `${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`, ephemeral: true});
+    await interaction.deferReply();
+    const db = await settings.findById(interaction.guild.id).cacheQuery();
+    let member = interaction.options.getMember('member');
+    let level = interaction.options.getInteger('level');
+    const userlevel = db.leveling.users.find(u => u.id == member.id);
+    if (!userlevel) return interaction.followUp(`${this.container.emojis.error} This user does not yet have a level. They need to chat first before you can set their level.`)
+    userlevel.level = level;
+    userlevel.xp = 0;
+    await db.save();
+    interaction.followUp(`${this.container.emojis.success} Set **${member.user.tag}**'s level to \` ${level} \` successfully.`)
+  }
+  async messageSetLevel(message, args) {
+    if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) return message.reply(`${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`);
+    const db = await settings.findById(message.guild.id).cacheQuery();
+    let member = await args.pick('member');
+    let level = await args.pick('integer');
+    const userlevel = db.leveling.users.find(u => u.id == member.id);
+    if (!userlevel) return message.reply(`${this.container.emojis.error} This user does not yet have a level. They need to chat first before you can set their level.`)
+    userlevel.level = level;
+    userlevel.xp = 0;
+    await db.save();
+    message.reply(`${this.container.emojis.success} Set **${member.user.tag}**'s level to \` ${level} \` successfully.`)
+  }
+
+  /**
+   * @param {ChatInputCommandInteraction} interaction 
+   */
+  async chatInputSetMessage(interaction) {
+    if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) return interaction.reply({content: `${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`, ephemeral: true});
+    await interaction.deferReply();
+    const db = await settings.findById(interaction.guild.id).cacheQuery();
+    let message = interaction.options.getString('message');
+    let channel = interaction.options.getChannel('channel');
+    if (!message) {
+      db.leveling.message = null;
+      await db.save();
+      interaction.followUp(`${this.container.emojis.success} Disabled the leveling message.`)
+    } else {
+      db.leveling.message = message;
+      db.leveling.announceChannel = channel?.id;
+      await db.save();
+      interaction.followUp(`${this.container.emojis.success} Set the leveling message successfully.`)
+    }
+  }
+  async messageSetMessage(message, args) {
+    if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) return message.reply(`${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`);
+    const db = await settings.findById(message.guild.id).cacheQuery();
+    let channel = await args.pick('channel').catch(() => undefined);
+    let msg = await args.rest('string').catch(() => undefined);
+    console.log(msg);
+    console.log(channel);
+    if (!message) {
+      db.leveling.message = null;
+      await db.save();
+      message.reply(`${this.container.emojis.success} Disabled the leveling message.`)
+    } else {
+      db.leveling.message = msg;
+      db.leveling.announceChannel = channel?.id;
+      console.log(db.leveling);
+      await db.save();
+      message.reply(`${this.container.emojis.success} Set the leveling message successfully.`)
+    }
+  }
+
+  
 
   /**
    * @param {ChatInputCommandInteraction} interaction 
