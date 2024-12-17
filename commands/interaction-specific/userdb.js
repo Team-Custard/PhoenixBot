@@ -12,6 +12,8 @@ const {
   TextInputStyle,
   EmbedBuilder,
   Colors,
+  ApplicationIntegrationType,
+  InteractionContextType,
 } = require("discord.js");
 
 // Create the Modal here so the set command works better.
@@ -176,7 +178,9 @@ class PingCommand extends Subcommand {
               .setName("clear")
               .setDescription("Clears all your UserDB settings"),
           )
-          .setDMPermission(false),
+          .setDMPermission(true)
+          .setIntegrationTypes([ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall])
+          .setContexts([InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel]),
       );
 
       const rest = new REST().setToken(this.container.client.token);
@@ -207,30 +211,6 @@ class PingCommand extends Subcommand {
                 ),
               );
           }
-          if (!res.find((r) => r.name == "setup_userdb")) {
-            console.log("Registering set command");
-            rest
-              .post(Routes.applicationCommands(this.container.client.id), {
-                body: {
-                  name: "setup_userdb",
-                  description: "User installed version of userdb set",
-                  type: 1,
-                  integration_types: [1],
-                  contexts: [0, 1, 2],
-                },
-              })
-              .then(() => {
-                console.log(
-                  "User command set message registered successfully.",
-                );
-              })
-              .catch((err) =>
-                console.log(
-                  "User command set message failed. It probably already exists.",
-                  err,
-                ),
-              );
-          }
         });
     }
   }
@@ -248,33 +228,33 @@ class PingCommand extends Subcommand {
   }
 
   async chatInputDisplay(interaction) {
-    const member = await interaction.options.getMember("user");
-    if (member.user.bot) {
+    const user = await interaction.options.getUser("user");
+    if (user.bot) {
       return interaction.reply(`${this.container.emojis.error} Bots can't be added to UserDB.`);
     }
     await interaction.deferReply();
     const usersettings = await UserDB.findById(
-      member.user.id,
+      user.id,
       UserDB.upsert,
     ).cacheQuery();
     let embed;
     if (usersettings) {
       embed = new EmbedBuilder()
-        .setTitle(member.user.username)
+        .setTitle(user.username)
         .setDescription(
-          `**ID:** ${member.user.id}\n**UserDB registered:** ${this.container.emojis.success} Yes\n\n__**UserDB info:**__\n**Timezone:** ${usersettings.timezone ? usersettings.timezone : "Unset"}\n**Pronouns:** ${usersettings.pronouns ? usersettings.pronouns : "Unset"}\n**Description:** ${usersettings.description ? usersettings.description : "Unset"}\n\n__**Socials:**__\n**Youtube:** ${usersettings.socials.youtube ? `[${usersettings.socials.youtube}](https://youtube.com/${usersettings.socials.youtube})` : "Unset"}\n**Twitter:** ${usersettings.socials.twitter ? `[${usersettings.socials.twitter}](https://twitter.com/${usersettings.socials.twitter})` : "Unset"}`,
+          `**ID:** ${user.id}\n**UserDB registered:** ${this.container.emojis.success} Yes\n\n__**UserDB info:**__\n**Timezone:** ${usersettings.timezone ? usersettings.timezone : "Unset"}\n**Pronouns:** ${usersettings.pronouns ? usersettings.pronouns : "Unset"}\n**Description:** ${usersettings.description ? usersettings.description : "Unset"}\n\n__**Socials:**__\n**Youtube:** ${usersettings.socials.youtube ? `[${usersettings.socials.youtube}](https://youtube.com/${usersettings.socials.youtube})` : "Unset"}\n**Twitter:** ${usersettings.socials.twitter ? `[${usersettings.socials.twitter}](https://twitter.com/${usersettings.socials.twitter})` : "Unset"}`,
         )
         .setColor(Colors.Orange)
-        .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+        .setThumbnail(user.displayAvatarURL({ dynamic: true }))
         .setTimestamp(new Date());
     } else {
       embed = new EmbedBuilder()
-        .setTitle(member.user.username)
+        .setTitle(user.username)
         .setDescription(
-          `**ID:** ${member.user.id}\n**UserDB registered:** ${this.container.emojis.error} No, use </userdb set:${interaction.commandId}>.`,
+          `**ID:** ${user.id}\n**UserDB registered:** ${this.container.emojis.error} No, use </userdb set:${interaction.commandId}>.`,
         )
         .setColor(Colors.Orange)
-        .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+        .setThumbnail(user.displayAvatarURL({ dynamic: true }))
 
         .setTimestamp(new Date());
     }
@@ -288,7 +268,7 @@ class PingCommand extends Subcommand {
 
   async chatInputClear(interaction) {
     await interaction.deferReply();
-    UserDB.findByIdAndDelete(interaction.member.id)
+    UserDB.findByIdAndDelete(interaction.user.id)
       .then(() => {
         interaction.followUp({
           content: `${this.container.emojis.success} Deleted your UserDB configuration successfully.`,

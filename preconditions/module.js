@@ -1,6 +1,6 @@
 const { Precondition } = require("@sapphire/framework");
 const serverSettings = require("../tools/SettingsSchema");
-const { PermissionFlagsBits, Message } = require("discord.js");
+const { PermissionFlagsBits, Message, InteractionContextType, ApplicationCommandType } = require("discord.js");
 
 class tagLockPrecondition extends Precondition {
 
@@ -14,13 +14,22 @@ class tagLockPrecondition extends Precondition {
     return this.checkLockStatus(command.fullCategory, message.guild);
   }
 
+  /**
+   * 
+   * @param {import("discord.js").Interaction} interaction 
+   * @param {*} command 
+   * @returns 
+   */
   async chatInputRun(interaction, command) {
     // for Slash Commands
+    console.log(interaction.authorizingIntegrationOwners)
+    if (!interaction.authorizingIntegrationOwners[0]) return this.ok();
     return this.checkLockStatus(command.fullCategory, interaction.guild);
   }
 
   async contextMenuRun(interaction, command) {
     // for Context Menu Command
+    if (!interaction.authorizingIntegrationOwners[0]) return this.ok();
     return this.checkLockStatus(command.fullCategory, interaction.guild);
   }
 

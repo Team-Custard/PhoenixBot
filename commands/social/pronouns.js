@@ -22,28 +22,28 @@ class PingCommand extends Command {
 
   async chatInputRun(interaction) {
     await interaction.deferReply();
-    let member = await interaction.options.getMember("user");
+    let user = await interaction.options.getUser("user");
 
-    if (!member) member = interaction.member;
+    if (!user) user = interaction.user;
 
     const usersettings = await UserDB.findById(
-      member.user.id,
+      user.id,
       UserDB.upsert,
     ).cacheQuery();
 
     if (!usersettings) {
       return interaction.followUp(
-        `${this.container.emojis.error} **${member.user.username}** does not have pronouns set through UserDB.`,
+        `${this.container.emojis.error} **${user.username}** does not have pronouns set through UserDB.`,
       );
     }
     if (!usersettings.pronouns) {
       return interaction.followUp(
-        `${this.container.emojis.error} **${member.user.username}** does not have pronouns set through UserDB.`,
+        `${this.container.emojis.error} **${user.username}** does not have pronouns set through UserDB.`,
       );
     }
 
     await interaction.followUp(
-      `**${member.user.username}**'s pronouns are **${usersettings.pronouns}**.`,
+      `**${user.username}**'s pronouns are **${usersettings.pronouns}**.`,
     );
   }
 
