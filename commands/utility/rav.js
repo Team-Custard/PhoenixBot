@@ -18,7 +18,6 @@ class PingCommand extends Command {
       },
       cooldownDelay: 3_000,
       requiredClientPermissions: [PermissionFlagsBits.AttachFiles],
-      requiredUserPermissions: [PermissionFlagsBits.ManageChannels],
       flags: true,
       preconditions: ["module"]
     });
