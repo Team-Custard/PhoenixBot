@@ -1,5 +1,6 @@
+const { ApplicationIntegrationType, InteractionContextType } = require("discord.js");
 const { Subcommand } = require("@sapphire/plugin-subcommands");
-const { BucketScope } = require("@sapphire/framework");
+const { BucketScope, ApplicationCommandRegistry } = require("@sapphire/framework");
 const search = require("youtube-search");
 
 class PingCommand extends Subcommand {
@@ -41,6 +42,9 @@ class PingCommand extends Subcommand {
     });
   }
 
+  /**
+   * @param {ApplicationCommandRegistry} registry 
+   */
   registerApplicationCommands(registry) {
     registry.idHints = ["1227016558778519622"];
     registry.registerChatInputCommand((builder) =>
@@ -69,7 +73,10 @@ class PingCommand extends Subcommand {
                 .setRequired(true),
             ),
         )
-        .setDMPermission(false),
+        .setDMPermission(true)
+        .setIntegrationTypes([ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall])
+        .setContexts([InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel])
+        ,
     );
   }
 
