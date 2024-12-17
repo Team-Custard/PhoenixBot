@@ -96,9 +96,6 @@ class PingCommand extends Subcommand {
         const permissions = new PermissionsBitField(roles.at(i).permissions);
         await permissions.remove("SendMessages");
         await permissions.remove("SendMessagesInThreads");
-        await permissions.remove("CreatePrivateThreads");
-        await permissions.remove("CreatePublicThreads");
-        await permissions.remove("AddReactions");
         await permissions.remove("Connect");
         await permissions.remove("Speak");
         const result = await roles.at(i).setPermissions(permissions, `Fixing role permissions for lockdown`).catch(() => undefined);
@@ -119,9 +116,6 @@ class PingCommand extends Subcommand {
         const permissions = new PermissionsBitField(roles.at(i).permissions);
         await permissions.remove("SendMessages");
         await permissions.remove("SendMessagesInThreads");
-        await permissions.remove("CreatePrivateThreads");
-        await permissions.remove("CreatePublicThreads");
-        await permissions.remove("AddReactions");
         await permissions.remove("Connect");
         await permissions.remove("Speak");
         const result = await roles.at(i).setPermissions(permissions, `Fixing role permissions for lockdown`).catch(() => undefined);
@@ -141,9 +135,6 @@ class PingCommand extends Subcommand {
     const permissions = new PermissionsBitField(interaction.guild.roles.everyone.permissions);
     await permissions.remove("SendMessages");
     await permissions.remove("SendMessagesInThreads");
-    await permissions.remove("CreatePrivateThreads");
-    await permissions.remove("CreatePublicThreads");
-    await permissions.remove("AddReactions");
     await permissions.remove("Connect");
     await permissions.remove("Speak");
     await interaction.guild.roles.everyone.setPermissions(permissions, `(Lock by ${interaction.user.tag})`);
@@ -155,9 +146,6 @@ class PingCommand extends Subcommand {
     const permissions = new PermissionsBitField(message.guild.roles.everyone.permissions);
     await permissions.remove("SendMessages");
     await permissions.remove("SendMessagesInThreads");
-    await permissions.remove("CreatePrivateThreads");
-    await permissions.remove("CreatePublicThreads");
-    await permissions.remove("AddReactions");
     await permissions.remove("Connect");
     await permissions.remove("Speak");
     await message.guild.roles.everyone.setPermissions(permissions, `(Lock by ${message.author.tag})`);
@@ -179,9 +167,6 @@ class PingCommand extends Subcommand {
       {
         SendMessages: false,
         SendMessagesInThreads: false,
-        CreatePublicThreads: false,
-        CreatePrivateThreads: false,
-        AddReactions: false,
         Connect: false,
         Speak: false,
       },
@@ -202,9 +187,6 @@ class PingCommand extends Subcommand {
       {
         SendMessages: false,
         SendMessagesInThreads: false,
-        CreatePublicThreads: false,
-        CreatePrivateThreads: false,
-        AddReactions: false,
         Connect: false,
         Speak: false,
       },
@@ -223,9 +205,6 @@ class PingCommand extends Subcommand {
       const permissions = new PermissionsBitField(interaction.guild.roles.everyone.permissions);
       await permissions.add("SendMessages");
       await permissions.add("SendMessagesInThreads");
-      await permissions.add("CreatePrivateThreads");
-      await permissions.add("CreatePublicThreads");
-      await permissions.add("AddReactions");
       await permissions.add("Connect");
       await permissions.add("Speak");
       await interaction.guild.roles.everyone.setPermissions(permissions, `(Unlock by ${interaction.user.tag})`);
@@ -240,9 +219,6 @@ class PingCommand extends Subcommand {
       {
         SendMessages: null,
         SendMessagesInThreads: null,
-        CreatePublicThreads: null,
-        CreatePrivateThreads: null,
-        AddReactions: null,
         Connect: null,
         Speak: null,
       },
@@ -257,9 +233,6 @@ class PingCommand extends Subcommand {
       const permissions = new PermissionsBitField(message.guild.roles.everyone.permissions);
       await permissions.add("SendMessages");
       await permissions.add("SendMessagesInThreads");
-      await permissions.add("CreatePrivateThreads");
-      await permissions.add("CreatePublicThreads");
-      await permissions.add("AddReactions");
       await permissions.add("Connect");
       await permissions.add("Speak");
       await message.guild.roles.everyone.setPermissions(permissions, `(Unlock by ${message.author.tag})`);
@@ -274,9 +247,6 @@ class PingCommand extends Subcommand {
       {
         SendMessages: null,
         SendMessagesInThreads: null,
-        CreatePublicThreads: null,
-        CreatePrivateThreads: null,
-        AddReactions: null,
         Connect: null,
         Speak: null,
       },

@@ -1,5 +1,5 @@
 const { Command } = require("@sapphire/framework");
-const { EmbedBuilder, Colors, PermissionFlagsBits } = require("discord.js");
+const { EmbedBuilder, Colors, PermissionFlagsBits, PermissionsBitField } = require("discord.js");
 
 class PingCommand extends Command {
   constructor(context, options) {
@@ -119,8 +119,8 @@ class PingCommand extends Command {
       }
       embed.addFields([
         {
-          name: "Examples",
-          value: cmd.detailedDescription.examples.join("\n"),
+          name: "Needed permissions:",
+          value: `User: ${new PermissionsBitField(cmd.options.requiredUserPermissions).toArray().join(", ") ?? "No permissions needed"}\nClient: ${new PermissionsBitField(cmd.options.requiredClientPermissions).toArray().join(", ") ?? "No permissions needed"}\n`,
         },
       ]);
       return message.reply({ embeds: [embed] });
