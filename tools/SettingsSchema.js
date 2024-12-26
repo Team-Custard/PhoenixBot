@@ -130,6 +130,8 @@ const settingsSchema = new Schema({
     }],
     message: {type: String, default: `Congrats {{mention}}, you've reached level **{{level}}**!`},
     announceChannel: String,
+    backgroundTransparency: {type: Number, default: 90},
+    useEmbed: Boolean,
   }
 }).plugin(SpeedGooseCacheAutoCleaner);
 
