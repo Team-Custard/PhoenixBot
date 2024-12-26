@@ -1,0 +1,321 @@
+import { PermissionFlagsBits } from "discord.js";
+
+const { Subcommand } = require("@sapphire/plugin-subcommands");
+const { BucketScope } = require("@sapphire/framework");
+
+class PingCommand extends Subcommand {
+  constructor(context, options) {
+    super(context, {
+      ...options,
+      name: "mod",
+      subcommands: [
+        {
+          name: "asciify",
+          chatInputRun: "chatInputCat",
+          requiredUserPermissions: ["ManageNicknames"],
+        },
+        {
+          name: "ban",
+          chatInputRun: "chatInputDog",
+          requiredUserPermissions: ["BanMembers"],
+        },
+        {
+          name: "dehoist",
+          chatInputRun: "chatInputKitten",
+          requiredUserPermissions: ["ManageNicknames"],
+        },
+        {
+          name: "infractions",
+          chatInputRun: "chatInputMeme",
+          requiredUserPermissions: ["ModerateMembers"],
+        },
+        {
+          name: "kick",
+          chatInputRun: "chatInputWolfram",
+          requiredUserPermissions: ["KickMembers"],
+        },
+        {
+          name: "mute",
+          chatInputRun: "chatInputPhoenixAV",
+          requiredUserPermissions: ["ModerateMembers"],
+        },
+        {
+          name: "nick",
+          chatInputRun: "chatInputAvatar",
+          requiredUserPermissions: ["ManageNicknames"],
+        },
+        {
+          name: "pardon",
+          chatInputRun: "chatInputRav",
+          requiredUserPermissions: ["ModerateMembers"],
+        },
+        {
+          name: "reason",
+          chatInputRun: "chatInputRav",
+          requiredUserPermissions: ["ModerateMembers"],
+        },
+        {
+          name: "shadowban",
+          chatInputRun: "chatInputRav",
+          requiredUserPermissions: ["ModerateMembers"],
+        },
+        {
+          name: "unban",
+          chatInputRun: "chatInputAvatar",
+          requiredUserPermissions: ["BanMembers"],
+        },
+        {
+          name: "unmute",
+          chatInputRun: "chatInputRav",
+          requiredUserPermissions: ["ModerateMembers"],
+        },
+        {
+          name: "unshadowban",
+          chatInputRun: "chatInputRav",
+          requiredUserPermissions: ["ModerateMembers"],
+        },
+        {
+          name: "warn",
+          chatInputRun: "chatInputRav",
+          requiredUserPermissions: ["ModerateMembers"],
+        },
+      ],
+      cooldownDelay: 60_000,
+      cooldownLimit: 10,
+      cooldownScope: BucketScope.Guild,
+    });
+  }
+
+  registerApplicationCommands(registry) {
+    registry.idHints = ["1227016558778519622"];
+    registry.registerChatInputCommand((builder) =>
+      builder
+        .setName("mod")
+        .setDescription("Mod commands")
+        .addSubcommand((command) =>
+          command.setName("asciify").setDescription("Converts fancy letters in a user's name to normal."),
+        )
+        .addSubcommand((command) =>
+          command.setName("ban").setDescription("Bans the user from the server with optional duration."),
+        )
+        .addSubcommand((command) =>
+          command
+            .setName("dehoist")
+            .setDescription("Sends a hoisting user to the bottom of the member's list."),
+        )
+        .addSubcommand((command) =>
+          command
+            .setName("infractions")
+            .setDescription("Searches a user's infractions in this server."),
+        )
+        .addSubcommand((command) =>
+          command
+            .setName("kick")
+            .setDescription("Kicks the user from the server.")
+        )
+        .addSubcommand((command) =>
+          command
+            .setName("mute")
+            .setDescription("Mutes the user for a specific amount of time.")
+        )
+        .addSubcommand((command) =>
+          command
+            .setName("nick")
+            .setDescription("Sets the user's nickname.")
+        )
+        .addSubcommand((command) =>
+          command
+            .setName("pardon")
+            .setDescription("Marks an infraction as pardoned.")
+        )
+        .setPermissions(PermissionFlagsBits.ModerateMembers)
+        .setDMPermission(false),
+    );
+  }
+
+  async chatInputRav(interaction) {
+    await interaction.deferReply();
+    const user = interaction.options.getUser("user");
+    const find = interaction.options.getBoolean("find");
+    const url = `https://serpapi.com/search.json?engine=google_reverse_image&image_url=${user.displayAvatarURL({ dynamic: true, size: 1024 })}&api_key=${process.env["serpapikey"]}`;
+
+    if (!find) {
+      return interaction.followUp({
+        content:
+          `Search **${user.username}**'s avatar.\n[\`[Google]\`](<https://lens.google.com/uploadbyurl?url=${user.displayAvatarURL({ size: 2048, dynamic: true })}>) ` +
+          `[\`[TinEye]\`](<https://www.tineye.com/search/?&url=${user.displayAvatarURL({ size: 2048, dynamic: true })}>) ` +
+          `[\`[Bing]\`](<https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIVSP&sbisrc=UrlPaste&q=imgurl:${user.displayAvatarURL({ size: 2048, dynamic: true })}>)`,
+      });
+    }
+
+    fetch(url, {
+      method: "GET",
+    })
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error(`http ${response.status} ${response.statusText}`);
+        }
+      })
+      .then((data) => {
+        if (!data.image_results)
+          return interaction.followUp(`${this.container.emojis.error} No similar profile pictures found.`);
+        const othermatches = data.image_results.map(
+          (d) => `[[${d.position}]](<${d.link}>)`,
+        );
+        interaction.followUp(
+          `Rav has found ${othermatches.length} possible matches for ${user.username}. They will be listed below. Alternative you can use the links option to send links to search it instead.\n**First match:** ${data.image_results[0].link}\n**All matches:** ${othermatches}`,
+        );
+      })
+      .catch((error) => interaction.followUp(`${this.container.emojis.error} ${error}`));
+  }
+
+  async chatInputAvatar(interaction) {
+    const guildav = await interaction.options.getBoolean("server");
+    if (guildav) {
+      let member = await interaction.options.getMember("user");
+      if (!member) member = interaction.member;
+
+      const avatar = member.displayAvatarURL({ dynamic: true, size: 1024 });
+
+      await interaction.reply({
+        files: [avatar],
+      });
+    } else {
+      let member = await interaction.options.getUser("user");
+      if (!member) member = interaction.user;
+
+      const avatar = member.displayAvatarURL({ dynamic: true, size: 1024 });
+
+      await interaction.reply({
+        files: [avatar],
+      });
+    }
+  }
+
+  async chatInputPhoenixAV(interaction) {
+    await interaction.deferReply();
+
+    let user = await interaction.options.getUser("user");
+    if (!user) user = interaction.user;
+
+    console.log("Creating image 1");
+    const { createCanvas, loadImage } = require("@napi-rs/canvas");
+    const canvas = createCanvas(1024, 1024);
+    const ctx = canvas.getContext("2d");
+
+    console.log("Creating image 2");
+    await loadImage(user.displayAvatarURL({ format: "png", size: 1024 }))
+      .then(async (img) => {
+        ctx.drawImage(img, 0, 0, canvas.height, canvas.width);
+      })
+      .catch((err) => {
+        return interaction.followUp(`${this.container.emojis.error} ${err}`);
+      });
+
+    console.log("Creating image 3");
+    await loadImage("https://phoenix.sylveondev.xyz/phoenixtrans.png")
+      .then(async (img) => {
+        ctx.drawImage(img, 0, 0, canvas.height, canvas.width);
+      })
+      .catch((err) => {
+        return interaction.followUp(`${this.container.emojis.error} ${err}`);
+      });
+
+    console.log("Creating image 4");
+    const attachment = new AttachmentBuilder(await canvas.encode("png"), {
+      name: `phoenixav.png`,
+    });
+    await interaction.followUp({
+      files: [attachment],
+    });
+  }
+
+  async chatInputWolfram(interaction) {
+    await interaction.deferReply();
+
+    const unfilteredquery = await interaction.options.getString("query");
+    const query = encodeURIComponent(unfilteredquery);
+
+    await fetch(
+      `https://api.wolframalpha.com/v1/result?i=${query}&appid=${process.env["wolframkey"]}`,
+    )
+      .then(async (response) => {
+        if (response.status != 200) {
+          return interaction.followUp(`${this.container.emojis.error} Not found or error occured.`);
+        }
+        const result = await response.text();
+        if (!result) {
+          return interaction.followUp(`${this.container.emojis.error} Not found or error occured.`);
+        }
+        interaction.followUp(`:information_source: ${result}`);
+      })
+      .catch((err) => {
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
+      });
+  }
+
+  async chatInputCat(interaction) {
+    await interaction.deferReply();
+    const getStream = await bent("https://cataas.com/");
+    const stream = await getStream("/cat");
+
+    if (stream.statusCode != 200) {
+      return interaction.followUp(`${this.container.emojis.error} ${stream.status}`);
+    }
+
+    await interaction.followUp({ files: [stream] });
+  }
+
+  async chatInputDog(interaction) {
+    await interaction.deferReply();
+    const getStream = await bent("https://dog.ceo");
+    const stream = await getStream("/api/breeds/image/random");
+
+    if (stream.statusCode != 200) {
+      return interaction.followUp(`${this.container.emojis.error} ${stream.status}`);
+    }
+
+    const obj = await stream.json();
+
+    await interaction.followUp({ files: [obj.message] });
+  }
+
+  async chatInputKitten(interaction) {
+    await interaction.deferReply();
+    const getStream = await bent("https://cataas.com/");
+    const stream = await getStream("/cat/kitten");
+
+    if (stream.statusCode != 200) {
+      return interaction.followUp(`${this.container.emojis.error} ${stream.status}`);
+    }
+
+    await interaction.followUp({ files: [stream] });
+  }
+
+  async chatInputMeme(interaction) {
+    await interaction.deferReply();
+    const getStream = await bent("https://meme-api.com");
+    const stream = await getStream("/gimme");
+
+    if (stream.statusCode != 200) {
+      return interaction.followUp(`${this.container.emojis.error} ${stream.status}`);
+    }
+
+    const obj = await stream.json();
+
+    if (obj.nsfw == true && !interaction.channel.nsfw) {
+      return interaction.followUp(
+        `Refusing to send the scraped reddit post because the post is nsfw.`,
+      );
+    }
+    await interaction.followUp({
+      content: `${obj.title} | ${obj.subreddit} | [Post link](<${obj.postLink}>)`,
+      files: [obj.url],
+    });
+  }
+}
+module.exports = {
+  PingCommand,
+};

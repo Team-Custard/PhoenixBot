@@ -70,6 +70,7 @@
     "text-language-detector": "^1.0.7",
     "translate": "^1.4.1",
     "undici": "^6.12.0",
+    "weird-to-normal-chars": "^1.8.3",
     "youtube-search": "^1.1.6"
   },
   "devDependencies": {
