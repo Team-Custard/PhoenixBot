@@ -173,6 +173,30 @@ class PingCommand extends Subcommand {
     interaction.followUp({ embeds: [embed] });
   }
 
+  async messageDisplay(message) {
+    const db = await serverSettings
+      .findById(message.guild.id, serverSettings.upsert)
+      .cacheQuery();
+
+    const embed = new EmbedBuilder()
+      .setAuthor({
+        name: message.guild.name,
+        iconURL: message.guild.iconURL({ dynamic: true }),
+      })
+      .setDescription(
+        `**Current logging settings**\n` +
+          `Messages: ${db.logging.messages ? `<#${db.logging.messages}>` : `Unset`}\n` +
+          `Members: ${db.logging.members ? `<#${db.logging.members}>` : `Unset`}\n` +
+          `Moderation: ${db.logging.moderation ? `<#${db.logging.moderation}>` : `Unset`}\n` +
+          `Infractions: ${db.logging.infractions ? `<#${db.logging.infractions}>` : `Unset`}\n` +
+          `Roles: ${db.logging.roles ? `<#${db.logging.roles}>` : `Unset`}\n` +
+          `Voice: ${db.logging.voice ? `<#${db.logging.voice}>` : `Unset`}`,
+      )
+      .setColor(Colors.Orange)
+      .setTimestamp(new Date());
+    message.reply({ embeds: [embed] });
+  }
+
   async chatInputMessages(interaction) {
     await interaction.deferReply();
     const channel = interaction.options.getChannel("channel");
@@ -193,6 +217,28 @@ class PingCommand extends Subcommand {
       })
       .catch((err) => {
         interaction.followUp(`${this.container.emojis.error} ${err}`);
+      });
+  }
+
+  async messageMessages(message, args) {
+    const channel = await args.pick("channel").catch(() => undefined);
+    const db = await serverSettings
+      .findById(message.guild.id, serverSettings.upsert)
+      .cacheQuery();
+    let successMsg = "";
+    if (channel) {
+      db.logging.messages = channel.id;
+      successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
+    } else {
+      db.logging.messages = null;
+      successMsg = `${this.container.emojis.success} Log successfully cleared.`;
+    }
+    db.save()
+      .then(() => {
+        message.reply(successMsg);
+      })
+      .catch((err) => {
+        message.reply(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -218,6 +264,27 @@ class PingCommand extends Subcommand {
         interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
+  async messageMembers(message, args) {
+    const channel = await args.pick("channel").catch(() => undefined);
+    const db = await serverSettings
+      .findById(message.guild.id, serverSettings.upsert)
+      .cacheQuery();
+    let successMsg = "";
+    if (channel) {
+      db.logging.members = channel.id;
+      successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
+    } else {
+      db.logging.members = null;
+      successMsg = `${this.container.emojis.success} Log successfully cleared.`;
+    }
+    db.save()
+      .then(() => {
+        message.reply(successMsg);
+      })
+      .catch((err) => {
+        message.reply(`${this.container.emojis.error} ${err}`);
+      });
+  }
 
   async chatInputModeration(interaction) {
     await interaction.deferReply();
@@ -239,6 +306,27 @@ class PingCommand extends Subcommand {
       })
       .catch((err) => {
         interaction.followUp(`${this.container.emojis.error} ${err}`);
+      });
+  }
+  async messageModeration(message, args) {
+    const channel = await args.pick("channel").catch(() => undefined);
+    const db = await serverSettings
+      .findById(message.guild.id, serverSettings.upsert)
+      .cacheQuery();
+    let successMsg = "";
+    if (channel) {
+      db.logging.moderation = channel.id;
+      successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
+    } else {
+      db.logging.moderation = null;
+      successMsg = `${this.container.emojis.success} Log successfully cleared.`;
+    }
+    db.save()
+      .then(() => {
+        message.reply(successMsg);
+      })
+      .catch((err) => {
+        message.reply(`${this.container.emojis.error} ${err}`);
       });
   }
 
@@ -264,6 +352,27 @@ class PingCommand extends Subcommand {
         interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
+  async messageInfractions(message, args) {
+    const channel = await args.pick("channel").catch(() => undefined);
+    const db = await serverSettings
+      .findById(message.guild.id, serverSettings.upsert)
+      .cacheQuery();
+    let successMsg = "";
+    if (channel) {
+      db.logging.infractions = channel.id;
+      successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
+    } else {
+      db.logging.infractions = null;
+      successMsg = `${this.container.emojis.success} Log successfully cleared.`;
+    }
+    db.save()
+      .then(() => {
+        message.reply(successMsg);
+      })
+      .catch((err) => {
+        message.reply(`${this.container.emojis.error} ${err}`);
+      });
+  }
 
   async chatInputRoles(interaction) {
     await interaction.deferReply();
@@ -287,6 +396,27 @@ class PingCommand extends Subcommand {
         interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
+  async messageRoles(message, args) {
+    const channel = await args.pick("channel").catch(() => undefined);
+    const db = await serverSettings
+      .findById(message.guild.id, serverSettings.upsert)
+      .cacheQuery();
+    let successMsg = "";
+    if (channel) {
+      db.logging.roles = channel.id;
+      successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
+    } else {
+      db.logging.roles = null;
+      successMsg = `${this.container.emojis.success} Log successfully cleared.`;
+    }
+    db.save()
+      .then(() => {
+        message.reply(successMsg);
+      })
+      .catch((err) => {
+        message.reply(`${this.container.emojis.error} ${err}`);
+      });
+  }
 
   async chatInputVoice(interaction) {
     await interaction.deferReply();
@@ -308,6 +438,27 @@ class PingCommand extends Subcommand {
       })
       .catch((err) => {
         interaction.followUp(`${this.container.emojis.error} ${err}`);
+      });
+  }
+  async messageVoice(message, args) {
+    const channel = await args.pick("channel").catch(() => undefined);
+    const db = await serverSettings
+      .findById(message.guild.id, serverSettings.upsert)
+      .cacheQuery();
+    let successMsg = "";
+    if (channel) {
+      db.logging.voice = channel.id;
+      successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
+    } else {
+      db.logging.voice = null;
+      successMsg = `${this.container.emojis.success} Log successfully cleared.`;
+    }
+    db.save()
+      .then(() => {
+        message.reply(successMsg);
+      })
+      .catch((err) => {
+        message.reply(`${this.container.emojis.error} ${err}`);
       });
   }
 }

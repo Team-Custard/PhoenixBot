@@ -1,6 +1,7 @@
 const { Command } = require("@sapphire/framework");
 const { PermissionFlagsBits } = require("discord.js");
 const serverSettings = require("../../tools/SettingsSchema");
+const { weirdToNormalChars } = require('weird-to-normal-chars');
 const settings = require("../../config.json");
 
 class PingCommand extends Command {
@@ -23,7 +24,6 @@ class PingCommand extends Command {
   }
 
   async messageRun(message, args) {
-    const normalisationForm = "NFKC";
     const member = await args.pick("member");
 
     if (message.member == member) {
@@ -49,7 +49,7 @@ class PingCommand extends Command {
     }
 
     const oldnickname = member.displayName;
-    const nickname = oldnickname.normalize(normalisationForm);
+    const nickname = weirdToNormalChars(oldnickname);
 
     await member.setNickname(nickname, `(Asciify by ${message.author.tag})`);
     message.reply(

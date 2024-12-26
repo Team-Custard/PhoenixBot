@@ -643,6 +643,7 @@ class PingCommand extends Subcommand {
    * @param {ChatInputCommandInteraction} interaction
    */
   async chatInputAddReward(interaction) {
+    if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) return interaction.reply({content: `${this.container.emojis.error} Only members with \`Manage Server\` can clear levels.`, ephemeral: true});
     await interaction.deferReply();
     const db = await settings.findById(interaction.guild.id).cacheQuery();
     if (((await premiumCheck(interaction.guild)) == false) && db.leveling.levelRoles > 10) return interaction.followUp(`${this.container.emojis.error} You've reached the maximum amount of level roles allowed. Buy plus to extend the limit.`);
@@ -659,11 +660,31 @@ class PingCommand extends Subcommand {
     
     interaction.followUp({ content: `${this.container.emojis.success} Now assigning ${role} on level ${lvl}`, allowedMentions:{parse:[]} });
   }
+  async messageAddReward(message, args) {
+    if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) return message.reply(`${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`);
+    const db = await settings.findById(message.guild.id).cacheQuery();
+    if (((await premiumCheck(message.guild)) == false) && db.leveling.levelRoles > 10) return message.reply(`${this.container.emojis.error} You've reached the maximum amount of level roles allowed. Buy plus to extend the limit.`);
+    if (db.leveling.levelRoles > 50) return message.reply(`${this.container.emojis.error} You've reached the maximum amount of level roles allowed.`);
+    const role = await args.pick('role');
+    const lvl = await args.pick('integer');
+    if (lvl > 1000 || lvl < 0) return message.reply(`${this.container.emojis.error} Level must be between 0 and 1000.`)
+
+    const found = db.leveling.levelRoles.findIndex(r => (r.roleId == role.id && r.level == lvl));
+    if (found > -1) {
+      db.leveling.levelRoles[found].roleId = role.id;
+      db.leveling.levelRoles[found].level = lvl.id;
+    }
+    else db.leveling.levelRoles.push({ roleId: role.id, level: lvl });
+    await db.save();
+    
+    message.reply({ content: `${this.container.emojis.success} Now assigning ${role} on level ${lvl}`, allowedMentions:{parse:[]} });
+  }
 
   /**
    * @param {ChatInputCommandInteraction} interaction
    */
   async chatInputRemoveReward(interaction) {
+    if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) return interaction.reply({content: `${this.container.emojis.error} Only members with \`Manage Server\` can clear levels.`, ephemeral: true});
     await interaction.deferReply();
     const db = await settings.findById(interaction.guild.id).cacheQuery();
     const role = interaction.options.getRole('role');
@@ -674,6 +695,19 @@ class PingCommand extends Subcommand {
       interaction.followUp({ content: `${this.container.emojis.success} Removed ${role} from the level roles.`, allowedMentions:{parse:[]} });
     }
     else return interaction.followUp(`${this.container.emojis.error} That role doesn't exist as a level role.`)
+    
+  }
+  async messageRemoveReward(message, args) {
+    if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) return message.reply(`${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`);
+    const db = await settings.findById(message.guild.id).cacheQuery();
+    const role = await args.pick('role');
+    const found = db.leveling.levelRoles.findIndex(r => (r.roleId == role.id));
+    if (found > -1) {
+      db.leveling.levelRoles.splice(found, 1);
+      await db.save();
+      message.reply({ content: `${this.container.emojis.success} Removed ${role} from the level roles.`, allowedMentions:{parse:[]} });
+    }
+    else return message.reply(`${this.container.emojis.error} That role doesn't exist as a level role.`)
     
   }
 
