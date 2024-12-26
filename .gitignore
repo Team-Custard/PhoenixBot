@@ -1,4 +1,5 @@
 node_modules/**/*
+static/rankcards/**/*
 config.json
 .env
 custombots.json

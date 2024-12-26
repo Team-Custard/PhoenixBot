@@ -26,7 +26,8 @@ class PhoenixClient extends SapphireClient {
         GatewayIntentBits.DirectMessages,
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessageReactions,
-        GatewayIntentBits.GuildVoiceStates
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildPresences
       ],
       loadDefaultErrorListeners: true,
       loadMessageCommandListeners: true,

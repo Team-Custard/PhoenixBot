@@ -1,3 +1,5 @@
+const { Message } = require("discord.js");
+
 const { isGuildBasedChannel } = require("@sapphire/discord.js-utilities");
 const { Listener, Events } = require("@sapphire/framework");
 const ServerSettings = require("../../tools/SettingsSchema");
@@ -22,6 +24,10 @@ class ReadyListener extends Listener {
       event: Events.MessageCreate,
     });
   }
+
+  /**
+   * @param {Message} message
+   */
   async run(message) {
     if (message.author.bot) return;
     if (!isGuildBasedChannel(message.channel)) return;
@@ -49,6 +55,27 @@ class ReadyListener extends Listener {
 
     if (level) {
         level.xp += xpToGive;
+        const rolestoadd = []
+        let roles = message.member.roles.cache.map(r => r.id);
+        for (let ind in roles) {
+          if (db.leveling.levelRoles.findIndex(r => r.roleId == roles[ind]) > -1) {
+            roles.splice(ind,1)
+          }
+        }
+
+        for (let i in db.leveling.levelRoles) {
+          if (db.leveling.stackRoles == true) {
+            if (level.level >= db.leveling.levelRoles[i].level) rolestoadd.push(db.leveling.levelRoles[i].roleId);
+          } else {
+            if (level.level >= db.leveling.levelRoles.sort((a, b) => a.level - b.level).reverse()[i].level && rolestoadd.length == 0) {
+              roles.push(db.leveling.levelRoles[i].roleId);
+              rolestoadd.push(db.leveling.levelRoles[i].roleId);
+            }
+          }
+          
+        }
+        if (rolestoadd.length > 0 && db.leveling.stackRoles) message.member.roles.add(rolestoadd, `Level roles`).catch(() => undefined);
+        if (rolestoadd.length > 0 && !db.leveling.stackRoles) message.member.roles.set(roles, `Level roles`).catch(() => undefined);
 
         if (level.xp > calculateLevel(level.level)) {
             level.xp = 0;
