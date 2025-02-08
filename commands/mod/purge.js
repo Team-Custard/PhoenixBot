@@ -17,7 +17,7 @@ class PingCommand extends Subcommand {
       },
       cooldownDelay: 30_000,
       cooldownScope: BucketScope.Guild,
-      requiredUserPermissions: [PermissionFlagsBits.ManageMessages],
+      suggestedUserPermissions: [PermissionFlagsBits.ManageMessages],
       requiredClientPermissions: [PermissionFlagsBits.ManageMessages],
       subcommands: [{
         name: "all",
@@ -96,10 +96,11 @@ class PingCommand extends Subcommand {
     const messages = await interaction.channel.messages.fetch({
         bulkDeletable: true,
         before: reply.id,
-        limit: limit
+        limit: limit,
+        force: true
     });
     const purged = await interaction.channel.bulkDelete(messages, true);
-    await interaction.followUp(`${this.container.emojis.success} Deleted ${purged.size}** messages.`)
+    await interaction.followUp(`${this.container.emojis.success} Deleted **${purged.size}** messages.`)
   }
 
   async messagePurgeAll(message, args) {
@@ -107,10 +108,11 @@ class PingCommand extends Subcommand {
     const messages = await message.channel.messages.fetch({
         bulkDeletable: true,
         before: message.id,
-        limit: limit
+        limit: limit,
+        force: true
     });
     const purged = await message.channel.bulkDelete(messages, true);
-    await message.reply(`${this.container.emojis.success} Deleted ${purged.size}** messages.`)
+    await message.reply(`${this.container.emojis.success} Deleted **${purged.size}** messages.`)
   }
 
   /**
@@ -123,7 +125,8 @@ class PingCommand extends Subcommand {
     const messages = await interaction.channel.messages.fetch({
         bulkDeletable: true,
         before: reply.id,
-        limit: limit
+        limit: limit,
+        force: true
     }).then(messages => {return messages.filter((msg => msg.author.id == member.id))})
     const purged = await interaction.channel.bulkDelete(messages, true);
     await interaction.followUp(`${this.container.emojis.success} Deleted **${purged.size}** messages.`)
@@ -136,7 +139,8 @@ class PingCommand extends Subcommand {
     const messages = await message.channel.messages.fetch({
         bulkDeletable: true,
         before: message.id,
-        limit: limit
+        limit: limit,
+        force: true
     }).then(async messages => {
         const filter = messages.filter((msg => msg.author.id == member.id))
         const purged = await message.channel.bulkDelete(filter, true);
@@ -154,7 +158,8 @@ class PingCommand extends Subcommand {
     const messages = await interaction.channel.messages.fetch({
         bulkDeletable: true,
         before: reply.id,
-        limit: limit
+        limit: limit,
+        force: true
     }).then(messages => {return messages.filter((msg => msg.author.bot))})
     const purged = await interaction.channel.bulkDelete(messages, true);
     await interaction.followUp(`${this.container.emojis.success} Deleted **${purged.size}** messages.`)
@@ -167,7 +172,8 @@ class PingCommand extends Subcommand {
     const messages = await message.channel.messages.fetch({
         bulkDeletable: true,
         before: message.id,
-        limit: limit
+        limit: limit,
+        force: true
     }).then(async messages => {
         const filter = messages.filter((msg => msg.author.bot))
         const purged = await message.channel.bulkDelete(filter, true);

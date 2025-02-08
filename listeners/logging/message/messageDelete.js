@@ -96,8 +96,9 @@ class GuildMemberAdd extends Listener {
             }),
           })
           .setDescription(
-            `Message deleted in ${message.channel}\n**Message:**\n${message.content}`,
+            `Message deleted in ${message.channel}${message.mentions.repliedUser ? `\n**Replying to:** ${message.mentions.repliedUser} - [message jump link](${(await message.fetchReference()).url})` : ``}${message.content ? `\n**Message:**\n${message.content}`:``}${message.stickers.first()?.url ? `\n**Sticker:**`:``}`,
           )
+          .setImage(message.stickers.first()?.url ?? null)
           .setColor(Colors.Orange)
           .setTimestamp(new Date());
 
@@ -111,8 +112,9 @@ class GuildMemberAdd extends Listener {
             firstEntry.executorId,
           ).catch(() => undefined);
           if (executor) embed.setDescription(
-            `${executor} deleted ${message.author}'s message in ${message.channel}\n**Message:**\n${message.content}`,
-          ).setFooter({
+            `${executor} deleted ${message.author}'s message in ${message.channel}${message.mentions.repliedUser ? `\n**Replying to:** ${message.mentions.repliedUser} - [message jump link](${(await message.fetchReference()).url})` : ``}${message.content ? `\n**Message:**\n${message.content}`:``}${message.stickers.length > 0 ? `\n**Sticker:**`:``}`,
+          )
+          .setFooter({
             text: executor.username,
             iconURL: executor.displayAvatarURL({
               dynamic: true,

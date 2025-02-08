@@ -47,11 +47,11 @@ class PingCommand extends Command {
           console.error(err);
         });
     } else {
-      const accepted = await require(`../../tools/warningEmbed`).warnMessage(
+      /*const accepted = await require(`../../tools/warningEmbed`).warnMessage(
         message,
         `You're about to refresh the entire stores. Continue?`,
       );
-      if (!accepted) return;
+      if (!accepted) return;*/
       const msg = await message.reply(
         `${this.container.emojis.loading} **Refreshing bot stores...**`,
       );

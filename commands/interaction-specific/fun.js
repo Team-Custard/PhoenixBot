@@ -2,7 +2,7 @@ const { Subcommand } = require("@sapphire/plugin-subcommands");
 const { BucketScope } = require("@sapphire/framework");
 const bent = require("bent");
 const fetch = require("node-fetch");
-const { AttachmentBuilder } = require("discord.js");
+const { AttachmentBuilder, ApplicationIntegrationType, InteractionContextType } = require("discord.js");
 
 class PingCommand extends Subcommand {
   constructor(context, options) {
@@ -127,10 +127,12 @@ class PingCommand extends Subcommand {
                 .setRequired(false),
             ),
         )
-        .setDMPermission(false),
+        .setDMPermission(true)
+        .setIntegrationTypes([ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall])
+        .setContexts([InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel]),
     );
   }
-
+  
   async chatInputRav(interaction) {
     await interaction.deferReply();
     const user = interaction.options.getUser("user");
@@ -172,6 +174,7 @@ class PingCommand extends Subcommand {
   async chatInputAvatar(interaction) {
     const guildav = await interaction.options.getBoolean("server");
     if (guildav) {
+      if (!interaction.guild) return interaction.reply({ content: `${this.container.emojis.error} Sorry, no valid server found.`, ephemeral: true })
       let member = await interaction.options.getMember("user");
       if (!member) member = interaction.member;
 
@@ -247,7 +250,7 @@ class PingCommand extends Subcommand {
         if (!result) {
           return interaction.followUp(`${this.container.emojis.error} Not found or error occured.`);
         }
-        interaction.followUp(`:information_source: ${result}`);
+        interaction.followUp(`${this.container.emojis.info} ${result}`);
       })
       .catch((err) => {
         interaction.followUp(`${this.container.emojis.error} ${err}`);
@@ -256,7 +259,7 @@ class PingCommand extends Subcommand {
 
   async chatInputCat(interaction) {
     await interaction.deferReply();
-    const getStream = await bent("https://cataas.com/");
+    const getStream = await bent("https://cataas.com");
     const stream = await getStream("/cat");
 
     if (stream.statusCode != 200) {
@@ -282,7 +285,7 @@ class PingCommand extends Subcommand {
 
   async chatInputKitten(interaction) {
     await interaction.deferReply();
-    const getStream = await bent("https://cataas.com/");
+    const getStream = await bent("https://cataas.com");
     const stream = await getStream("/cat/kitten");
 
     if (stream.statusCode != 200) {

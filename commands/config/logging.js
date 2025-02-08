@@ -29,6 +29,11 @@ class PingCommand extends Subcommand {
           messageRun: "messageMembers",
         },
         {
+          name: "users",
+          chatInputRun: "chatInputUsers",
+          messageRun: "messageUsers",
+        },
+        {
           name: "messages",
           chatInputRun: "chatInputMessages",
           messageRun: "messageMessages",
@@ -53,12 +58,17 @@ class PingCommand extends Subcommand {
           chatInputRun: "chatInputVoice",
           messageRun: "messageVoice",
         },
+        {
+          name: "commands",
+          chatInputRun: "chatInputCommands",
+          messageRun: "messageCommands",
+        },
       ],
       cooldownDelay: 60_000,
       cooldownLimit: 6,
       cooldownScope: BucketScope.Guild,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
-      requiredUserPermissions: [PermissionFlagsBits.ManageGuild],
+      suggestedUserPermissions: [PermissionFlagsBits.ManageGuild],
     });
   }
 
@@ -134,7 +144,33 @@ class PingCommand extends Subcommand {
           command
             .setName("voice")
             .setDescription(
-              "Logs member voice channel joins, kicks, and mutes/deafens.",
+              "Logs member joins or leaves a voice channel.",
+            )
+            .addChannelOption((option) =>
+              option
+                .setName("channel")
+                .setDescription("The channel to use. Leave blank to clear.")
+                .setRequired(false),
+            ),
+        )
+        .addSubcommand((command) =>
+          command
+            .setName("users")
+            .setDescription(
+              "Logs when a user changes their username and avatars.",
+            )
+            .addChannelOption((option) =>
+              option
+                .setName("channel")
+                .setDescription("The channel to use. Leave blank to clear.")
+                .setRequired(false),
+            ),
+        )
+        .addSubcommand((command) =>
+          command
+            .setName("commands")
+            .setDescription(
+              "Logs when a member uses a command.",
             )
             .addChannelOption((option) =>
               option
@@ -163,10 +199,11 @@ class PingCommand extends Subcommand {
         `**Current logging settings**\n` +
           `Messages: ${db.logging.messages ? `<#${db.logging.messages}>` : `Unset`}\n` +
           `Members: ${db.logging.members ? `<#${db.logging.members}>` : `Unset`}\n` +
+          `Users: ${db.logging.users ? `<#${db.logging.users}>` : `Unset`}\n` +
           `Moderation: ${db.logging.moderation ? `<#${db.logging.moderation}>` : `Unset`}\n` +
           `Infractions: ${db.logging.infractions ? `<#${db.logging.infractions}>` : `Unset`}\n` +
-          `Roles: ${db.logging.roles ? `<#${db.logging.roles}>` : `Unset`}\n` +
-          `Voice: ${db.logging.voice ? `<#${db.logging.voice}>` : `Unset`}`,
+          `Voice: ${db.logging.voice ? `<#${db.logging.voice}>` : `Unset`}\n` +
+          `Commands: ${db.logging.commands ? `<#${db.logging.commands}>` : `Unset`}`,
       )
       .setColor(Colors.Orange)
       .setTimestamp(new Date());
@@ -187,10 +224,12 @@ class PingCommand extends Subcommand {
         `**Current logging settings**\n` +
           `Messages: ${db.logging.messages ? `<#${db.logging.messages}>` : `Unset`}\n` +
           `Members: ${db.logging.members ? `<#${db.logging.members}>` : `Unset`}\n` +
+          `Users: ${db.logging.users ? `<#${db.logging.users}>` : `Unset`}\n` +
           `Moderation: ${db.logging.moderation ? `<#${db.logging.moderation}>` : `Unset`}\n` +
           `Infractions: ${db.logging.infractions ? `<#${db.logging.infractions}>` : `Unset`}\n` +
           `Roles: ${db.logging.roles ? `<#${db.logging.roles}>` : `Unset`}\n` +
-          `Voice: ${db.logging.voice ? `<#${db.logging.voice}>` : `Unset`}`,
+          `Voice: ${db.logging.voice ? `<#${db.logging.voice}>` : `Unset`}\n` +
+          `Commands: ${db.logging.commands ? `<#${db.logging.commands}>` : `Unset`}`,
       )
       .setColor(Colors.Orange)
       .setTimestamp(new Date());
@@ -275,6 +314,50 @@ class PingCommand extends Subcommand {
       successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
     } else {
       db.logging.members = null;
+      successMsg = `${this.container.emojis.success} Log successfully cleared.`;
+    }
+    db.save()
+      .then(() => {
+        message.reply(successMsg);
+      })
+      .catch((err) => {
+        message.reply(`${this.container.emojis.error} ${err}`);
+      });
+  }
+
+  async chatInputUsers(interaction) {
+    await interaction.deferReply();
+    const channel = interaction.options.getChannel("channel");
+    const db = await serverSettings
+      .findById(interaction.guild.id, serverSettings.upsert)
+      .cacheQuery();
+    let successMsg = "";
+    if (channel) {
+      db.logging.users = channel.id;
+      successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
+    } else {
+      db.logging.users = null;
+      successMsg = `${this.container.emojis.success} Log successfully cleared.`;
+    }
+    db.save()
+      .then(() => {
+        interaction.followUp(successMsg);
+      })
+      .catch((err) => {
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
+      });
+  }
+  async messageUsers(message, args) {
+    const channel = await args.pick("channel").catch(() => undefined);
+    const db = await serverSettings
+      .findById(message.guild.id, serverSettings.upsert)
+      .cacheQuery();
+    let successMsg = "";
+    if (channel) {
+      db.logging.users = channel.id;
+      successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
+    } else {
+      db.logging.users = null;
       successMsg = `${this.container.emojis.success} Log successfully cleared.`;
     }
     db.save()
@@ -451,6 +534,50 @@ class PingCommand extends Subcommand {
       successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
     } else {
       db.logging.voice = null;
+      successMsg = `${this.container.emojis.success} Log successfully cleared.`;
+    }
+    db.save()
+      .then(() => {
+        message.reply(successMsg);
+      })
+      .catch((err) => {
+        message.reply(`${this.container.emojis.error} ${err}`);
+      });
+  }
+
+  async chatInputCommands(interaction) {
+    await interaction.deferReply();
+    const channel = interaction.options.getChannel("channel");
+    const db = await serverSettings
+      .findById(interaction.guild.id, serverSettings.upsert)
+      .cacheQuery();
+    let successMsg = "";
+    if (channel) {
+      db.logging.commands = channel.id;
+      successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
+    } else {
+      db.logging.commands = null;
+      successMsg = `${this.container.emojis.success} Log successfully cleared.`;
+    }
+    db.save()
+      .then(() => {
+        interaction.followUp(successMsg);
+      })
+      .catch((err) => {
+        interaction.followUp(`${this.container.emojis.error} ${err}`);
+      });
+  }
+  async messageCommands(message, args) {
+    const channel = await args.pick("channel").catch(() => undefined);
+    const db = await serverSettings
+      .findById(message.guild.id, serverSettings.upsert)
+      .cacheQuery();
+    let successMsg = "";
+    if (channel) {
+      db.logging.commands = channel.id;
+      successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
+    } else {
+      db.logging.commands = null;
       successMsg = `${this.container.emojis.success} Log successfully cleared.`;
     }
     db.save()

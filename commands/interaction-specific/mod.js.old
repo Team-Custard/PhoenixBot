@@ -12,72 +12,72 @@ class PingCommand extends Subcommand {
         {
           name: "asciify",
           chatInputRun: "chatInputCat",
-          requiredUserPermissions: ["ManageNicknames"],
+          suggestedUserPermissions: ["ManageNicknames"],
         },
         {
           name: "ban",
           chatInputRun: "chatInputDog",
-          requiredUserPermissions: ["BanMembers"],
+          suggestedUserPermissions: ["BanMembers"],
         },
         {
           name: "dehoist",
           chatInputRun: "chatInputKitten",
-          requiredUserPermissions: ["ManageNicknames"],
+          suggestedUserPermissions: ["ManageNicknames"],
         },
         {
           name: "infractions",
           chatInputRun: "chatInputMeme",
-          requiredUserPermissions: ["ModerateMembers"],
+          suggestedUserPermissions: ["ModerateMembers"],
         },
         {
           name: "kick",
           chatInputRun: "chatInputWolfram",
-          requiredUserPermissions: ["KickMembers"],
+          suggestedUserPermissions: ["KickMembers"],
         },
         {
           name: "mute",
           chatInputRun: "chatInputPhoenixAV",
-          requiredUserPermissions: ["ModerateMembers"],
+          suggestedUserPermissions: ["ModerateMembers"],
         },
         {
           name: "nick",
           chatInputRun: "chatInputAvatar",
-          requiredUserPermissions: ["ManageNicknames"],
+          suggestedUserPermissions: ["ManageNicknames"],
         },
         {
           name: "pardon",
-          chatInputRun: "chatInputRav",
-          requiredUserPermissions: ["ModerateMembers"],
+          chatInputRun: "chatInputPardon",
+          suggestedUserPermissions: ["ModerateMembers"],
         },
         {
           name: "reason",
-          chatInputRun: "chatInputRav",
-          requiredUserPermissions: ["ModerateMembers"],
+          chatInputRun: "chatInputReason",
+          suggestedUserPermissions: ["ModerateMembers"],
         },
         {
           name: "shadowban",
-          chatInputRun: "chatInputRav",
-          requiredUserPermissions: ["ModerateMembers"],
+          chatInputRun: "chatInputShadowban",
+          suggestedUserPermissions: ["ModerateMembers"],
         },
         {
           name: "unban",
-          chatInputRun: "chatInputAvatar",
-          requiredUserPermissions: ["BanMembers"],
+          chatInputRun: "chatInputUnban",
+          suggestedUserPermissions: ["BanMembers"],
         },
         {
           name: "unmute",
-          chatInputRun: "chatInputRav",
-          requiredUserPermissions: ["ModerateMembers"],
+          chatInputRun: "chatInputUnmute",
+          suggestedUserPermissions: ["ModerateMembers"],
         },
         {
           name: "unshadowban",
-          chatInputRun: "chatInputRav",
-          requiredUserPermissions: ["ModerateMembers"],
+          chatInputRun: "chatInputUnshadowban",
+          suggestedUserPermissions: ["ModerateMembers"],
         },
         {
           name: "warn",
-          chatInputRun: "chatInputRav",
-          requiredUserPermissions: ["ModerateMembers"],
+          chatInputRun: "chatInputWarn",
+          suggestedUserPermissions: ["ModerateMembers"],
         },
       ],
       cooldownDelay: 60_000,
@@ -249,7 +249,7 @@ class PingCommand extends Subcommand {
         if (!result) {
           return interaction.followUp(`${this.container.emojis.error} Not found or error occured.`);
         }
-        interaction.followUp(`:information_source: ${result}`);
+        interaction.followUp(`${this.container.emojis.info} ${result}`);
       })
       .catch((err) => {
         interaction.followUp(`${this.container.emojis.error} ${err}`);

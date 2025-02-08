@@ -6,6 +6,7 @@ const settings = require("../config.json");
 
 const { ClusterClient, getInfo } = require('discord-hybrid-sharding');
 
+require('@sapphire/plugin-hmr/register');
 require('@sapphire/plugin-scheduled-tasks/register');
 const redisParse = require('./parseRedisUrl').parse();
 
@@ -45,6 +46,9 @@ class PhoenixClient extends SapphireClient {
             db: 2
           }
         }
+      },
+      hmr: {
+        enabled: settings.enableHmr
       },
       allowedMentions: { parse: ['everyone', 'roles', 'users'], repliedUser: false }
     });

@@ -26,7 +26,7 @@ class PingCommand extends Command {
   }
 
   async messageRun(message) {
-    const getStream = await bent("https://cataas.com/");
+    const getStream = await bent("https://cataas.com");
     const stream = await getStream("/cat");
 
     if (stream.statusCode != 200) return message.reply(`${this.container.emojis.error} ${stream.status}`);

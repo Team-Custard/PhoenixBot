@@ -56,7 +56,7 @@ class PingCommand extends Subcommand {
         PermissionFlagsBits.SendMessages,
         PermissionFlagsBits.EmbedLinks,
       ],
-      requiredUserPermissions: [PermissionFlagsBits.ManageGuild],
+      suggestedUserPermissions: [PermissionFlagsBits.ManageGuild],
     });
   }
 

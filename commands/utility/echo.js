@@ -1,5 +1,6 @@
 const { Command } = require("@sapphire/framework");
 const { PermissionFlagsBits } = require("discord.js");
+const ServerSettings = require("../../tools/SettingsSchema");
 
 class PingCommand extends Command {
   constructor(context, options) {
@@ -15,7 +16,7 @@ class PingCommand extends Command {
       },
       cooldownDelay: 3_000,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
-      requiredUserPermissions: [PermissionFlagsBits.ManageGuild],
+      suggestedUserPermissions: [PermissionFlagsBits.ManageGuild],
       preconditions: ["module"]
     });
   }
@@ -48,6 +49,9 @@ class PingCommand extends Command {
     let channel = await interaction.options.getChannel("channel");
     if (!channel) channel = interaction.channel;
 
+    const db = await ServerSettings.findById(interaction.guild.id).cacheQuery();
+    if (!db.logging.commands) return interaction.followUp(`${this.container.emojis.error} In order to use the echo command, you must set a command logging channel first so you'd know who is talking through the bot.`)
+
     channel.send(
       `${await require("../../tools/textParser").parse(msg, interaction.member)}`,
     );
@@ -56,6 +60,8 @@ class PingCommand extends Command {
 
   async messageRun(message, args) {
     const msg = await args.rest("string");
+    const db = await ServerSettings.findById(message.guild.id).cacheQuery();
+    if (!db.logging.commands) return message.reply(`${this.container.emojis.error} In order to use the echo command, you must set a command logging channel first so you'd know who is talking through the bot.`)
 
     message.channel.send(
       `${await require("../../tools/textParser").parse(msg, message.member)}`,

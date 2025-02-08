@@ -3,11 +3,15 @@
   "stagingprefix" : "==",
   "testingprefix" : "===",
   "ownerId": "",
+  "forcepremium": false,
+  "enableHmr": false,
+  "premiumId": "",
   "process":{
       "noIntro": true,
       "botclient": true,
       "dashboard": true,
       "errorwebhook": false,
+      "infowebhook": false,
       "botmode": "test"
   },
   "dashboard": {

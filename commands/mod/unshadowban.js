@@ -26,7 +26,7 @@ class PingCommand extends Command {
         ],
       },
       cooldownDelay: 3_000,
-      requiredUserPermissions: [PermissionFlagsBits.ModerateMembers],
+      suggestedUserPermissions: [PermissionFlagsBits.ModerateMembers],
       flags: true,
       preconditions: ["module"]
     });
@@ -71,12 +71,12 @@ class PingCommand extends Command {
       punishment: "Unshadowban",
       member: member.id,
       moderator: message.member.id,
-      reason: reason,
+      reason: (reason ? reason : `No reason specified`),
       expiretime: 0,
       expired: false,
       hidden: hideMod,
       modlogID: null,
-      creationDate: (Math.round(Date.now() / 1000))
+      creationDate: Math.floor(Math.round(Date.now() / 1000))
     };
 
     if (!db.moderation.shadowBannedRole) return message.reply(`${this.container.emojis.error} Shadowbanning is not setup.`);

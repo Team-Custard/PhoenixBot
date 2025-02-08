@@ -9,6 +9,7 @@ class MessageCommandDenied extends Listener {
     });
   }
   run(error, { message }) {
+    if (Reflect.get(Object(error.context), 'silent') || message.channel.isDMBased()) return;
     return message.reply({ content: `${this.container.emojis.error} ${error}` });
   }
 }

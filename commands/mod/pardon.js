@@ -9,14 +9,14 @@ class PingCommand extends Command {
       ...options,
       name: "pardon",
       aliases: [`pd`, `removewarn`, `excuse`],
-      description: "Deletes an infraction from a user.",
+      description: "Marks a warning as pardoned, making the warning inactive early. Inactive warnings don't count towards the punishment system.",
       detailedDescription: {
         usage: "pardon <caseid>",
         examples: ["pardon 22"],
         args: ["caseid : The case to remove"],
       },
       cooldownDelay: 3_000,
-      requiredUserPermissions: [PermissionFlagsBits.ManageGuild],
+      suggestedUserPermissions: [PermissionFlagsBits.ManageGuild],
       preconditions: ["module"]
     });
   }
@@ -30,6 +30,7 @@ class PingCommand extends Command {
 
     const thecase = db.infractions.find((c) => c.id == caseid);
     if (!thecase) return message.reply(`${this.container.emojis.error} No such case found.`);
+    if (thecase.punishment != "Warn") return message.reply(`${this.container.emojis.error} Sorry, this case is not a warning or was already pardoned.`);
 
     for (let i = 0; i < db.infractions.length; i++) {
       if (db.infractions[i].id == caseid) {
@@ -40,22 +41,19 @@ class PingCommand extends Command {
 
     await db.save();
     message.reply(
-      `${this.container.emojis.success} Pardoned case  **\` ${caseid} \`** for **${this.container.client.users.cache.get(thecase.member) ? this.container.client.users.cache.get(thecase.member).tag : thecase.member}**'s ${thecase.punishment}.`,
+      `${this.container.emojis.success} **${this.container.client.users.cache.get(thecase.member) ? this.container.client.users.cache.get(thecase.member).tag : thecase.member}**'s warning has been pardoned.`,
     );
 
     if (db.logging.infractions) {
       const channel = await message.guild.channels
         .fetch(db.logging.infractions)
         .catch(() => undefined);
+
       if (channel) {
-        const embed = new EmbedBuilder()
-          .setTitle(`${thecase.punishment} - Case ${thecase.id}`)
-          .setDescription(
-            `**Offender:** <@${thecase.member}>\n**Moderator:** <@${thecase.moderator}>\n**Reason:** ${thecase.reason}`,
-          )
-          .setColor(Colors.Orange)
-          .setFooter({ text: `ID ${thecase.member}` })
-          .setTimestamp(new Date());
+        const message = await channel.messages.fetch(thecase.modlogID).catch(() => undefined);
+        if (!message) return;
+        const embed = new EmbedBuilder(message.embeds[0])
+          .setTitle(`${thecase.punishment} - Case ${thecase.id}`);
 
         await channel.messages
           .fetch(thecase.modlogID)

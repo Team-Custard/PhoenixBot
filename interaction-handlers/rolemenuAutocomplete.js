@@ -37,12 +37,12 @@ const serverSettings = require("../tools/SettingsSchema");
           if (focusedOption.value) {
             const items = db?.rolesMenu.filter(tag => tag.id?.includes(focusedOption.value));
             if (items)
-                return this.some(items.map((match) => ({ name: match.name, value: match.name })));
+                return this.some(items.map((match) => ({ name: match.name, value: match.name })).splice(0, 25));
             else
                 return this.none();
           }
           else {
-            return this.some(db?.rolesMenu.filter(tag => tag.id?.includes(focusedOption.value)).map((match) => ({ name: match.name, value: match.name })));
+            return this.some(db?.rolesMenu.filter(tag => tag.id?.includes(focusedOption.value)).map((match) => ({ name: match.name, value: match.name })).splice(0, 25));
           }
           
         }
