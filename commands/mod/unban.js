@@ -19,7 +19,7 @@ class PingCommand extends Command {
         ],
       },
       cooldownDelay: 3_000,
-      requiredUserPermissions: [PermissionFlagsBits.BanMembers],
+      suggestedUserPermissions: [PermissionFlagsBits.BanMembers],
       requiredClientPermissions: [PermissionFlagsBits.BanMembers],
       preconditions: ["module"]
     });
@@ -44,12 +44,12 @@ class PingCommand extends Command {
       punishment: "Unban",
       member: member.id,
       moderator: message.member.id,
-      reason: reason,
+      reason: (reason ? reason : `No reason specified`),
       expiretime: 0,
       expired: false,
       hidden: false,
       modlogID: null,
-      creationDate: (Math.round(Date.now() / 1000))
+      creationDate: Math.floor(Math.round(Date.now() / 1000))
     };
 
     const unban = await message.guild.bans.remove(member.id, `(Unban by ${message.author.tag}) ${reason}`).catch((e) => {

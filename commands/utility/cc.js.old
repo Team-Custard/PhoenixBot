@@ -47,7 +47,7 @@ class PingCommand extends Subcommand {
       cooldownDelay: 15_000,
       cooldownLimit: 3,
       cooldownScope: BucketScope.Guild,
-      requiredUserPermissions: [PermissionFlagsBits.ManageGuild],
+      suggestedUserPermissions: [PermissionFlagsBits.ManageGuild],
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
       preconditions: ["module"]
     });

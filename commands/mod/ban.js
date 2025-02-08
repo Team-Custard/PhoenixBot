@@ -31,7 +31,7 @@ class PingCommand extends Command {
         ],
       },
       cooldownDelay: 3_000,
-      requiredUserPermissions: [PermissionFlagsBits.BanMembers],
+      suggestedUserPermissions: [PermissionFlagsBits.BanMembers],
       requiredClientPermissions: [PermissionFlagsBits.BanMembers],
       flags: true,
       preconditions: ["module"]
@@ -102,12 +102,12 @@ class PingCommand extends Command {
       punishment: "Ban",
       member: member.id,
       moderator: message.member.id,
-      reason: reason,
+      reason: (reason ? reason : `No reason specified`),
       expiretime: (isNaN(duration) ? 0 : Math.round(Date.now() / 1000) + Math.round(duration / 1000)),
       expired: false,
       hidden: hideMod,
       modlogID: null,
-      creationDate: (Math.round(Date.now() / 1000))
+      creationDate: Math.floor(Math.round(Date.now() / 1000))
     };
 
     let dmSuccess = true;
@@ -127,7 +127,9 @@ class PingCommand extends Command {
       reason: `(Ban by ${message.author.tag}${isNaN(duration) ? `` : ` | ${require("ms")(duration)}`}) ${reason}`,
     });
     if (!isNaN(duration)) {
-      this.container.tasks.create({ name: 'tempBan', payload: { guildid: message.guild.id, memberid: member.id } }, { delay: duration, customJobOptions: { removeOnComplete: true, removeOnFail: true } });
+      await this.container.tasks.create({ name: 'tempBan', payload: { guildid: message.guild.id, memberid: member.id, caseid: thecase.id } }, { delay: duration, customJobOptions: { removeOnComplete: true, removeOnFail: true } })
+      .then(() => { console.log(`Successfully registered a tempBan task`) })
+      .catch((err) => { console.error(`Failed to create a tempBan task.`, err) })
     }
 
     if (db.logging.infractions) {

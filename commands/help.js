@@ -74,11 +74,11 @@ class PingCommand extends Command {
             name: `Moderation`,
             value: mod.length > 0 ? mod.join(", ") : "No commands found",
           },
-          {
+          /*{
             name: `Automod`,
             value:
               automod.length > 0 ? automod.join(", ") : "No commands found",
-          },
+          },*/
           {
             name: `Social`,
             value: social.length > 0 ? social.join(", ") : "No commands found",
@@ -120,7 +120,7 @@ class PingCommand extends Command {
       embed.addFields([
         {
           name: "Needed permissions:",
-          value: `User: ${new PermissionsBitField(cmd.options.requiredUserPermissions).toArray().join(", ") ?? "No permissions needed"}\nClient: ${new PermissionsBitField(cmd.options.requiredClientPermissions).toArray().join(", ") ?? "No permissions needed"}\n`,
+          value: `User: ${new PermissionsBitField(cmd.options.suggestedUserPermissions).toArray().join(", ") ?? "No permissions needed"}\nClient: ${new PermissionsBitField(cmd.options.requiredClientPermissions).toArray().join(", ") ?? "No permissions needed"}\n`,
         },
       ]);
       return message.reply({ embeds: [embed] });

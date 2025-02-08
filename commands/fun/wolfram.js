@@ -38,7 +38,7 @@ class PingCommand extends Command {
         }
         const result = await response.text();
         if (!result) return message.reply(`${this.container.emojis.error} Not found or error occured.`);
-        message.reply(`:information_source: ${result}`);
+        message.reply(`${this.container.emojis.info} ${result}`);
       })
       .catch((err) => {
         message.reply(`${this.container.emojis.error} ${err}`);

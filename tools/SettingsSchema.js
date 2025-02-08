@@ -1,3 +1,5 @@
+const { EmbedBuilder } = require("discord.js");
+
 const { Schema, model } = require("mongoose");
 const { SpeedGooseCacheAutoCleaner } = require("speedgoose");
 
@@ -13,19 +15,19 @@ const settingsSchema = new Schema({
   donatorUser: String,
   utilities: Boolean,
   customBot: Boolean,
-  modules: {
-    utilityPlugin: {type: Boolean, default: true},
-    funPlugin: {type: Boolean, default: true},
-    modPlugin: {type: Boolean, default: true},
-    automodPlugin: {type: Boolean, default: true},
-    socialPlugin: {type: Boolean, default: true},
-    interactionSpecificPlugin: {type: Boolean, default: true}
-  },
+  blacklisted: Boolean,
+  blacklistReason: String,
+  disabledCommands: [String],
+  permissionOverrides: [{
+    role_id: String,
+    grant: [String],
+  }],
   tags: [
     {
       name: String,
       description: String,
       creator: String,
+      embed: String,
     },
   ],
   cc: [
@@ -53,12 +55,14 @@ const settingsSchema = new Schema({
   },
   logging: {
     members: String,
+    users: String,
     messages: String,
     msgignorechannels: [String],
     moderation: String,
     infractions: String,
     roles: String,
     voice: String,
+    commands: String,
   },
   rolesMenu: [{
     id: String,
@@ -70,6 +74,11 @@ const settingsSchema = new Schema({
     }]
   }],
   moderation: {
+    system: [{
+      warnings: String,
+      punishment: String,
+      duration: Number
+    }],
     muteRole: String,
     shadowBannedRole: String,
     defaultMuteTime: String,
@@ -132,7 +141,32 @@ const settingsSchema = new Schema({
     announceChannel: String,
     backgroundTransparency: {type: Number, default: 90},
     useEmbed: Boolean,
-  }
+  },
+  embeds: [{
+    name: String,
+    data: {
+      author: {
+        name: String,
+        icon_url: String,
+        url: String
+      },
+      title: String,
+      url: String,
+      description: String,
+      thumbnail: String,
+      image: String,
+      fields: [{
+        title: String,
+        value: String,
+        inline: Boolean,
+      }],
+      footer: {
+        text: String,
+        icon_url: String,
+      },
+      timestamp: Number
+    }
+  }]
 }).plugin(SpeedGooseCacheAutoCleaner);
 
 const settings = model(

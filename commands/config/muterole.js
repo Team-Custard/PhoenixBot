@@ -18,7 +18,7 @@ class PingCommand extends Command {
       },
       cooldownDelay: 20_000,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
-      requiredUserPermissions: [PermissionFlagsBits.ManageGuild],
+      suggestedUserPermissions: [PermissionFlagsBits.ManageGuild],
       flags: true,
     });
   }

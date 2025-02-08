@@ -1,5 +1,5 @@
 // const { isMessageInstance } = require('@sapphire/discord.js-utilities');
-const { BucketScope } = require("@sapphire/framework");
+const { BucketScope, ApplicationCommandRegistry } = require("@sapphire/framework");
 const { Subcommand } = require("@sapphire/plugin-subcommands");
 const serverSettings = require("../../tools/SettingsSchema");
 const { PermissionFlagsBits } = require("discord.js");
@@ -10,7 +10,7 @@ class PingCommand extends Subcommand {
       ...options,
       name: "tags",
       aliases: ["t", "tag"],
-      description: "Displays legacy tags settings.",
+      description: "Manages tags. Note that only plain text supports placeholders. Embeds do not.",
       detailedDescription: {
         usage: "tag [subcommand] <name>",
         examples: [
@@ -50,7 +50,7 @@ class PingCommand extends Subcommand {
           name: "lock",
           chatInputRun: "chatInputLock",
           messageRun: "messageLock",
-          requiredUserPermissions: [PermissionFlagsBits.ManageGuild],
+          suggestedUserPermissions: [PermissionFlagsBits.ManageGuild],
         },
         {
           name: "display",
@@ -63,10 +63,13 @@ class PingCommand extends Subcommand {
       cooldownLimit: 3,
       cooldownScope: BucketScope.Guild,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
-      preconditions: ["module"]
+      preconditions: ["module"],
     });
   }
 
+  /**
+   * @param {ApplicationCommandRegistry} registry 
+   */
   registerApplicationCommands(registry) {
     registry.idHints = ["1227016558778519622"];
     registry.registerChatInputCommand((builder) =>
@@ -89,8 +92,9 @@ class PingCommand extends Subcommand {
             .addStringOption((option) =>
               option
                 .setName("description")
-                .setDescription("The description of the tag (256 char max)")
-                .setRequired(true),
+                .setDescription("The description of the tag (2048 char max)")
+                .setRequired(true)
+                .setMaxLength(2048),
             ),
         )
         .addSubcommand((command) =>
@@ -171,14 +175,15 @@ class PingCommand extends Subcommand {
     if (tagName.length > 12) {
       return interaction.followUp(`${this.container.emojis.error} Tag name is too long.`);
     }
-    if (tagDesc.length > 256) {
+    if (tagDesc.length > 2048) {
       return interaction.followUp(`${this.container.emojis.error} Tag description is too long.`);
     }
-    if (db.tags.length > 25) {
+    if (!(await require("../../tools/premiumCheck")(interaction.guild)) && db.tags.length > 25) {
       return interaction.followUp(
-        `${this.container.emojis.error} You've maxed out on the maximum of tags you can hold in the server. Limit is 25.`,
+        `${this.container.emojis.error} You've maxed out on the maximum of tags you can hold in the server. Limit is 25, upgradable with plus.`,
       );
     }
+    if (db.tags.length > 500) return interaction.followUp(`${this.container.emojis.error} You've maxed out on the maximum of tags you can hold in the server. Limit is 500.`)
 
     db.tags.push({
       name: tagName,
@@ -330,14 +335,15 @@ class PingCommand extends Subcommand {
 
     if (tag || btag) return message.reply(`${this.container.emojis.error} Tag already exists.`);
     if (tagName.length > 12) return message.reply(`${this.container.emojis.error} Tag name is too long.`);
-    if (tagDesc.length > 256) {
+    if (tagDesc.length > 2048) {
       return message.reply(`${this.container.emojis.error} Tag description is too long.`);
     }
-    if (db.tags.length > 25) {
+    if (!(await require("../../tools/premiumCheck")(message.guild)) && db.tags.length > 25) {
       return message.reply(
-        `${this.container.emojis.error} You've maxed out on the maximum of tags you can hold in the server. Limit is 25.`,
+        `${this.container.emojis.error} You've maxed out on the maximum of tags you can hold in the server. Limit is 25, upgradable with plus.`,
       );
     }
+    if (db.tags.length > 500) return message.reply(`${this.container.emojis.error} You've maxed out on the maximum of tags you can hold in the server. Limit is 500.`)
 
     db.tags.push({
       name: tagName,

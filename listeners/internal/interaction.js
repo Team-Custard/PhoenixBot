@@ -50,13 +50,6 @@ class ReadyListener extends Listener {
           const buttons = new ActionRowBuilder()
             .addComponents(
               new ButtonBuilder()
-                .setURL("https://support.discord.com/hc/en-us/articles/21334461140375-Using-Apps-on-Discord")
-                .setLabel("Why am I seeing this")
-                .setEmoji(`${this.container.emojis.success}`)
-                .setStyle(ButtonStyle.Link),
-            )
-            .addComponents(
-              new ButtonBuilder()
                 .setCustomId("userbotephemeral-" + interaction.user.id)
                 .setLabel("Toggle ephemeral")
                 .setStyle(ButtonStyle.Secondary),
@@ -120,13 +113,6 @@ class ReadyListener extends Listener {
           const buttons = new ActionRowBuilder()
             .addComponents(
               new ButtonBuilder()
-                .setURL("https://support.discord.com/hc/en-us/articles/21334461140375-Using-Apps-on-Discord")
-                .setLabel("Why am I seeing this")
-                .setEmoji(`${this.container.emojis.success}`)
-                .setStyle(ButtonStyle.Link),
-            )
-            .addComponents(
-              new ButtonBuilder()
                 .setCustomId("userbotephemeral-" + interaction.user.id)
                 .setLabel("Toggle ephemeral")
                 .setStyle(ButtonStyle.Secondary),
@@ -182,13 +168,6 @@ class ReadyListener extends Listener {
         });
 
         const buttons = new ActionRowBuilder()
-          .addComponents(
-            new ButtonBuilder()
-                .setURL("https://support.discord.com/hc/en-us/articles/21334461140375-Using-Apps-on-Discord")
-                .setLabel("Why am I seeing this")
-                .setEmoji(`${this.container.emojis.success}`)
-                .setStyle(ButtonStyle.Link),
-          )
           .addComponents(
             new ButtonBuilder()
               .setCustomId("userbotephemeral-" + interaction.user.id)

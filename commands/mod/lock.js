@@ -17,7 +17,7 @@ class PingCommand extends Subcommand {
       },
       cooldownDelay: 30_000,
       cooldownScope: BucketScope.Guild,
-      requiredUserPermissions: [PermissionFlagsBits.ManageChannels],
+      suggestedUserPermissions: [PermissionFlagsBits.ManageChannels],
       requiredClientPermissions: [PermissionFlagsBits.ManageChannels, PermissionFlagsBits.ManageRoles],
       subcommands: [{
         name: "channel",
@@ -45,7 +45,7 @@ class PingCommand extends Subcommand {
         name: "fixperms",
         chatInputRun: "chatInputFixperms",
         messageRun: "messageFixperms",
-        requiredUserPermissions: [PermissionFlagsBits.ManageRoles]
+        suggestedUserPermissions: [PermissionFlagsBits.ManageRoles]
       }],
       preconditions: ["module"]
     });

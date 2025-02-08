@@ -23,6 +23,7 @@ class GuildMemberAdd extends Listener {
     }
 
     if (message.author.bot) return;
+    if (oldmessage.content == message.content) return;
 
     const db = await ServerSettings.findById(message.guild.id).cacheQuery();
     if (db.logging.messages) {
@@ -47,7 +48,7 @@ class GuildMemberAdd extends Listener {
             }),
           })
           .setDescription(
-            `Message updated in ${message.channel}\n[Message jump link](${message.url})`,
+            `Message updated in ${message.channel}\n[Message jump link](${message.url})${message.mentions.repliedUser ? `\n**Replying to:** ${message.mentions.repliedUser} - [message jump link](${(await message.fetchReference()).url})` : ``}${message.stickers.first()?.url ? `\n-# Sticker attached below`:``}`,
           )
           .addFields(
             {
@@ -62,6 +63,7 @@ class GuildMemberAdd extends Listener {
             },
           )
           .setColor(Colors.Orange)
+          .setImage(message.stickers.first()?.url ?? null)
           .setTimestamp(new Date());
 
         await webhook
