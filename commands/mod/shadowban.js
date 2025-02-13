@@ -86,13 +86,14 @@ class PingCommand extends Command {
     if (!db.moderation.shadowBannedRole) return message.reply(`${this.container.emojis.error} Shadowbanning is not setup.`);
 
     const previousRoles = member.roles.cache.map(r => r);
+    const newRoles = [db.moderation.shadowBannedRole].concat(previousRoles.filter(r => !r.editable || r.managed))
 
     db.moderation.shadowbannedUsers.push({
         user: member.id,
-        roles: member.roles.cache.map(r => r.id)
+        roles: previousRoles.map(r => r.id)
     });
 
-    await member.roles.set([db.moderation.shadowBannedRole], `(shadowban by ${message.author.tag}) ${reason}`);
+    await member.roles.set(newRoles, `(shadowban by ${message.author.tag}) ${reason}`);
 
     let dmSuccess = true;
       if (!silentDM) member.send({ embeds: [new EmbedBuilder()
