@@ -26,6 +26,53 @@ class PingCommand extends Command {
     });
   }
 
+
+  async chatInputRun(interaction) {
+    const user = interaction.options.getUser('user');
+    const onlyType = interaction.options.getString('punishment');
+    const long = interaction.options.getString('long');
+    await interaction.deferReply();
+
+    const db = await serverSettings
+      .findById(interaction.guild.id, serverSettings.upsert)
+      .cacheQuery();
+
+    let infractions = [];
+    if (onlyType) infractions = db.infractions.filter((c) => (c.member == user.id && c.punishment.toLowerCase().startsWith(onlyType)));
+    else infractions = db.infractions.filter((c) => c.member == user.id);
+    if (infractions.length == 0) {
+      return interaction.followUp(
+        `${this.container.emojis.error} No infractions on **${user.tag}**. ${onlyType ? `They have never recieved an infraction for the type you're looking for.`: `They're squeaky clean.`}`,
+      );
+    }
+    infractions = infractions.reverse();
+    const paginated = new PaginatedMessage();
+    const embedFields = [];
+    infractions.forEach((inf, index) => {
+      embedFields.push({name: `\` ${inf.id} \` **${inf.punishment}**`, value: `* **Created:** ${inf.creationDate ? `<t:${inf.creationDate}:R>` : `Unknown`}\n* **Moderator:** <@!${inf.moderator}>\n* **Reason:** ${inf.reason ? inf.reason : `No reason specified`}${inf.expiretime != 0 ? `\n* **Expires:** <t:${inf.expiretime}:R>`: ``}`, inline: (long ? false : true)})
+    });
+
+    // Create a new embed every nine infractions, and add it to a paginated message.
+    for (let i = 0; i < infractions.length; i += 9) {
+      console.log(i)
+      await paginated.addPageBuilder(page => page
+        .setEmbeds([new EmbedBuilder()
+          .setAuthor({
+            name: user.tag,
+            iconURL: user.displayAvatarURL({ dynamic: true })
+          })
+          .setTitle(i == 0 ? (onlyType ? `${infractions.length} found infractions` : `${db.infractions.filter(i => (i.punishment == "Warn" && i.member == user.id)).length} active warnings - ${db.infractions.filter(i => i.member == user.id).length} total infractions`) : null)
+          .addFields(embedFields.slice(i, i+9))
+          .setColor(Colors.Orange)
+          .setTimestamp(new Date())
+        ])
+      )
+    }
+
+    // Send the final message
+    await paginated.run(interaction, interaction.user);
+  }
+
   /**
    * 
    * @param {Message} message 
