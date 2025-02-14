@@ -214,7 +214,7 @@ class PingCommand extends Command {
             .setLabel("Footer text")
             .setMaxLength(2048)
             .setStyle(TextInputStyle.Short)
-            .setValue(embed.data.author?.name ?? "")
+            .setValue(embed.data.footer?.text ?? "")
             .setRequired(false)
           ),
           new ActionRowBuilder().addComponents(
@@ -223,7 +223,7 @@ class PingCommand extends Command {
             .setLabel("Footer image")
             .setMaxLength(256)
             .setStyle(TextInputStyle.Short)
-            .setValue(embed.data.author?.icon_url ?? "")
+            .setValue(embed.data.footer?.icon_url ?? "")
             .setRequired(false)
           ),
           new ActionRowBuilder().addComponents(
@@ -232,7 +232,7 @@ class PingCommand extends Command {
             .setLabel("Timestamp")
             .setMaxLength(256)
             .setStyle(TextInputStyle.Short)
-            .setValue(embed.data.author?.url ?? "")
+            .setValue(embed.data.timestamp ?? "")
             .setRequired(false)
           ),
         ])
@@ -490,7 +490,8 @@ class PingCommand extends Command {
             await db.save();
             modalResponse.followUp({ content: `Saved! There's now ${db.embeds.length} / ${premiumCheck ? 50 : 6} embeds.`, ephemeral: true });
           } else {
-            db.embeds.at(db.embeds.findIndex(e => e.name == modalResponse.fields.getTextInputValue("ModalNameField"))) = {
+            const premiumCheck = await require("../../tools/premiumCheck")(interaction.guild);
+            db.embeds[await db.embeds.findIndex(e => e.name == modalResponse.fields.getTextInputValue("ModalNameField"))] = {
               name: modalResponse.fields.getTextInputValue("ModalNameField"),
               data: {
                 author: {
@@ -503,7 +504,7 @@ class PingCommand extends Command {
                 description: embed.data.description || null,
                 thumbnail: embed.data.thumbnail?.url || null,
                 image: embed.data.image?.url || null,
-                fields: embed.data.fields.map(f => { return {name: f.name, value: f.value, inline: f.inline} }),
+                fields: embed.data.fields.map(f => { return {name: f.name, value: f.value, inline: f.inline} }) || null,
                 footer: {
                   text: embed.data.footer?.text || null,
                   icon_url: embed.data.footer?.icon_url || null,
@@ -552,10 +553,10 @@ class PingCommand extends Command {
             .setDescription(embeddb.data.description || null)
             .setThumbnail(embeddb.data.thumbnail || null)
             .setImage(embeddb.data.image || null)
-            .setFields(embeddb.data.fields?.map(f => { return {name: f.name, value: f.value, inline: f.inline} }) || [])
+            .setFields(embeddb.data.fields?.map(f => { return {name: f.name || `???`, value: f.value || `???`, inline: f.inline || false} }) || [])
             .setFooter({
               text: embeddb.data.footer.text || null,
-              iconURL: embeddb.data.footer.text || null
+              iconURL: embeddb.data.footer.icon_url || null
             })
             .setTimestamp(embeddb.data.timestamp || null)
             modalResponse.followUp({ content: `Embed loaded.`, ephemeral: true });

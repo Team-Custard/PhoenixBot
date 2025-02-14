@@ -156,7 +156,7 @@ const settingsSchema = new Schema({
       thumbnail: String,
       image: String,
       fields: [{
-        title: String,
+        name: String,
         value: String,
         inline: Boolean,
       }],
