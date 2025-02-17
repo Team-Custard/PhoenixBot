@@ -25,12 +25,11 @@ class PingCommand extends Command {
         flags: [
           `--silent : Don't send a dm to the member.`,
           `--hide : Don't show yourself as the moderator in user dm.`,
-          `--purge : Deletes 7 days worth of the user's messages.`,
-          `--mass : Bans multiple specified members at once. They will not recieve a dm if this is used.`,
-          `--link : Bans the member from all servers your server is affiliated with (shareban).`
+          `--purge : Deletes 7 days worth of the user's messages.`
         ],
       },
-      cooldownDelay: 3_000,
+      cooldownDelay: 1_800_000,
+      cooldownLimit: 20,
       suggestedUserPermissions: [PermissionFlagsBits.BanMembers],
       requiredClientPermissions: [PermissionFlagsBits.BanMembers],
       flags: true,

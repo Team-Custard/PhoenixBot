@@ -18,7 +18,8 @@ class PingCommand extends Command {
           "reason : The reason for the action",
         ],
       },
-      cooldownDelay: 3_000,
+      cooldownDelay: 1_800_000,
+      cooldownLimit: 20,
       suggestedUserPermissions: [PermissionFlagsBits.BanMembers],
       requiredClientPermissions: [PermissionFlagsBits.BanMembers],
       preconditions: ["module"]

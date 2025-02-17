@@ -16,7 +16,8 @@ class PingCommand extends Command {
         examples: ["asciify sylveondev"],
         args: ["member : The member to change the name of"],
       },
-      cooldownDelay: 3_000,
+      cooldownDelay: 1_800_000,
+      cooldownLimit: 20,
       requiredClientPermissions: [PermissionFlagsBits.ManageNicknames],
       suggestedUserPermissions: [PermissionFlagsBits.ManageNicknames],
       preconditions: ["module"]

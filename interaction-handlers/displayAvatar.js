@@ -29,6 +29,14 @@ const {
     async run(interaction) {
       if (interaction.customId.startsWith("displayAvatar")) {
         if (interaction.customId.endsWith('OLD')) {
+          if (interaction.message.embeds[0].thumbnail.height == 0) return interaction.reply({ 
+            embeds: [{
+              title: 'There\'s nothing here!',
+              description: `Oops, I was not able to save the old avatar of this user, the old avatar was not archived. This can be for a number of reasons, but a likely reason is the old avatar was not cached by cloudflare in our region.`,
+              color: Colors.Orange
+            }],
+            ephemeral: true 
+          })
           interaction.reply({
             embeds: [{
                 title: `Old avatar`,

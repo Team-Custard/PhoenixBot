@@ -3,6 +3,7 @@
     "@sapphire/ts-config"
   ],
   "compilerOptions": {
+    "module": "Node16",
     "incremental": false,
     "noEmit": true,
     "checkJs": false,

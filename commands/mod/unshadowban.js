@@ -25,7 +25,8 @@ class PingCommand extends Command {
           `--hide : Don't show yourself as the moderator in user dm.`,
         ],
       },
-      cooldownDelay: 3_000,
+      cooldownDelay: 1_800_000,
+      cooldownLimit: 20,
       suggestedUserPermissions: [PermissionFlagsBits.ModerateMembers],
       flags: true,
       preconditions: ["module"]

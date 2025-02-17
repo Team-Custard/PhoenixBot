@@ -15,7 +15,8 @@ class PingCommand extends Command {
         examples: ["nick sylveondev Sylveon", "nick sylveondev"],
         args: ["member : The member to change the name of", "nickname : The new nickname, leave blank to reset the nickname"],
       },
-      cooldownDelay: 3_000,
+      cooldownDelay: 1_800_000,
+      cooldownLimit: 20,
       requiredClientPermissions: [PermissionFlagsBits.ManageNicknames],
       suggestedUserPermissions: [PermissionFlagsBits.ManageNicknames],
       preconditions: ["module"]
