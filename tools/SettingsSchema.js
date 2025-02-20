@@ -18,6 +18,7 @@ const settingsSchema = new Schema({
   blacklisted: Boolean,
   blacklistReason: String,
   disabledCommands: [String],
+  whitelistedRoles: [String],
   permissionOverrides: [{
     role_id: String,
     grant: [String],
@@ -86,6 +87,7 @@ const settingsSchema = new Schema({
     modRole: String,
     alwaysConfirm: Boolean,
     reasonRequired: Boolean,
+    appealLink: String,
     lockdownChannels: [String],
     shadowbannedUsers: [{
       user: String,

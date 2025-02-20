@@ -1,5 +1,5 @@
 const { Command } = require("@sapphire/framework");
-const { PermissionFlagsBits, EmbedBuilder, Colors } = require("discord.js");
+const { PermissionFlagsBits, EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 const serverSettings = require("../../tools/SettingsSchema");
 const settings = require("../../config.json");
 
@@ -25,7 +25,8 @@ class PingCommand extends Command {
         flags: [
           `--silent : Don't send a dm to the member.`,
           `--hide : Don't show yourself as the moderator in user dm.`,
-          `--purge : Deletes 7 days worth of the user's messages.`
+          `--purge : Deletes 7 days worth of the user's messages.`,
+          `--unappealable : Don't send the ban appeal link with the user dm.`
         ],
       },
       cooldownDelay: 1_800_000,
@@ -42,6 +43,7 @@ class PingCommand extends Command {
     let silentDM = args.getFlags("silent", "s");
     const hideMod = args.getFlags("hide", "h");
     const purge = args.getFlags("purge", "p");
+    const unappealable = args.getFlags("unappealable", "ua");
     const unformattedreason = await args
       .rest("string")
       .catch(() => `No reason specified`);
@@ -75,14 +77,14 @@ class PingCommand extends Command {
         message.guild.members.me.roles.highest.position
       ) {
         return message.reply(
-          `${this.container.emojis.error} I'm not high enough in the role hiarchy to moderate this member.`,
+          `${this.container.emojis.error} I'm not high enough in the role hierarchy to moderate this member.`,
         );
       }
       if (
         isGuildMember.roles.highest.position >= message.member.roles.highest.position
       ) {
         return message.reply(
-          `${this.container.emojis.error} You aren't high enough in the role hiarchy to moderate this member.`,
+          `${this.container.emojis.error} You aren't high enough in the role hierarchy to moderate this member.`,
         );
       }
       if (!isGuildMember.bannable) {
@@ -110,7 +112,15 @@ class PingCommand extends Command {
     };
 
     let dmSuccess = true;
-      if (!silentDM) member.send({ embeds: [new EmbedBuilder()
+      if (!silentDM) {
+        const actionRow = new ActionRowBuilder()
+        .addComponents(new ButtonBuilder()
+          .setStyle(ButtonStyle.Link)
+          .setLabel((db.moderation.appealLink && !unappealable) ? 'Appeal' : 'This ban cannot be appealed')
+          .setDisabled((db.moderation.appealLink && !unappealable) ? false : true)
+          .setURL(db.moderation.appealLink || `https://google.com`)
+        )
+        member.send({ components: [actionRow], embeds: [new EmbedBuilder()
         .setTitle(`${this.container.emojis.error} You were banned!`)
         .setDescription(`You have been banned from **${message.guild.name}**.\n**Case: \` ${thecase.id} \`**\n**Moderator:** ${hideMod ? 'Hidden' : `<@!${thecase.moderator}>`}\n**Duration:** ${!isNaN(duration) ? (duration <= 40320 * 60 * 1000 ? ` for ${await require("pretty-ms")(duration, { verbose: true })}` : `Permanent`) : `Permanent`}\n**Reason:** ${thecase.reason || 'No reason was provided'}`)
         .setFooter({
@@ -118,9 +128,11 @@ class PingCommand extends Command {
           iconURL: message.guild.iconURL({ dynamic: true })
         })
         .setColor(Colors.Orange)
-      ]}).catch(function () {
+      ]}).catch(function (e) {
+        console.log(e);
         dmSuccess = false;
       });
+    }
     await message.guild.bans.create(member.id, {
       deleteMessageSeconds: purge ? 60 * 60 * 24 * 7 : 0,
       reason: `(Ban by ${message.author.tag}${isNaN(duration) ? `` : ` | ${require("ms")(duration)}`}) ${reason}`,

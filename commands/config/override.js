@@ -89,7 +89,7 @@ class PingCommand extends Subcommand {
     const db = await serverSettings.findById(interaction.guild.id).cacheQuery();
     if (db.permissionOverrides.length == 0) return interaction.followUp(`${this.container.emojis.error} No overrides was created yet.`);
     const embed = new EmbedBuilder()
-    .setDescription(`${db.permissionOverrides.map(r => `<@&${r.role_id}> : ${r.grant.map(g => `${g}`)}`).join(`\n`)}`)
+    .setDescription(`${db.permissionOverrides.map(r => `<@&${r.role_id}> : ${r.grant.map(g => `${g}`).join(', ')}`).join(`\n`)}`)
     .setColor(Colors.Orange)
     interaction.followUp({ embeds: [embed] });
   }
@@ -97,7 +97,7 @@ class PingCommand extends Subcommand {
     const db = await serverSettings.findById(message.guild.id).cacheQuery();
     if (db.permissionOverrides.length == 0) return message.reply(`${this.container.emojis.error} No overrides was created yet.`);
     const embed = new EmbedBuilder()
-    .setDescription(`${db.permissionOverrides.map(r => `<@&${r.role_id}> : ${r.grant.map(g => `${g}`)}`).join(`\n`)}`)
+    .setDescription(`${db.permissionOverrides.map(r => `<@&${r.role_id}> : ${r.grant.map(g => `${g}`).join(', ')}`).join(`\n`)}`)
     .setColor(Colors.Orange)
     message.reply({ embeds: [embed] });
   }
@@ -125,7 +125,7 @@ class PingCommand extends Subcommand {
         grant: [cmd]
     });
     await db.save();
-    interaction.followUp({content: `${this.container.emojis.success} Granted ${role} permission to use \`${cmd}\`. For this change to apply to slash commands you have to grant permissions for the role to use the command in discord's server settings on a computer.`, allowedMentions: {parse: []}});
+    interaction.followUp({content: `${this.container.emojis.success} Granted ${role} permission to use \`${cmd}\`. Please note that subcommand specific permissions do not support overrides.`, allowedMentions: {parse: []}});
   }
   async messageCreate(message) {
     const cmd = await args.push("string");
@@ -146,7 +146,7 @@ class PingCommand extends Subcommand {
         grant: [cmd]
     });
     await db.save();
-    message.reply({content: `${this.container.emojis.success} Granted ${role} permission to use \`${cmd}\`. For this change to apply to slash commands you have to grant permissions for the role to use the command in discord's server settings on a computer.`, allowedMentions: {parse: []}});
+    message.reply({content: `${this.container.emojis.success} Granted ${role} permission to use \`${cmd}\`. Please note that subcommand specific permissions do not support overrides.`, allowedMentions: {parse: []}});
   }
 
   /**

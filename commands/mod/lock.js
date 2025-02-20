@@ -45,7 +45,7 @@ class PingCommand extends Subcommand {
         name: "fixperms",
         chatInputRun: "chatInputFixperms",
         messageRun: "messageFixperms",
-        suggestedUserPermissions: [PermissionFlagsBits.ManageRoles]
+        requiredUserPermissions: [PermissionFlagsBits.ManageRoles]
       }],
       preconditions: ["module"]
     });

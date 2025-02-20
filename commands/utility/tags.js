@@ -50,7 +50,7 @@ class PingCommand extends Subcommand {
           name: "lock",
           chatInputRun: "chatInputLock",
           messageRun: "messageLock",
-          suggestedUserPermissions: [PermissionFlagsBits.ManageGuild],
+          requiredUserPermissions: [PermissionFlagsBits.ManageGuild],
         },
         {
           name: "display",

@@ -45,14 +45,14 @@ class PingCommand extends Command {
       message.guild.members.me.roles.highest.position
     ) {
       return message.reply(
-        `${this.container.emojis.error} I'm not high enough in the role hiarchy to moderate this member.`,
+        `${this.container.emojis.error} I'm not high enough in the role hierarchy to moderate this member.`,
       );
     }
     if (
       member.roles.highest.position >= message.member.roles.highest.position
     ) {
       return message.reply(
-        `${this.container.emojis.error} You aren't high enough in the role hiarchy to moderate this member.`,
+        `${this.container.emojis.error} You aren't high enough in the role hierarchy to moderate this member.`,
       );
     }
     if (!member.moderatable) {

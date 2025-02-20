@@ -184,18 +184,22 @@ class UserCommand extends Command {
         .setTimestamp(new Date());
       await message.reply({ embeds: [embed] });
     } else {
-      const embed = new EmbedBuilder()
-        .setAuthor({
-          name: user.displayName + (user.bot ? `[BOT]` : ``),
-          iconURL: user.displayAvatarURL({ dynamic: true }),
-        })
-        .setThumbnail(user.displayAvatarURL({ dynamic: true }))
-        .setDescription(
-          `**Tag:** ${user.tag}\n**ID:** ${user.id}\n**Account created:** <t:${Math.floor(user.createdTimestamp / 1000)}:R>\nNot in this server.`,
-        )
-        .setColor(Colors.Orange)
-        .setFooter({ text: "Triggered" })
-        .setTimestamp(new Date());
+      let isBanned = undefined;
+        if (message.member.permissions.has(PermissionFlagsBits.BanMembers)) {
+          isBanned = await message.guild.bans.fetch(user.id).catch(() => undefined);
+        }
+        const embed = new EmbedBuilder()
+          .setAuthor({
+            name: user.displayName + (user.bot ? `[BOT]` : ``),
+            iconURL: user.displayAvatarURL({ dynamic: true }),
+          })
+          .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+          .setDescription(
+            `**Tag:** ${user.tag}\n**ID:** ${user.id}\n**Account created:** <t:${Math.floor(user.createdTimestamp / 1000)}:R>\n${isBanned ? `***Banned from this server.***` : `Not in this server.`}`,
+          )
+          .setColor(Colors.Orange)
+          .setFooter({ text: "Triggered" })
+          .setTimestamp(new Date());
       await message.reply({ embeds: [embed] });
     }
   }
