@@ -49,7 +49,7 @@ class PingCommand extends Command {
     }
 
     if (message.member == member) {
-      return message.reply(`${this.container.emojis.error} Bruh. On yourself?`);
+      return message.reply(`${this.container.emojis.error} You can't use this on yourself.`);
     }
     if (
       member.roles.highest.position >=

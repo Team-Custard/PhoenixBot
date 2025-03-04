@@ -25,8 +25,55 @@ class PingCommand extends Command {
     });
   }
 
+  async chatInputRun(interaction) {
+    await interaction.deferReply();
+    const caseid = await interaction.options.getInteger("case_id");
+    const reason = await interaction.options.getString("reason");
+
+    const db = await serverSettings
+      .findById(interaction.guild.id, serverSettings.upsert)
+      .cacheQuery();
+
+    const thecase = db.infractions.find((c) => c.id == caseid);
+    if (!thecase) return interaction.followUp(`${this.container.emojis.error} No such case found.`);
+    console.log(thecase);
+
+    thecase.moderator = interaction.member.id;
+    thecase.reason = reason;
+    await db.save();
+    interaction.followUp(
+      `${this.container.emojis.success} Modified reason for case  **\` ${caseid} \`**.`,
+    );
+
+    if (db.logging.infractions) {
+      const channel = await interaction.guild.channels
+        .fetch(db.logging.infractions)
+        .catch(() => undefined);
+      if (channel) {
+        const embed = new EmbedBuilder()
+          .setTitle(`${thecase.punishment} - Case ${thecase.id}`)
+          .setDescription(
+            `**Offender:** <@${thecase.member}>\n**Moderator:** ${interaction.user}\n**Reason:** ${reason}`,
+          )
+          .setColor(Colors.Orange)
+          .setFooter({ text: `ID ${thecase.member}` })
+          .setTimestamp(new Date());
+
+        await channel.messages
+          .fetch(thecase.modlogID)
+          .then(function (msg) {
+            console.log(thecase.modlogID);
+            msg.edit({ embeds: [embed] });
+          })
+          .catch(function (err) {
+            console.error(`[error] Error on sending to channel`, err);
+          });
+      }
+    }
+  }
+  
   async messageRun(message, args) {
-    const caseid = await args.pick("number");
+    const caseid = await args.pick("integer");
     const reason = await args.rest("string");
 
     const db = await serverSettings

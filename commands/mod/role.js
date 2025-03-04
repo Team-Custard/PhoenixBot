@@ -182,7 +182,7 @@ class PingCommand extends Subcommand {
   async messageAssign(message, args) {
     const member = await args.pick('member');
     const role = await args.pick('role');
-    const reason = await args.rest('reason').catch(() => 'No reason specified');
+    const reason = await args.rest('string').catch(() => 'No reason specified');
 
     if (message.member == member) {
       return message.reply(`${this.container.emojis.error} You can't give yourself roles with this command.`);
@@ -306,7 +306,7 @@ class PingCommand extends Subcommand {
   async messageRemove(message, args) {
     const member = await args.pick('member');
     const role = await args.pick('role');
-    const reason = await args.rest('reason').catch(() => 'No reason specified');
+    const reason = await args.rest('string').catch(() => 'No reason specified');
 
     if (message.member == member) {
       return message.reply(`${this.container.emojis.error} You can't give yourself roles with this command.`);

@@ -38,6 +38,140 @@ class PingCommand extends Command {
     });
   }
 
+async chatInputRun(interaction) {
+    await interaction.deferReply();
+    const member = await interaction.options.getUser("user");
+    let silentDM = await interaction.options.getBoolean("silent");
+    const hideMod = await interaction.options.getBoolean("hidden");
+    const reason = await interaction.options.getString("reason") || "No reason specified";
+    const unformattedduration = await interaction.options.getString("duration") || 'Nil';
+    const purge = await interaction.options.getBoolean("purge");
+    const unappealable = await interaction.options.getBoolean("unappealable");
+
+    const duration = require("ms")(unformattedduration);
+
+    // Run a check if the user is in the server. We need to do this to see if
+    // the moderator and bot has the correct permissions to ban the member.
+    // Forcefully enable the silentDM flag if the member isn't in the server.
+    // Users shouldn't be notified if they have been banned from a server they aren't in
+    const isBanned = await interaction.guild.bans
+      .fetch(member.id)
+      .catch(() => undefined);
+    if (isBanned) return interaction.followUp(`${this.container.emojis.error} That user is already banned.`);
+    const isGuildMember = await interaction.guild.members
+      .fetch(member.id)
+      .catch(() => undefined);
+    if (!isGuildMember) silentDM = true;
+    else {
+      if (interaction.member == member) {
+        return interaction.followUp(`${this.container.emojis.error} You can't use this on yourself.`);
+      }
+      if (
+        isGuildMember.roles.highest.position >=
+        interaction.guild.members.me.roles.highest.position
+      ) {
+        return interaction.followUp(
+          `${this.container.emojis.error} I'm not high enough in the role hierarchy to moderate this member.`,
+        );
+      }
+      if (
+        isGuildMember.roles.highest.position >= interaction.member.roles.highest.position
+      ) {
+        return interaction.followUp(
+          `${this.container.emojis.error} You aren't high enough in the role hierarchy to moderate this member.`,
+        );
+      }
+      if (!isGuildMember.bannable) {
+        return interaction.followUp(`${this.container.emojis.error} This user is not bannable.`);
+      }
+    }
+
+    let caseid = 0;
+    const db = await serverSettings
+      .findById(interaction.guild.id, serverSettings.upsert)
+      .cacheQuery();
+
+    caseid = db.infractions.length + 1;
+    const thecase = {
+      id: caseid,
+      punishment: "Ban",
+      member: member.id,
+      moderator: interaction.member.id,
+      reason: (reason ? reason : `No reason specified`),
+      expiretime: (isNaN(duration) ? 0 : Math.round(Date.now() / 1000) + Math.round(duration / 1000)),
+      expired: false,
+      hidden: hideMod,
+      modlogID: null,
+      creationDate: Math.floor(Math.round(Date.now() / 1000))
+    };
+
+    let dmSuccess = true;
+      if (!silentDM) {
+        const actionRow = new ActionRowBuilder()
+        .addComponents(new ButtonBuilder()
+          .setStyle(ButtonStyle.Link)
+          .setLabel((db.moderation.appealLink && !unappealable) ? 'Appeal' : 'This ban cannot be appealed')
+          .setDisabled((db.moderation.appealLink && !unappealable) ? false : true)
+          .setURL(db.moderation.appealLink || `https://google.com`)
+        )
+        member.send({ components: [actionRow], embeds: [new EmbedBuilder()
+        .setTitle(`${this.container.emojis.error} You were banned!`)
+        .setDescription(`You have been banned from **${interaction.guild.name}**.\n**Case: \` ${thecase.id} \`**\n**Moderator:** ${hideMod ? 'Hidden' : `<@!${thecase.moderator}>`}\n**Duration:** ${!isNaN(duration) ? (duration <= 40320 * 60 * 1000 ? ` for ${await require("pretty-ms")(duration, { verbose: true })}` : `Permanent`) : `Permanent`}\n**Reason:** ${thecase.reason || 'No reason was provided'}`)
+        .setFooter({
+          text: interaction.guild.name,
+          iconURL: interaction.guild.iconURL({ dynamic: true })
+        })
+        .setColor(Colors.Orange)
+      ]}).catch(function (e) {
+        console.log(e);
+        dmSuccess = false;
+      });
+    }
+    await interaction.guild.bans.create(member.id, {
+      deleteMessageSeconds: purge ? 60 * 60 * 24 * 7 : 0,
+      reason: `(Ban by ${interaction.user.tag}${isNaN(duration) ? `` : ` | ${require("ms")(duration)}`}) ${reason}`,
+    });
+    if (!isNaN(duration)) {
+      await this.container.tasks.create({ name: 'tempBan', payload: { guildid: interaction.guild.id, memberid: member.id, caseid: thecase.id } }, { delay: duration, customJobOptions: { removeOnComplete: true, removeOnFail: true } })
+      .then(() => { console.log(`Successfully registered a tempBan task`) })
+      .catch((err) => { console.error(`Failed to create a tempBan task.`, err) })
+    }
+
+    if (db.logging.infractions) {
+      const channel = await interaction.guild.channels
+        .fetch(db.logging.infractions)
+        .catch(() => undefined);
+      if (channel) {
+        const embedT = new EmbedBuilder()
+          .setTitle(`${thecase.punishment} - Case ${thecase.id}`)
+          .setDescription(
+            `**Offender:** ${member}\n**Moderator:** ${interaction.user}\n**Duration:** ${!isNaN(duration) ? `${await require("pretty-ms")(duration, { verbose: true })}` : `Permanant`}\n**Reason:** ${thecase.reason}`,
+          )
+          .setColor(Colors.Orange)
+          .setFooter({ text: `ID ${member.id}` })
+          .setTimestamp(new Date());
+
+        const msg = await channel
+          .send({
+            // content: '',
+            embeds: [embedT],
+          })
+          .catch((err) => {
+            console.error(`[error] Error on sending to channel`, err);
+            return undefined;
+          });
+        if (msg) thecase.modlogID = msg.id;
+      }
+    }
+
+    db.infractions.push(thecase);
+
+    await db.save();
+    interaction.followUp(
+      `${this.container.emojis.success} Banned **${member.tag}**${!isNaN(duration) ? ` for ${await require("pretty-ms")(duration, { verbose: true })}` : ``}. ${!silentDM && dmSuccess ? `` : `User was not notified.`}`,
+    );
+  }
+
   async messageRun(message, args) {
     const member = await args.pick("user");
     let silentDM = args.getFlags("silent", "s");
@@ -70,7 +204,7 @@ class PingCommand extends Command {
     if (!isGuildMember) silentDM = true;
     else {
       if (message.member == member) {
-        return message.reply(`${this.container.emojis.error} Bruh. On yourself?`);
+        return message.reply(`${this.container.emojis.error} You can't use this on yourself.`);
       }
       if (
         isGuildMember.roles.highest.position >=

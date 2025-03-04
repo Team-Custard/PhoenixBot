@@ -24,11 +24,43 @@ class PingCommand extends Command {
     });
   }
 
+  async chatInputRun(interaction) {
+    const member = await interaction.options.getMember("member");
+
+    if (interaction.member == member) {
+      return interaction.reply(`${this.container.emojis.error} You can't use this on yourself.`);
+    }
+    if (
+      member.roles.highest.position >=
+      interaction.guild.members.me.roles.highest.position
+    ) {
+      return interaction.reply(
+        `${this.container.emojis.error} I'm not high enough in the role hierarchy to moderate this member.`,
+      );
+    }
+    if (
+      member.roles.highest.position >= interaction.member.roles.highest.position
+    ) {
+      return interaction.reply(
+        `${this.container.emojis.error} You aren't high enough in the role hierarchy to moderate this member.`,
+      );
+    }
+    if (!member.manageable) {
+      return interaction.reply(`${this.container.emojis.error} This user is not manageable.`);
+    }
+
+    const oldnickname = member.displayName;
+    const nickname = ` ឵${oldnickname}`;
+
+    await member.setNickname(nickname, `(Dehoist by ${interaction.user.tag})`);
+    interaction.reply(`${this.container.emojis.success} Dehoisted **${member.user.tag}**.`);
+  }
+
   async messageRun(message, args) {
     const member = await args.pick("member");
 
     if (message.member == member) {
-      return message.reply(`${this.container.emojis.error} Bruh. On yourself?`);
+      return message.reply(`${this.container.emojis.error} You can't use this on yourself.`);
     }
     if (
       member.roles.highest.position >=

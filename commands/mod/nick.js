@@ -23,12 +23,46 @@ class PingCommand extends Command {
     });
   }
 
+  async chatInputRun(interaction) {
+    const member = await interaction.options.getMember("member");
+    const newnick = await interaction.options.getString("nickname")
+
+    if (interaction.member == member) {
+      return interaction.reply(`${this.container.emojis.error} You can't change your own nickname with the bot.`);
+    }
+    if (
+      member.roles.highest.position >=
+      interaction.guild.members.me.roles.highest.position
+    ) {
+      return interaction.reply(
+        `${this.container.emojis.error} I'm not high enough in the role hierarchy to moderate this member.`,
+      );
+    }
+    if (
+      member.roles.highest.position >= interaction.member.roles.highest.position
+    ) {
+      return interaction.reply(
+        `${this.container.emojis.error} You aren't high enough in the role hierarchy to moderate this member.`,
+      );
+    }
+    if (!member.manageable) {
+      return interaction.reply(`${this.container.emojis.error} This user is not manageable.`);
+    }
+
+    const oldnickname = member.displayName;
+    await member.setNickname(newnick, `(Nick by ${interaction.user.tag})`);
+
+    interaction.reply(
+      `${this.container.emojis.success} ${newnick ? `**${member.user.tag}**'s nickname has been changed to \`${newnick}\`.` : `**${member.user.tag}**'s nickname has been reset.`}`,
+    );
+  }
+  
   async messageRun(message, args) {
     const member = await args.pick("member");
     const newnick = await args.rest("string").catch(() => null);
 
     if (message.member == member) {
-      return message.reply(`${this.container.emojis.error} Bruh. On yourself?`);
+      return message.reply(`${this.container.emojis.error} You can't change your own nickname with the bot.`);
     }
     if (
       member.roles.highest.position >=
@@ -53,7 +87,7 @@ class PingCommand extends Command {
     await member.setNickname(newnick, `(Nick by ${message.author.tag})`);
 
     message.reply(
-      `${this.container.emojis.success} ${newnick ? `Set **${member.user.tag}**'s nickname from \`${oldnickname}\` to \`${newnick}\` successfully.` : `Reset **${member.user.tag}**'s nickname.`}`,
+      `${this.container.emojis.success} ${newnick ? `**${member.user.tag}**'s nickname has been changed to \`${newnick}\`.` : `**${member.user.tag}**'s nickname has been reset.`}`,
     );
   }
 }

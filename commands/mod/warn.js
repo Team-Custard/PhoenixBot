@@ -57,7 +57,7 @@ class PingCommand extends Command {
       return interaction.followUp(`${this.container.emojis.error} You're so mean... After everything I've ever done for you this is how I get treated? What's wrong with you man...`);
     }
     if (interaction.member == member) {
-      return interaction.followUp(`${this.container.emojis.error} Bruh. On yourself?`);
+      return interaction.followUp(`${this.container.emojis.error} You can't use this on yourself.`);
     }
     if (
       member.roles?.highest.position >=
@@ -325,7 +325,7 @@ class PingCommand extends Command {
       return message.reply(`${this.container.emojis.error} You're so mean... After everything I've ever done for you this is how I get treated? What's wrong with you man...`);
     }
     if (message.member == member) {
-      return message.reply(`${this.container.emojis.error} Bruh. On yourself?`);
+      return message.reply(`${this.container.emojis.error} You can't use this on yourself.`);
     }
     if (
       member.roles?.highest.position >=

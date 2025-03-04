@@ -8,12 +8,12 @@ class PingCommand extends Command {
   constructor(context, options) {
     super(context, {
       ...options,
-      name: "appeals_link",
+      name: "appeals-link",
       aliases: [`appeal`, "appeallink"],
       description: "Add an appeal button to your ban dm",
       detailedDescription: {
-        usage: "appeal_link <link>",
-        examples: ["appeal_link https://appeal.gg/sylveondev"],
+        usage: "appeal-link <link>",
+        examples: ["appeal-link https://appeal.gg/sylveondev"],
         args: ["link : The ban appeal link. We recommend using [this site](https://appeal.gg) for appeals"],
       },
       cooldownDelay: 3_000,
@@ -22,6 +22,34 @@ class PingCommand extends Command {
     });
   }
 
+  async messageRun(interaction) {
+    await interaction.deferReply();
+    const link = await interaction.options.getString('link');
+
+    const db = await serverSettings
+        .findById(interaction.guild.id, serverSettings.upsert)
+        .cacheQuery();
+
+    if (!link) {
+        db.moderation.appealLink = null;
+        await db.save();
+        interaction.followUp(
+            `${this.container.emojis.success} Ban appeal link removed successfully.`,
+          );
+    }
+
+    if (!link.startsWith('https://')) return interaction.followUp(`${this.container.emojis.error} That wasn't a link.`)
+
+    
+
+    db.moderation.appealLink = link;
+
+    await db.save();
+    interaction.followUp(
+      `${this.container.emojis.success} Ban appeal link set to \`${link}\`.`,
+    );
+  }
+  
   async messageRun(message, args) {
     const link = await args.pick("string").catch(() => undefined);
 
