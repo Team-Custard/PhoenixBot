@@ -78,6 +78,9 @@ class GuildMemberAdd extends Listener {
           .setDescription(
             `${member} left\nMember for: **${await timeDifference(new Date(), member.joinedAt)}**\nCreated <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`,
           )
+          .addFields([
+            { name: 'Roles:', value: `${member.roles.cache.map(r => r).join(', ')}` || `No roles found` }
+          ])
           .setThumbnail(
             member.user.displayAvatarURL({ dynamic: true, size: 1024 }),
           )

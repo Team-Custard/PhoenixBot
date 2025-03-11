@@ -81,7 +81,7 @@ class ReadyListener extends Listener {
             level.xp = 0;
             level.level += 1;
 
-            if (db.leveling.message) {
+            if (db.leveling.message && level.level > 1) {
                 if (db.leveling.announceChannel) {
                     await message.guild.channels.fetch(db.leveling.announceChannel)
                     .then(async (channel) => {

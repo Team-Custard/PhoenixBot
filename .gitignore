@@ -3,3 +3,4 @@ static/rankcards/**/*
 config.json
 .env
 custombots.json
+*DS_Store

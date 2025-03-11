@@ -2,7 +2,8 @@ const { Subcommand } = require("@sapphire/plugin-subcommands");
 const { BucketScope } = require("@sapphire/framework");
 const bent = require("bent");
 const fetch = require("node-fetch");
-const { AttachmentBuilder, ApplicationIntegrationType, InteractionContextType } = require("discord.js");
+const { getPost } = require('random-reddit');
+const { AttachmentBuilder, ApplicationIntegrationType, InteractionContextType, EmbedBuilder, Colors, ChatInputCommandInteraction } = require("discord.js");
 
 class PingCommand extends Subcommand {
   constructor(context, options) {
@@ -27,6 +28,10 @@ class PingCommand extends Subcommand {
           chatInputRun: "chatInputMeme",
         },
         {
+          name: "reddit",
+          chatInputRun: "chatInputReddit",
+        },
+        {
           name: "wolfram",
           chatInputRun: "chatInputWolfram",
         },
@@ -37,6 +42,14 @@ class PingCommand extends Subcommand {
         {
           name: "avatar",
           chatInputRun: "chatInputAvatar",
+        },
+        {
+          name: "icon",
+          chatInputRun: "chatInputIcon",
+        },
+        {
+          name: "banner",
+          chatInputRun: "chatInputBanner",
         },
         {
           name: "rav",
@@ -70,6 +83,17 @@ class PingCommand extends Subcommand {
           command
             .setName("meme")
             .setDescription("Sends a random meme from reddit"),
+        )
+        .addSubcommand((command) =>
+          command
+            .setName("reddit")
+            .setDescription("Gets a post from Reddit")
+            .addStringOption((option) =>
+              option
+                .setName("subreddit")
+                .setDescription("The subreddit to use")
+                .setRequired(true),
+            ),
         )
         .addSubcommand((command) =>
           command
@@ -112,6 +136,16 @@ class PingCommand extends Subcommand {
         )
         .addSubcommand((command) =>
           command
+            .setName("icon")
+            .setDescription("Display the server's icon"),
+        )
+        .addSubcommand((command) =>
+          command
+            .setName("banner")
+            .setDescription("Display the server's banner"),
+        )
+        .addSubcommand((command) =>
+          command
             .setName("rav")
             .setDescription("Searches for a user's avatar with Google")
             .addUserOption((option) =>
@@ -132,6 +166,32 @@ class PingCommand extends Subcommand {
         .setContexts([InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel]),
     );
   }
+
+  async chatInputReddit(interaction) {
+      await interaction.deferReply();
+      let sub = await interaction.options.getString('subreddit');
+      sub = sub.replace('r/', '');
+      const post = await getPost(sub);
+  
+      if (!post) return interaction.followUp(`${this.container.emojis.error} No post found.`)
+  
+      if (post.over_18 && !interaction.channel?.nsfw) return interaction.followUp(`${this.container.emojis.warning} The fetched post was marked as nsfw, thus I will not send it here.`);
+  
+      const embed = new EmbedBuilder()
+      .setTitle(post.title+(post.archived ? ' 🔒':''))
+      .setURL(`https://reddit.com${post.permalink}`)
+      .setFields([
+          { name: 'Author', value: `[u/${post.author}](https://reddit.com/u/${post.author})`, inline: true },
+          { name: 'Upvotes', value: `⬆️ ${post.ups} ⬇️ ${post.downs}`, inline: true }
+      ])
+      .setDescription(post.selftext.substring(0,2000) || `(No description)`)
+      .setColor(Colors.Orange)
+      .setImage(post.url || null)
+      .setFooter({ text: `ID: ${post.id}` })
+      .setTimestamp(Math.floor(post.created_utc * 1000));
+  
+      await interaction.followUp({ embeds: [embed] });
+    }
   
   async chatInputRav(interaction) {
     await interaction.deferReply();
@@ -193,6 +253,35 @@ class PingCommand extends Subcommand {
         files: [avatar],
       });
     }
+  }
+
+  /**
+   * 
+   * @param {ChatInputCommandInteraction} interaction 
+   * @returns 
+   */
+  async chatInputIcon(interaction) {
+    if (!interaction.guild) return interaction.reply({ ephemeral: true, content: `${this.container.emojis.error} This command can only be used in a server.` })
+    const avatar = interaction.guild.iconURL({ size: 1024 });
+
+    await interaction.reply({
+      files: [avatar],
+    });
+  }
+
+  /**
+   * 
+   * @param {ChatInputCommandInteraction} interaction 
+   * @returns 
+   */
+  async chatInputIcon(interaction) {
+    if (!interaction.guild) return interaction.reply({ ephemeral: true, content: `${this.container.emojis.error} This command can only be used in a server.` })
+    if (!interaction.guild.banner) return interaction.reply({ ephemeral: true, content: `${this.container.emojis.error} This server currently does not have a banner set.` })
+    const avatar = interaction.guild.bannerURL({ size: 1024 });
+
+    await interaction.reply({
+      files: [avatar],
+    });
   }
 
   async chatInputPhoenixAV(interaction) {
@@ -307,9 +396,7 @@ class PingCommand extends Subcommand {
     const obj = await stream.json();
 
     if (obj.nsfw == true && !interaction.channel.nsfw) {
-      return interaction.followUp(
-        `Refusing to send the scraped reddit post because the post is nsfw.`,
-      );
+      return interaction.followUp(`${this.container.emojis.warning} The fetched post was marked as nsfw, thus I will not send it here.`);
     }
     await interaction.followUp({
       content: `${obj.title} | ${obj.subreddit} | [Post link](<${obj.postLink}>)`,

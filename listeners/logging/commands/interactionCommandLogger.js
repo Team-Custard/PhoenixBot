@@ -1,7 +1,7 @@
 const { Listener, Events, Command } = require("@sapphire/framework");
 const { isGuildBasedChannel } = require("@sapphire/discord.js-utilities");
 const ServerSettings = require("../../../tools/SettingsSchema");
-const { EmbedBuilder, Colors, Message, ChatInputCommandInteraction } = require("discord.js");
+const { EmbedBuilder, Colors, Message, ChatInputCommandInteraction, ApplicationCommandOptionType } = require("discord.js");
 const webhookFetch = require("../../../tools/webhookFetch");
 
 class GuildMemberAdd extends Listener {
@@ -44,7 +44,7 @@ class GuildMemberAdd extends Listener {
             }),
           })
           .setDescription(
-            `${interaction.user} executed the slash command ${command.name} in ${interaction.channel}\n**Interaction:**\n/${interaction.commandName} ${interaction.options.data.map(i => `[${i.name}: ${i.value}]`).join(" ")}`,
+            `${interaction.user} executed the slash command ${command.name} in ${interaction.channel}\n**Interaction:**\n/${interaction.commandName} ${interaction.options?.getSubcommandGroup(false) ? `${interaction.options?.getSubcommandGroup()} `:''}${interaction.options?.getSubcommand(false) ? `${interaction.options.getSubcommand()} `:''}${interaction.options?.getSubcommand(false) ? (interaction.options?.getSubcommandGroup(false) ? interaction.options?.data[0].options[0].options?.map(i => `[${i.name}: ${i.value}]`).join(" ") : interaction.options?.data[0].options?.map(i => `[${i.name}: ${i.value}]`).join(" ")) : interaction.options?.data.map(i => `[${i.name}: ${i.value}]`).join(" ")}`,
           )
           .setColor(Colors.Orange)
           .setTimestamp(new Date());
