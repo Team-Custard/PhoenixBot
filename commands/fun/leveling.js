@@ -568,17 +568,21 @@ class PingCommand extends Subcommand {
     const member = interaction.options.getMember('member');
     await interaction.deferReply();
     const db = await settings.findById(interaction.guild.id).cacheQuery();
-    if (!db.leveling.users.find(u => u.id == member.user.id)) return interaction.followUp(`${this.container.emojis.error} The specified user doesn't exist in the leveling database.`)
-    db.leveling.users.splice(db.leveling.users.indexOf({id: member.user.id}), 1);
+    const userlevel = db.leveling.users.find(u => u.id == member.id);
+    if (!userlevel) return interaction.reply(`${this.container.emojis.error} This user does not yet have a level. They need to chat first before you can set their level.`)
+    userlevel.level = 0;
+    userlevel.xp = 0;
     await db.save();
     interaction.followUp(`${this.container.emojis.success} Reset ${member.user.tag}'s level.`);
   }
-  async chatInputClearUser(message, args) {
+  async messageClearUser(message, args) {
     if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) return message.reply(`${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`);
-    const member = await args.pick('member');
     const db = await settings.findById(message.guild.id).cacheQuery();
-    if (!db.leveling.users.find(u => u.id == member.user.id)) return message.reply(`${this.container.emojis.error} The specified user doesn't exist in the leveling database.`)
-    db.leveling.users.splice(db.leveling.users.indexOf({id: member.user.id}), 1);
+    let member = await args.pick('member');
+    const userlevel = db.leveling.users.find(u => u.id == member.id);
+    if (!userlevel) return message.reply(`${this.container.emojis.error} This user does not yet have a level. They need to chat first before you can set their level.`)
+    userlevel.level = 0;
+    userlevel.xp = 0;
     await db.save();
     message.reply(`${this.container.emojis.success} Reset ${member.user.tag}'s level.`);
   }

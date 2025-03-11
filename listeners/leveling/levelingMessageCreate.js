@@ -79,7 +79,7 @@ class ReadyListener extends Listener {
 
         if (level.xp > calculateLevel(level.level)) {
             level.xp = 0;
-            level.level += 1;
+            level.level = level.level + 1;
 
             if (db.leveling.message && level.level > 1) {
                 if (db.leveling.announceChannel) {
