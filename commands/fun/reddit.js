@@ -11,8 +11,9 @@ class PingCommand extends Command {
       aliases: [],
       description: "Displays a post from a subreddit you specify. Note that posts marked nsfw will not display outside of nsfw channels.",
       detailedDescription: {
-        usage: "meme",
-        examples: ["meme"],
+        usage: "reddit <subreddit>",
+        examples: ["reddit r/tihi"],
+        args: ['subreddit: The subreddit to use']
       },
       cooldownDelay: 60_000,
       cooldownLimit: 10,
