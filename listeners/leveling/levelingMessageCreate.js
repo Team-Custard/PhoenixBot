@@ -79,7 +79,7 @@ class ReadyListener extends Listener {
 
         if (level.xp > calculateLevel(level.level)) {
             level.xp = 0;
-            level.level = level.level + 1;
+            level.level += 1;
 
             if (db.leveling.message && level.level > 1) {
                 if (db.leveling.announceChannel) {
@@ -111,6 +111,7 @@ class ReadyListener extends Listener {
             xp: xpToGive
         });
         await db.save();
+        cooldowns.add(message.author.id);
         setTimeout(() => {
             cooldowns.delete(message.author.id);
         }, 60_000);
