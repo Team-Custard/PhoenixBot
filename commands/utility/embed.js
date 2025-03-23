@@ -112,14 +112,14 @@ class PingCommand extends Command {
     ]);
 
     const embed = new EmbedBuilder()
-    .setTitle("Sample Embed")
-    .setThumbnail("https://cdn.discordapp.com/emojis/1251263469299302472.png?size=1024")
-    .setDescription("Hi there, this is the embed builder. You can customize the embed using the buttons below, and send the embed in the current channel when you are finished. If you want to customize the embed later, you can save the embed below. The embed autosaves to your UserDB profile so if you accidentially dismiss the embed, you can load it up again by hitting load autosave.")
+    .setTitle("Welcome to the embed builder")
+    .setThumbnail("https://cdn.discordapp.com/emojis/1314111973197086720.png?size=1024")
+    .setDescription("Welcome, this is the sample embed. The embed builder allows you to easily make embeds and send them with the bot. You can save up to 15 embeds for free, and 100 with plus. You have two hours to edit your embed before the prompt times out.")
     .setColor(Colors.Orange);
 
     interaction.reply({ embeds: [embed], components: [actionRowA, actionRowB, actionRowC], ephemeral: true });
     const message = await interaction.fetchReply();
-    const collector = message.createMessageComponentCollector({filter: (i) => i.user.id == interaction.user.id, componentType: ComponentType.Button, time: 1_800_000});
+    const collector = message.createMessageComponentCollector({filter: (i) => i.user.id == interaction.user.id, componentType: ComponentType.Button, time: 7_200_000});
 
     collector.on("collect", async (collected) => {
       if (collected.customId == "EmbedAuthor") {
@@ -463,8 +463,8 @@ class PingCommand extends Command {
           const embeddb = db.embeds.find(e => e.name == modalResponse.fields.getTextInputValue("ModalNameField"));
           if (!embeddb) {
             const premiumCheck = await require("../../tools/premiumCheck")(interaction.guild);
-            if (db.embeds.length == 6 && !premiumCheck) return collected.reply({content:'Too many embeds. You can only have up to 6 embeds, 50 with plus.', ephemeral: true});
-            if (db.embeds.length == 50) return collected.reply({content:'Too many embeds. You can only have up to 50 embeds.', ephemeral: true});
+            if (db.embeds.length == 15 && !premiumCheck) return collected.reply({content:'Too many embeds. You can only have up to 15 embeds, 100 with plus.', ephemeral: true});
+            if (db.embeds.length == 50) return collected.reply({content:'Too many embeds. You can only have up to 100 embeds.', ephemeral: true});
 
             db.embeds.push({
               name: modalResponse.fields.getTextInputValue("ModalNameField"),
@@ -488,7 +488,7 @@ class PingCommand extends Command {
               }
             });
             await db.save();
-            modalResponse.followUp({ content: `Saved! There's now ${db.embeds.length} / ${premiumCheck ? 50 : 6} embeds.`, ephemeral: true });
+            modalResponse.followUp({ content: `Saved! There's now ${db.embeds.length} / ${premiumCheck ? 100 : 15} embeds.`, ephemeral: true });
           } else {
             const premiumCheck = await require("../../tools/premiumCheck")(interaction.guild);
             db.embeds[await db.embeds.findIndex(e => e.name == modalResponse.fields.getTextInputValue("ModalNameField"))] = {
@@ -513,7 +513,7 @@ class PingCommand extends Command {
               }
             }
             await db.save();
-            modalResponse.followUp({ content: `Updated! There's ${db.embeds.length} / ${premiumCheck ? 50 : 6} embeds.`, ephemeral: true });
+            modalResponse.followUp({ content: `Updated! There's ${db.embeds.length} / ${premiumCheck ? 100 : 15} embeds.`, ephemeral: true });
           }
         }
         catch (err) {
@@ -590,7 +590,7 @@ class PingCommand extends Command {
           const embeddb = db.embeds.find(e => e.name == modalResponse.fields.getTextInputValue("ModalNameField"));
           if (embeddb) {
             db.embeds.splice(db.embeds.findIndex(e => e.name == modalResponse.fields.getTextInputValue("ModalNameField")), 1);
-            modalResponse.followUp({ content: `Deleted. There's now ${db.embeds.length} / ${premiumCheck ? 50 : 6} embeds.`, ephemeral: true });
+            modalResponse.followUp({ content: `Deleted. There's now ${db.embeds.length} / ${premiumCheck ? 100 : 15} embeds.`, ephemeral: true });
         } else modalResponse.followUp({ content: `That embed doesn't exist.`, ephemeral: true });
         }
         catch (err) {
@@ -602,7 +602,7 @@ class PingCommand extends Command {
         try {
           const db = await serverSettings.findById(interaction.guild.id).cacheQuery();
           const premiumCheck = await require("../../tools/premiumCheck")(interaction.guild);
-          await collected.reply({ content: `There are ${db.embeds.length} / ${premiumCheck ? 50 : 6} embeds registered in this server.\n\n### Embeds:\n${db.embeds.map(e => `\`${e.name}\``)}`, ephemeral: true });
+          await collected.reply({ content: `There are ${db.embeds.length} / ${premiumCheck ? 100 : 15} embeds registered in this server.\n\n### Embeds:\n${db.embeds.map(e => `\`${e.name}\``)}`, ephemeral: true });
         }
         catch (err) {
           console.error('Error executing delete field embed. ',err);

@@ -5,7 +5,7 @@ const { GuildMember } = require("discord.js")
  * @param {String} text The text to be parsed by the parser.
  * @param {GuildMember} member The member object used by the parser.
  */
-exports.parse = async (text, member, optionalArgs) => {
+exports.parse = async (text, member, optionalArgs = []) => {
   const parsed = await text.replace(/\{\{(.*?)\}\}/g, function (match, token) {
     switch (token) {
       case "mention": {

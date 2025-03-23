@@ -24,6 +24,7 @@
   },
   "type": "commonjs",
   "dependencies": {
+    "@dbd-soft-ui/shards": "^1.0.2",
     "@discordjs/discord.js": "github:discordjs/discord.js",
     "@discordjs/rest": "^2.2.0",
     "@google-cloud/translate": "^8.3.0",

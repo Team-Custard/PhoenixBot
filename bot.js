@@ -2,6 +2,7 @@ const { PhoenixClient } = require("./tools/PhoenixClient");
 const fs = require("fs");
 const { fork } = require("child_process");
 const { ClusterClient } = require('discord-hybrid-sharding');
+const DSU = require("@dbd-soft-ui/shards")
 
 require("./tools/database").connect();
 
@@ -11,6 +12,13 @@ switch (require("./config.json").process.botmode) {
     client.cluster.on("ready", (cluster) => {
       if (require("./config.json").process.dashboard == true && cluster.id === 0) {
         global.bottype = require("./config.json").process.botmode;
+
+        /*DSU.register(cluster, {
+            dashboard_url: "http://localhost:1200",
+            key: process.env['shardkey'],
+            interval: 15
+        });*/        
+
         require("./server");
       }
       console.log(`Cluster ${cluster.id} is ready.`);
@@ -24,6 +32,13 @@ switch (require("./config.json").process.botmode) {
     client.cluster.on("ready", (cluster) => {
       if (require("./config.json").process.dashboard == true && cluster.id === 0) {
         global.bottype = require("./config.json").process.botmode;
+
+        /*DSU.register(cluster, {
+            dashboard_url: "http://localhost:1200",
+            key: process.env['shardkey'],
+            interval: 15
+        });*/
+
         require("./server");
       }
       console.log(`Cluster ${cluster.id} is ready.`);
@@ -37,6 +52,13 @@ switch (require("./config.json").process.botmode) {
     client.cluster.on("ready", (cluster) => {
       if (require("./config.json").process.dashboard == true && cluster.id === 0) {
         global.bottype = require("./config.json").process.botmode;
+
+        /*DSU.register(cluster, {
+            dashboard_url: "http://localhost:1200",
+            key: process.env['shardkey'],
+            interval: 15
+        });*/
+
         require("./server");
       }
       console.log(`Cluster ${cluster.id} is ready.`);

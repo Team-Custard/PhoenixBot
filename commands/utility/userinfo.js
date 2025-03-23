@@ -1,4 +1,4 @@
-const { Command } = require("@sapphire/framework");
+const { Command, Args } = require("@sapphire/framework");
 const {
   ApplicationCommandType,
   EmbedBuilder,
@@ -6,7 +6,8 @@ const {
   PermissionFlagsBits,
   GuildMemberFlags,
   ApplicationIntegrationType,
-  InteractionContextType
+  InteractionContextType,
+  Message
 } = require("discord.js");
 const serverSettings = require("../../tools/SettingsSchema");
 
@@ -128,7 +129,7 @@ class UserCommand extends Command {
           })
           .setThumbnail(user.displayAvatarURL({ dynamic: true }))
           .setDescription(
-            `**Tag:** ${user.tag}\n**ID:** ${user.id}\n**Account created:** <t:${Math.floor(user.createdTimestamp / 1000)}:R>\n${isBanned ? `***Banned from this server.***` : `Not in this server.`}`,
+            `**Tag:** ${user.tag}\n**ID:** ${user.id}\n**Account created:** <t:${Math.floor(user.createdTimestamp / 1000)}:R>\n${isBanned ? `**Banned:** *Yes*\n**Ban reason:** ${isBanned.reason || 'No reason specified'}` : `**Banned:** No`}\nNot in this server.`,
           )
           .setColor(Colors.Orange)
           .setFooter({ text: "Triggered" })
@@ -144,7 +145,7 @@ class UserCommand extends Command {
           })
           .setThumbnail(user.displayAvatarURL({ dynamic: true }))
           .setDescription(
-            `**Tag:** ${user.tag}\n**ID:** ${user.id}\n**Account created:** <t:${Math.floor(user.createdTimestamp / 1000)}:R>\n*Userapps cannot view guild data.*`,
+            `**Tag:** ${user.tag}\n**ID:** ${user.id}\n**Account created:** <t:${Math.floor(user.createdTimestamp / 1000)}:R>\n-# *Userapps cannot view guild data, so I cannot show you any other info on this user. Invite Phoenix to the server to view more info on this user.*`,
           )
           .setColor(Colors.Orange)
           .setFooter({ text: "Triggered" })
@@ -153,6 +154,11 @@ class UserCommand extends Command {
     }
   }
 
+  /**
+   * 
+   * @param {Message} message 
+   * @param {Args} args 
+   */
   async messageRun(message, args) {
     const user = await args.pick("user").catch(() => message.author);
     const member = await message.guild.members
@@ -184,9 +190,9 @@ class UserCommand extends Command {
         .setTimestamp(new Date());
       await message.reply({ embeds: [embed] });
     } else {
-      let isBanned = undefined;
+      //let isBanned = undefined;
+      let isBanned = await message.guild.bans.fetch(user.id).catch(() => undefined);
         if (message.member.permissions.has(PermissionFlagsBits.BanMembers)) {
-          isBanned = await message.guild.bans.fetch(user.id).catch(() => undefined);
         }
         const embed = new EmbedBuilder()
           .setAuthor({
@@ -195,7 +201,7 @@ class UserCommand extends Command {
           })
           .setThumbnail(user.displayAvatarURL({ dynamic: true }))
           .setDescription(
-            `**Tag:** ${user.tag}\n**ID:** ${user.id}\n**Account created:** <t:${Math.floor(user.createdTimestamp / 1000)}:R>\n${isBanned ? `***Banned from this server.***` : `Not in this server.`}`,
+            `**Tag:** ${user.tag}\n**ID:** ${user.id}\n**Account created:** <t:${Math.floor(user.createdTimestamp / 1000)}:R>\n${isBanned ? `**Banned:** *Yes*\n**Ban reason:** ${isBanned.reason || 'No reason specified'}` : `**Banned:** No`}\nNot in this server.`,
           )
           .setColor(Colors.Orange)
           .setFooter({ text: "Triggered" })
