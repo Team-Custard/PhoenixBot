@@ -1,6 +1,6 @@
 const { Command } = require("@sapphire/framework");
 const { BucketScope } = require("@sapphire/framework");
-const { getPost } = require('random-reddit');
+const { getPost } = require('../../tools/redditUtils');
 const { PermissionFlagsBits, EmbedBuilder, Colors } = require("discord.js");
 
 class PingCommand extends Command {
