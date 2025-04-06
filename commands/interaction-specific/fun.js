@@ -186,9 +186,21 @@ class PingCommand extends Subcommand {
       ])
       .setDescription(post.selftext.substring(0,2000) || `(No description)`)
       .setColor(Colors.Orange)
-      .setImage(post.url || null)
+      .setImage(post.url.startsWith('https://i.redd.it') ? post.url : null)
       .setFooter({ text: `ID: ${post.id}` })
       .setTimestamp(Math.floor(post.created_utc * 1000));
+
+      if (post.url.startsWith('https://v.redd.it')) {
+        embed.addFields([
+          { name: '** **', value: `**[🎥 This is a video! Press to play video.](${post.url})**` }
+        ])
+      }
+      if (post.url.startsWith('https://www.reddit.com/gallery')) {
+        embed.addFields([
+          { name: '** **', value: `**[🖼️ This is a gallery! Press to view full gallery.](${post.url})**` }
+        ])
+        embed.setImage(`https://i.redd.it/${post.gallery_data.items[0].media_id}.${post.media_metadata[post.gallery_data.items[0].media_id].m.split('/')[1]}`)
+      }
   
       await interaction.followUp({ embeds: [embed] });
     }
