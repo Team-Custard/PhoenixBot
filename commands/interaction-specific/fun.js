@@ -2,7 +2,7 @@ const { Subcommand } = require("@sapphire/plugin-subcommands");
 const { BucketScope } = require("@sapphire/framework");
 const bent = require("bent");
 const fetch = require("node-fetch");
-const { getPost } = require('random-reddit');
+const { getPost } = require('../../tools/redditUtils');
 const { AttachmentBuilder, ApplicationIntegrationType, InteractionContextType, EmbedBuilder, Colors, ChatInputCommandInteraction } = require("discord.js");
 
 class PingCommand extends Subcommand {
