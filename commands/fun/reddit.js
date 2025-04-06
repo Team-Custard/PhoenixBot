@@ -31,7 +31,7 @@ class PingCommand extends Command {
     sub = sub.replace('r/', '');
     const post = await getPost(sub);
 
-    if (!post) return message.reply(`${this.container.emojis.error} No post found.`)
+    if (!post) return message.reply(`${this.container.emojis.error} I could not find any posts. Either the subreddit doesn't exist or I have been blocked from Reddit's api.`)
 
     if (post.over_18 && !message.channel.nsfw) return message.reply(`${this.container.emojis.warning} The fetched post was marked as nsfw, thus I will not send it here.`);
 

@@ -68,6 +68,7 @@
     "os-utils": "^0.0.14",
     "phoenixbot": "file:",
     "pretty-ms": "git+https://github.com/Sylveondev/pretty-ms.git",
+    "reddit": "^1.2.1",
     "sequelize": "^6.37.2",
     "speedgoose": "^2.0.13",
     "text-language-detector": "^1.0.7",
