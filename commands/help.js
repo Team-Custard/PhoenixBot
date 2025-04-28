@@ -74,12 +74,12 @@ class PingCommand extends Command {
             name: `Moderation`,
             value: mod.length > 0 ? mod.join(", ") : "No commands found",
           },
-          /*{
+          {
             name: `Automod`,
             value:
               automod.length > 0 ? automod.join(", ") : "No commands found",
           },
-          {
+          /*{
             name: `Social`,
             value: social.length > 0 ? social.join(", ") : "No commands found",
           },*/

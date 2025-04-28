@@ -21,6 +21,9 @@ class GuildMemberAdd extends Listener {
 
     // if (ban.partial) return console.log("Partial ban.");
 
+    const timer = (await this.container.tasks.list({types: ["delayed", "waiting", "prioritized"]})).find(t => t.name == 'tempBan' && t.data.guildid == ban.guild.id && t.data.memberid == ban.user.id);
+    if (timer) timer.remove();
+
     console.log(`1Ban removed`);
     const db = await ServerSettings.findById(ban.guild.id).cacheQuery();
     if (db.logging.moderation) {

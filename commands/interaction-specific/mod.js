@@ -41,6 +41,10 @@ class PingCommand extends Subcommand {
           chatInputRun: "chatInputInfractions",
         },
         {
+          name: "slowmode",
+          chatInputRun: "chatInputSlowmode",
+        },
+        {
           name: "unban",
           chatInputRun: "chatInputUnban",
         },
@@ -167,6 +171,19 @@ class PingCommand extends Subcommand {
           )
         )
         .addSubcommand((command) =>
+          command.setName("slowmode").setDescription("Changes the slowmode of a channel")
+          .addStringOption(option => option
+            .setName(`time`)
+            .setDescription(`The cooldown of the channel`)
+            .setRequired(true)
+          )
+          .addChannelOption(option => option
+            .setName(`channel`)
+            .setDescription(`The channel to change`)
+            .setRequired(false)
+          )
+        )
+        .addSubcommand((command) =>
           command.setName("unban").setDescription("Unbans a user")
           .addUserOption(option => option
             .setName(`user`)
@@ -255,6 +272,12 @@ class PingCommand extends Subcommand {
     const valid = await command.preconditions.chatInputRun(interaction, command, context)
     if (valid.isErr()) return interaction.reply({ ephemeral:true, content: `${this.container.emojis.error} ${await valid.unwrapErr()}` });
     await this.container.stores.get("commands").get("infractions").chatInputRun(interaction, context);
+  }
+  async chatInputSlowmode(interaction, context) {
+    const command = await this.container.stores.get("commands").get("slowmode");
+    const valid = await command.preconditions.chatInputRun(interaction, command, context)
+    if (valid.isErr()) return interaction.reply({ ephemeral:true, content: `${this.container.emojis.error} ${await valid.unwrapErr()}` });
+    await this.container.stores.get("commands").get("slowmode").chatInputRun(interaction, context);
   }
   async chatInputUnban(interaction, context) {
     const command = await this.container.stores.get("commands").get("unban");

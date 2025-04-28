@@ -63,6 +63,16 @@ class PingCommand extends Subcommand {
           chatInputRun: "chatInputCommands",
           messageRun: "messageCommands",
         },
+        {
+          name: "automod",
+          chatInputRun: "chatInputAutomod",
+          messageRun: "messageAutomod",
+        },
+        {
+          name: "verification",
+          chatInputRun: "chatInputVerification",
+          messageRun: "messageVerification",
+        },
       ],
       cooldownDelay: 60_000,
       cooldownLimit: 6,
@@ -171,6 +181,32 @@ class PingCommand extends Subcommand {
             .setName("commands")
             .setDescription(
               "Logs when a member uses a command.",
+            )
+            .addChannelOption((option) =>
+              option
+                .setName("channel")
+                .setDescription("The channel to use. Leave blank to clear.")
+                .setRequired(false),
+            ),
+        )
+        .addSubcommand((command) =>
+          command
+            .setName("automod")
+            .setDescription(
+              "Logs when a member triggers Phoenix's automod.",
+            )
+            .addChannelOption((option) =>
+              option
+                .setName("channel")
+                .setDescription("The channel to use. Leave blank to clear.")
+                .setRequired(false),
+            ),
+        )
+        .addSubcommand((command) =>
+          command
+            .setName("verification")
+            .setDescription(
+              "Logs when a member passes or fails verification.",
             )
             .addChannelOption((option) =>
               option
@@ -567,17 +603,39 @@ class PingCommand extends Subcommand {
         interaction.followUp(`${this.container.emojis.error} ${err}`);
       });
   }
-  async messageCommands(message, args) {
+  async messageAutomod(message, args) {
     const channel = await args.pick("channel").catch(() => undefined);
     const db = await serverSettings
       .findById(message.guild.id, serverSettings.upsert)
       .cacheQuery();
     let successMsg = "";
     if (channel) {
-      db.logging.commands = channel.id;
+      db.logging.automod = channel.id;
       successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
     } else {
-      db.logging.commands = null;
+      db.logging.automod = null;
+      successMsg = `${this.container.emojis.success} Log successfully cleared.`;
+    }
+    db.save()
+      .then(() => {
+        message.reply(successMsg);
+      })
+      .catch((err) => {
+        message.reply(`${this.container.emojis.error} ${err}`);
+      });
+  }
+
+  async messageVerification(message, args) {
+    const channel = await args.pick("channel").catch(() => undefined);
+    const db = await serverSettings
+      .findById(message.guild.id, serverSettings.upsert)
+      .cacheQuery();
+    let successMsg = "";
+    if (channel) {
+      db.logging.verification = channel.id;
+      successMsg = `${this.container.emojis.success} Log successfully set to ${channel}.`;
+    } else {
+      db.logging.verification = null;
       successMsg = `${this.container.emojis.success} Log successfully cleared.`;
     }
     db.save()

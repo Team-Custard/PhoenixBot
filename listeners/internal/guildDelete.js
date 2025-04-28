@@ -25,6 +25,12 @@ class GuildDelete extends Listener {
               }
             }
     console.log(`Left guild ${guild.name} (${guild.id})`);
+
+    const tasks = await this.container.tasks.list({types: ["delayed", "waiting", "prioritized"]}).find(t => t.data.guildid == guild.id)
+
+    for (let i in tasks) {
+      await tasks[i].remove();
+    }
   }
 }
 module.exports = {

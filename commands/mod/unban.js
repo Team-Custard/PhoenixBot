@@ -70,9 +70,6 @@ class PingCommand extends Command {
       }
     }
 
-    const timer = (await this.container.tasks.list({types: ["delayed", "waiting", "prioritized"]})).find(t => t.data.guildid == interaction.guild.id && t.data.memberid == member.id);
-    if (timer) timer.remove();
-
     if (db.logging.infractions) {
       const channel = await interaction.guild.channels
         .fetch(db.logging.infractions)

@@ -61,9 +61,11 @@ const settingsSchema = new Schema({
     msgignorechannels: [String],
     moderation: String,
     infractions: String,
+    automod: String,
     roles: String,
     voice: String,
     commands: String,
+    verification: String,
   },
   rolesMenu: [{
     id: String,
@@ -95,8 +97,17 @@ const settingsSchema = new Schema({
     }]
   },
   automod: {
+    autokick: {
+      duration: Number,
+      neededRole: String
+    },
+    bindings: [
+      {
+        id: String,
+        actions: [String],
+      }
+    ],
     muteduration: String,
-    reportchannel: String,
     pingreport: String,
     nsfwimage: [],
     nsfwweight: {type: Number, default: 50},

@@ -5,7 +5,8 @@ const serverSettings = require("../tools/SettingsSchema");
 class ManualTask extends ScheduledTask {
     constructor(context, options) {
         super(context, {
-            ...options
+            ...options,
+            name: 'tempBan'
         });
     }
     async run(payload) {

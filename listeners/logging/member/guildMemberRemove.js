@@ -59,6 +59,12 @@ class GuildMemberAdd extends Listener {
 
     const db = await ServerSettings.findById(member.guild.id).cacheQuery();
 
+    const timer = (await this.container.tasks.list({types: ["delayed", "waiting", "prioritized"]})).find(t => t.name == 'autoKick' && t.data.guildid == member.guild.id && t.data.memberid == member.id);
+    if (timer) {
+      timer.remove();
+      console.log('Removed autokick task as the user has left the server');
+    }
+
     if (db.logging.members) {
       const channel = await member.guild.channels
         .fetch(db.logging.members)
