@@ -272,7 +272,7 @@ async chatInputRun(interaction) {
       reason: `(Ban by ${message.author.tag}${isNaN(duration) ? `` : ` | ${require("ms")(duration)}`}) ${reason}`,
     });
     if (!isNaN(duration)) {
-      await this.container.tasks.create({ name: 'tempBan', payload: { guildid: message.guild.id, memberid: member.id, caseid: thecase.id } }, { delay: duration, customJobOptions: { removeOnComplete: true, removeOnFail: true } })
+      await this.container.tasks.create({ name: 'tempBan', payload: { guildid: message.guild.id, memberid: member.id, caseid: thecase.id } }, { delay: duration, customJobOptions: { removeOnComplete: true, removeOnFail: false } })
       .then(() => { console.log(`Successfully registered a tempBan task`) })
       .catch((err) => { console.error(`Failed to create a tempBan task.`, err) })
     }
