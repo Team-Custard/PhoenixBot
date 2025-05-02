@@ -9,7 +9,7 @@ class scheduledTaskError extends Listener {
       event: "scheduledTaskError",
     });
   }
-  async run(error, { task }) {
+  async run(error) {
     console.log(error);
     return;
     if (require('../../config.json').process.errorwebhook) {

@@ -9,8 +9,8 @@ class scheduledTaskRun extends Listener {
       event: "scheduledTaskRun",
     });
   }
-  async run({ task }) {
-    console.log(`Running task ${task}`);
+  async run(task) {
+    console.log(`Running task ${task.name}`);
   }
 }
 module.exports = {

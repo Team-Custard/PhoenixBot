@@ -9,7 +9,7 @@ class scheduledTaskNotFound extends Listener {
       event: "scheduledTaskNotFound",
     });
   }
-  async run({ task }) {
+  async run(task) {
     console.log(`Task not found: ${task}`);
   }
 }

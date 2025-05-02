@@ -9,8 +9,8 @@ class scheduledTaskFinished extends Listener {
       event: "scheduledTaskFinished",
     });
   }
-  async run({ task }) {
-    console.log(`Successfully finished task ${task}`);
+  async run(task) {
+    console.log(`Successfully finished task ${task.name}`);
   }
 }
 module.exports = {
