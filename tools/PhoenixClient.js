@@ -43,7 +43,7 @@ class PhoenixClient extends SapphireClient {
             host: redisParse.host,
             password: redisParse.password,
             port: redisParse.port,
-            db: 2
+            db: (settings.process.botmode == 'prod' ? 2 : (settings.process.botmode == 'dev' ? 3 : 4))
           }
         }
       },
