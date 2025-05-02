@@ -23,7 +23,7 @@ class GuildMemberAdd extends Listener {
 
     const db = await ServerSettings.findById(member.guild.id).cacheQuery();
     if (db.automod.autokick.duration) {
-        await this.container.tasks.create({ name: 'autoKick', payload: { guildid: member.guild.id, memberid: member.id } }, { delay: db.automod.autokick.duration, customJobOptions: { removeOnComplete: true, removeOnFail: true } })
+        await this.container.tasks.create({ name: 'autoKick', payload: { guildid: member.guild.id, memberid: member.id } }, { delay: db.automod.autokick.duration, customJobOptions: { removeOnComplete: true, removeOnFail: false } })
         .then(() => { console.log(`Successfully registered a autoKick task`) })
 
         //console.log(await this.container.tasks.list({ types: ["active", "delayed", "waiting"] }))
