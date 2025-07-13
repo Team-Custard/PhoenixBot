@@ -9,7 +9,7 @@ class PingCommand extends Subcommand {
   constructor(context, options) {
     super(context, {
       ...options,
-      name: "fun",
+      name: "utilities",
       subcommands: [
         {
           name: "cat",
@@ -48,8 +48,8 @@ class PingCommand extends Subcommand {
           chatInputRun: "chatInputIcon",
         },
         {
-          name: "banner",
-          chatInputRun: "chatInputBanner",
+          name: "serverbanner",
+          chatInputRun: "chatInputServerBanner",
         },
         {
           name: "rav",
@@ -66,8 +66,8 @@ class PingCommand extends Subcommand {
     registry.idHints = ["1227016558778519622"];
     registry.registerChatInputCommand((builder) =>
       builder
-        .setName("fun")
-        .setDescription("Fun commands")
+        .setName("utilities")
+        .setDescription("Utility commands")
         .addSubcommand((command) =>
           command.setName("cat").setDescription("Sends a random cat"),
         )
@@ -141,7 +141,7 @@ class PingCommand extends Subcommand {
         )
         .addSubcommand((command) =>
           command
-            .setName("banner")
+            .setName("serverbanner")
             .setDescription("Display the server's banner"),
         )
         .addSubcommand((command) =>
@@ -153,12 +153,6 @@ class PingCommand extends Subcommand {
                 .setName("user")
                 .setDescription("The user")
                 .setRequired(true),
-            )
-            .addBooleanOption((option) =>
-              option
-                .setName("find")
-                .setDescription("Find the image instead of sending links to")
-                .setRequired(false),
             ),
         )
         .setDMPermission(true)
@@ -208,39 +202,13 @@ class PingCommand extends Subcommand {
   async chatInputRav(interaction) {
     await interaction.deferReply();
     const user = interaction.options.getUser("user");
-    const find = interaction.options.getBoolean("find");
-    const url = `https://serpapi.com/search.json?engine=google_reverse_image&image_url=${user.displayAvatarURL({ dynamic: true, size: 1024 })}&api_key=${process.env["serpapikey"]}`;
-
-    if (!find) {
-      return interaction.followUp({
-        content:
-          `Search **${user.username}**'s avatar.\n[\`[Google]\`](<https://lens.google.com/uploadbyurl?url=${user.displayAvatarURL({ size: 2048, dynamic: true })}>) ` +
-          `[\`[TinEye]\`](<https://www.tineye.com/search/?&url=${user.displayAvatarURL({ size: 2048, dynamic: true })}>) ` +
-          `[\`[Bing]\`](<https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIVSP&sbisrc=UrlPaste&q=imgurl:${user.displayAvatarURL({ size: 2048, dynamic: true })}>)`,
-      });
-    }
-
-    fetch(url, {
-      method: "GET",
-    })
-      .then((response) => {
-        if (response.ok) {
-          return response.json();
-        } else {
-          throw new Error(`http ${response.status} ${response.statusText}`);
-        }
-      })
-      .then((data) => {
-        if (!data.image_results)
-          return interaction.followUp(`${this.container.emojis.error} No similar profile pictures found.`);
-        const othermatches = data.image_results.map(
-          (d) => `[[${d.position}]](<${d.link}>)`,
-        );
-        interaction.followUp(
-          `Rav has found ${othermatches.length} possible matches for ${user.username}. They will be listed below. Alternative you can use the links option to send links to search it instead.\n**First match:** ${data.image_results[0].link}\n**All matches:** ${othermatches}`,
-        );
-      })
-      .catch((error) => interaction.followUp(`${this.container.emojis.error} ${error}`));
+    
+    return interaction.followUp({
+      content:
+        `Search **${user.username}**'s avatar.\n[\`[Google]\`](<https://lens.google.com/uploadbyurl?url=${user.displayAvatarURL({ size: 2048, dynamic: true })}>) ` +
+        `[\`[TinEye]\`](<https://www.tineye.com/search/?&url=${user.displayAvatarURL({ size: 2048, dynamic: true })}>) ` +
+        `[\`[Bing]\`](<https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIVSP&sbisrc=UrlPaste&q=imgurl:${user.displayAvatarURL({ size: 2048, dynamic: true })}>)`,
+    });
   }
 
   async chatInputAvatar(interaction) {
@@ -286,7 +254,7 @@ class PingCommand extends Subcommand {
    * @param {ChatInputCommandInteraction} interaction 
    * @returns 
    */
-  async chatInputIcon(interaction) {
+  async chatInputServerBanner(interaction) {
     if (!interaction.guild) return interaction.reply({ ephemeral: true, content: `${this.container.emojis.error} This command can only be used in a server.` })
     if (!interaction.guild.banner) return interaction.reply({ ephemeral: true, content: `${this.container.emojis.error} This server currently does not have a banner set.` })
     const avatar = interaction.guild.bannerURL({ size: 1024 });

@@ -1,4 +1,4 @@
-const { Command } = require("@sapphire/framework");
+const { Command, Args } = require("@sapphire/framework");
 const {
   ApplicationCommandType,
   EmbedBuilder,
@@ -6,6 +6,7 @@ const {
   PermissionFlagsBits,
   GuildMemberFlags,
   ChatInputCommandInteraction,
+  Message,
 } = require("discord.js");
 const serverSettings = require("../../tools/SettingsSchema");
 
@@ -28,7 +29,8 @@ class UserCommand extends Command {
         PermissionFlagsBits.SendMessages,
         PermissionFlagsBits.EmbedLinks,
       ],
-      preconditions: ["module"]
+      preconditions: ["module"],
+      flags: true
     });
   }
 
@@ -91,13 +93,75 @@ class UserCommand extends Command {
     interaction.followUp({ embeds: [embed] });
   }
 
+  /**
+   * 
+   * @param {Message} message 
+   * @param {Args} args 
+   * @returns 
+   */
   async messageRun(message, args) {
-    const guild = await args.pick("guild").catch(() => message.guild);
+    const rawguild = await args.pick("string").catch(() => message.guild.id);
+    let guild = await this.container.client.guilds.fetch(rawguild).catch(() => undefined);
+    let widgetflag = args.getFlags("widget", "w");
+    console.log(guild);
 
+    if (!guild) {
+      const discovery = await this.container.client.fetchGuildPreview(rawguild).catch(() => undefined);
+      console.log(discovery);
+      
+      
+      if (!discovery || discovery?.code) {
+        if (!widgetflag) {
+          return message.reply(`${this.container.emojis.error} Couldn't display the server information. For Phoenix to be able to display server information, the server must be discoverable, or also have Phoenix in the server. Phoenix can also display server information using the widget with the --widget flag, but it's not recommended.`);
+        }
+
+        const widget = await this.container.client.fetchGuildWidget(rawguild).catch(() => undefined);
+        
+        if ((!widget || widget?.code)) {
+          return message.reply(`${this.container.emojis.error} Couldn't display the server information. For Phoenix to be able to display server information, the server must be discoverable, have widget enabled, or also have Phoenix in the server.`);
+        }
+        
+        guild = widget;
+        console.log(guild);
+        const embed = new EmbedBuilder()
+        .setAuthor({
+          name: guild.name
+        })
+        .setDescription(`**Name:** ${guild.name}\n`+
+          `**ID:** ${guild.id}\n`+
+          `\n**Fetched method:** Widget\n`
+        )
+        .setColor(Colors.Orange)
+        .setFooter({ text: `Triggered` })
+        .setTimestamp(new Date());
+        
+        return message.reply({ embeds: [embed] });
+      }
+      
+      const embed = new EmbedBuilder()
+      .setAuthor({
+        name: discovery.name,
+        iconURL: discovery.iconURL({dynamic:true, size: 512})
+      })
+      .setDescription(`**Name:** ${discovery.name}\n`+
+        `**ID:** ${discovery.id}\n`+
+        `**Created:** <t:${Math.floor(discovery.createdTimestamp / 1000)}:R>\n`+
+        `**Users:** ${discovery.approximateMemberCount}\n`+
+        `**Emojis:** ${discovery.emojis.size}\n`+
+        `**Stickers:** ${discovery.stickers.size}\n`+
+        `\n**Fetched method:** Discovery`
+      )
+      .setThumbnail(discovery.iconURL({dynamic:true, size: 512}))
+      .setColor(Colors.Orange)
+      .setFooter({ text: `Triggered` })
+      .setTimestamp(new Date());
+      return message.reply({ embeds: [embed] });
+    }
+    
     const embed = new EmbedBuilder()
     .setAuthor({
-        name: guild.name,
-        iconURL: guild.iconURL({dynamic:true, size: 512})
+      name: guild.name,
+      iconURL: guild.iconURL({dynamic:true, size: 512})
     })
     .setDescription(`**Name:** ${guild.name}\n`+
         `**ID:** ${guild.id}\n`+
@@ -112,7 +176,8 @@ class UserCommand extends Command {
         `**Boosts:** ${guild.premiumSubscriptionCount} (Level ${guild.premiumTier})\n`+
         `\n**Verification:** ${guild.verificationLevel} / 4\n`+
         `**Explicit filter:** ${guild.explicitContentFilter} / 2\n`+
-        `**Notifications:** ${guild.defaultMessageNotifications == 1 ? `@mention` : `all`}`
+        `**Notifications:** ${guild.defaultMessageNotifications == 1 ? `@mention` : `all`}\n`+
+        `\n**Fetch method:** Directly`
     )
     .setThumbnail(guild.iconURL({dynamic:true, size: 512}))
     .setColor(Colors.Orange)

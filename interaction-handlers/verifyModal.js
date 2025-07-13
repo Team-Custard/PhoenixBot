@@ -83,6 +83,9 @@ class MenuHandler extends InteractionHandler {
       interaction.member.roles
         .add(role, `Verification`)
         .then(async () => {
+        })
+        .then(async () => {
+          if (db.verification.unverifiedRole) interaction.member.roles.remove(db.verification.unverifiedRole, `Verification`).catch(() => undefined);
           if (db.logging.verification) {
             const channel = await member.guild.channels
               .fetch(db.logging.verification)

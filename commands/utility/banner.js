@@ -7,15 +7,15 @@ class PingCommand extends Command {
     super(context, {
       ...options,
       name: "banner",
-      aliases: ['serverbanner'],
-      description: "Displays the server banner",
+      aliases: [],
+      description: "Displays a user's banner.",
       detailedDescription: {
-        usage: "banner",
-        examples: ["banner"],
-        args: [],
+        usage: "banner [user]",
+        examples: ["banner 763631377152999435"],
+        args: ["user: The user to use."],
       },
       cooldownDelay: 60_000,
-      cooldownLimit: 10,
+      cooldownLimit: 3,
       cooldownScope: BucketScope.Guild,
       requiredClientPermissions: [
         PermissionFlagsBits.SendMessages,
@@ -25,13 +25,16 @@ class PingCommand extends Command {
     });
   }
 
-  async messageRun(message) {
-    if (!message.guild.banner) return message.reply({ content: `${this.container.emojis.error} This server currently does not have a banner set.` })
-
-    const avatar = message.guild.bannerURL({ dynamic: true, size: 1024 });
+  async messageRun(message, args) {
+    let user = await args.pick("user").catch(() => undefined);
+    if (!user) user = message.author;
+    user.fetch({ force: true }).catch(() => undefined);
+    const banner = user.bannerURL({ dynamic: true, size: 1024 });
+    console.log(banner);
+    if (!banner) return message.reply({ content: `${this.container.emojis.error} This user currently does not have a banner set.` });
 
     await message.reply({
-      files: [avatar],
+      files: [banner],
     });
   }
 }

@@ -42,6 +42,8 @@ const settingsSchema = new Schema({
 
   verification: {
     role: String,
+    unverifiedRole: String,
+    managerRole: String,
     messageText: String,
     verifiedText: String,
   },

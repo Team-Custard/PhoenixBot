@@ -29,7 +29,7 @@ class PingCommand extends Command {
     if (!usersettings) usersettings = new UserDB({ _id: interaction.member.id });
     const reason = interaction.options.getString("reason");
 
-    if (usersettings.afk.since) return interaction.followUp(`${this.container.emojis.warning} You caught a strange issue where you seem to already have an afk status set. The status should automatically clear in a moment. If it doesn't clear itself in 5 seconds, ping yourself and it'll force the status to clear.`)
+    if (usersettings.afk.since) return interaction.followUp(`${this.container.emojis.warning} You caught a strange issue where you seem to already have an afk status set. The status should automatically clear in a moment. If it doesn't clear itself in 5 seconds, ping yourself and it'll force the status to clear.`);
 
     usersettings.afk.since = Math.floor(new Date().getTime() / 1000);
     usersettings.afk.status = reason;
@@ -54,7 +54,7 @@ class PingCommand extends Command {
     if (!usersettings) usersettings = new UserDB({ _id: message.member.id });
     const reason = await args.rest("string");
 
-    if (usersettings.afk.since) return message.reply(`${this.container.emojis.warning} You caught a strange issue where you seem to already have an afk status set. The status should automatically clear in a moment. If it doesn't clear itself in 5 seconds, ping yourself and it'll force the status to clear.`)
+    if (usersettings.afk.since) return message.reply(`${this.container.emojis.warning} You caught a strange issue where you seem to already have an afk status set. The status should automatically clear in a moment. If it doesn't clear itself in 5 seconds, ping yourself and it'll force the status to clear.`);
 
     usersettings.afk.since = Math.floor(new Date().getTime() / 1000);
     usersettings.afk.status = reason;
