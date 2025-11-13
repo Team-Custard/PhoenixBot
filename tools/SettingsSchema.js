@@ -103,6 +103,7 @@ const settingsSchema = new Schema({
       duration: Number,
       neededRole: String
     },
+    minimumAge: Number,
     bindings: [
       {
         id: String,

@@ -16,7 +16,7 @@ class ReadyListener extends Listener {
       ...options,
       once: true,
       name: "emojiCheck",
-      event: "ready",
+      event: "clientReady",
     });
   }
   async run(client) {
@@ -28,7 +28,7 @@ class ReadyListener extends Listener {
         info: "❔",
         error: "❌",
         loading: "⭕"
-    }
+    };
 
     const emojis = await rest.get(`/applications/${client.id}/emojis`).catch(undefined);
     if (emojis) {
