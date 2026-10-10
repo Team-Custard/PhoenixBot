@@ -1,11 +1,6 @@
 const {
   Command,
-  CommandStore,
-  ListenerStore,
-  PreconditionStore,
-  InteractionHandlerStore,
 } = require("@sapphire/framework");
-const { Colors } = require("discord.js");
 const { PermissionFlagsBits } = require("discord.js");
 
 class PingCommand extends Command {

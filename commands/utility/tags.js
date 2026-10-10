@@ -1,64 +1,40 @@
-// const { isMessageInstance } = require('@sapphire/discord.js-utilities');
-const { BucketScope, ApplicationCommandRegistry } = require("@sapphire/framework");
-const { Subcommand } = require("@sapphire/plugin-subcommands");
-const serverSettings = require("../../tools/SettingsSchema");
 const { PermissionFlagsBits } = require("discord.js");
+const { BucketScope } = require("@sapphire/framework");
+const { PhoenixCommand } = require("../../tools/PhoenixCommand");
+const { getSettings } = require("../../tools/guildSettings");
+const { emoji } = require("../../tools/errorReporter");
+const { parse } = require("../../tools/textParser");
+const premiumCheck = require("../../tools/premiumCheck");
+const builtInTags = require("../../tools/infoStuff.json");
 
-class PingCommand extends Subcommand {
+const FREE_LIMIT = 25;
+const MAX_LIMIT = 500;
+const nameArg = (description, autocomplete = true) => ({ name: "name", type: "string", required: true, maxLength: 12, autocomplete, description });
+
+class TagsCommand extends PhoenixCommand {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "tags",
       aliases: ["t", "tag"],
-      description: "Manages tags. Note that only plain text supports placeholders. Embeds do not.",
-      detailedDescription: {
-        usage: "tag [subcommand] <name>",
-        examples: [
-          "tag list",
-          "tag breezip",
-          "tag add sylveon I like Sylveons",
-        ],
-        args: [
-          "subcommand: Can be list/add/remove/lock/display. Defaults to display.",
-          "name: The name of the tag.",
-        ],
-      },
+      description: "Shows and manages server tags. Placeholders like {{mention}} work in tag text.",
+      examples: ["tag list", "tag breezip", "tag add sylveon I like Sylveons"],
       subcommands: [
-        {
-          name: "list",
-          chatInputRun: "chatInputList",
-          messageRun: "messageList",
-        },
+        { name: "display", description: "Displays a tag", args: [nameArg("The name of the tag")], run: "display", default: true },
+        { name: "list", description: "Lists all tags in the server", run: "list" },
         {
           name: "add",
-          chatInputRun: "chatInputAdd",
-          messageRun: "messageAdd",
-          preconditions: ["tagLock", "module"],
+          description: "Adds a tag to the server",
+          run: "add",
+          args: [
+            nameArg("The name of the tag (12 characters max)", false),
+            { name: "description", type: "string", required: true, rest: true, maxLength: 2048, description: "What the tag says (2048 characters max)" },
+          ],
         },
-        {
-          name: "remove",
-          chatInputRun: "chatInputRemove",
-          messageRun: "messageRemove",
-          preconditions: ["tagLock"],
-        },
-        {
-          name: "info",
-          chatInputRun: "chatInputInfo",
-          messageRun: "messageInfo",
-        },
-        {
-          name: "lock",
-          chatInputRun: "chatInputLock",
-          messageRun: "messageLock",
-          requiredUserPermissions: [PermissionFlagsBits.ManageGuild],
-        },
-        {
-          name: "display",
-          chatInputRun: "chatInputDisplay",
-          messageRun: "messageDisplay",
-          default: true,
-        },
+        { name: "remove", description: "Removes a tag from the server", args: [nameArg("The name of the tag")], run: "remove" },
+        { name: "info", description: "Shows who made a tag and its raw text", args: [nameArg("The name of the tag")], run: "info" },
       ],
+      slash: { name: "tag" },
       cooldownDelay: 15_000,
       cooldownLimit: 3,
       cooldownScope: BucketScope.Guild,
@@ -67,397 +43,69 @@ class PingCommand extends Subcommand {
     });
   }
 
-  /**
-   * @param {ApplicationCommandRegistry} registry 
-   */
-  registerApplicationCommands(registry) {
-    registry.idHints = ["1227016558778519622"];
-    registry.registerChatInputCommand((builder) =>
-      builder
-        .setName("tag")
-        .setDescription("Displays tags set by the server and Phoenix.")
-        .addSubcommand((command) =>
-          command.setName("list").setDescription("List all tags in the server"),
-        )
-        .addSubcommand((command) =>
-          command
-            .setName("add")
-            .setDescription("Adds a tag to the server")
-            .addStringOption((option) =>
-              option
-                .setName("name")
-                .setDescription("The name of the tag (12 char max)")
-                .setRequired(true),
-            )
-            .addStringOption((option) =>
-              option
-                .setName("description")
-                .setDescription("The description of the tag (2048 char max)")
-                .setRequired(true)
-                .setMaxLength(2048),
-            ),
-        )
-        .addSubcommand((command) =>
-          command
-            .setName("remove")
-            .setDescription("Removes a tag from the server")
-            .addStringOption((option) =>
-              option
-                .setName("name")
-                .setDescription("The name of the tag")
-                .setRequired(true)
-                .setAutocomplete(true),
-            ),
-        )
-        .addSubcommand((command) =>
-          command
-            .setName("display")
-            .setDescription("Displays a tag")
-            .addStringOption((option) =>
-              option
-                .setName("name")
-                .setDescription("The name of the tag")
-                .setRequired(true)
-                .setAutocomplete(true),
-            ),
-        )
-        .addSubcommand((command) =>
-          command
-            .setName("lock")
-            .setDescription("Locks tag management to server managers.")
-            .addBooleanOption((option) =>
-              option
-                .setName("enable")
-                .setDescription("Enable the option?")
-                .setRequired(true),
-            ),
-        )
-        .setDMPermission(false),
+  find(settings, name) {
+    const lower = name.toLowerCase();
+    const custom = settings.tags.find((t) => t.name?.toLowerCase() === lower);
+    if (custom) return { tag: custom, builtIn: false };
+    const builtIn = builtInTags.find((t) => t.name.toLowerCase() === lower);
+    return builtIn ? { tag: builtIn, builtIn: true } : null;
+  }
+
+  /** Tag management can be locked to server managers on the dashboard. */
+  lockedFor(ctx, settings) {
+    return settings.lockTags && !ctx.member.permissions.has(PermissionFlagsBits.ManageGuild);
+  }
+
+  async display(ctx, { name }) {
+    const settings = await getSettings(ctx.guild.id);
+    const found = this.find(settings, name);
+    if (!found) return ctx.error(`${emoji("error")} Tag not found.`);
+    return ctx.reply({ content: await parse(found.tag.description, ctx.member), allowedMentions: { parse: ["users"] } });
+  }
+
+  async list(ctx) {
+    const settings = await getSettings(ctx.guild.id);
+    const custom = settings.tags.map((t) => `\`${t.name}\``).join(", ");
+    return ctx.reply(
+      `The following tags are available.${settings.lockTags ? " Tags in this server can only be managed by a server manager." : ""}\n\n` +
+      `**Built-in:** ${builtInTags.map((t) => `\`${t.name}\``).join(", ")}\n**Server tags:** ${custom || "No tags created."}`.slice(0, 1900),
     );
   }
 
-  async chatInputLock(interaction) {
-    await interaction.deferReply();
-    const db = await serverSettings
-      .findById(interaction.guild.id, serverSettings.upsert)
-      .cacheQuery();
+  async add(ctx, { name, description }) {
+    const settings = await getSettings(ctx.guild.id);
+    if (this.lockedFor(ctx, settings)) return ctx.error(`${emoji("error")} Tag management is locked for members.`);
+    if (this.find(settings, name)) return ctx.error(`${emoji("error")} Tag already exists.`);
+    if (name.length > 12) return ctx.error(`${emoji("error")} Tag name is too long.`);
+    if (settings.tags.length >= MAX_LIMIT) return ctx.error(`${emoji("error")} You've reached the maximum of ${MAX_LIMIT} tags.`);
+    if (settings.tags.length >= FREE_LIMIT && !(await premiumCheck(ctx.guild))) {
+      return ctx.error(`${emoji("error")} You've reached the maximum of ${FREE_LIMIT} tags. Upgrade with Plus for more.`);
+    }
 
-    const option = await interaction.options.getBoolean("locked");
-
-    db.lockTags = option;
-
-    db.save()
-      .then(() => {
-        interaction.followUp(
-          `${this.container.emojis.success} ${option ? "locked tags. You now need to be a server manager to manage tags." : "unlocked tags."}`,
-        );
-      })
-      .catch((err) => {
-        interaction.followUp(`${this.container.emojis.error} ${err}`);
-      });
+    settings.tags.push({ name, description, creator: ctx.user.username });
+    await settings.save();
+    return ctx.reply(`${emoji("success")} Successfully added tag \`${name}\`.`);
   }
 
-  async chatInputAdd(interaction) {
-    await interaction.deferReply();
-    const db = await serverSettings
-      .findById(interaction.guild.id, serverSettings.upsert)
-      .cacheQuery();
+  async remove(ctx, { name }) {
+    const settings = await getSettings(ctx.guild.id);
+    if (this.lockedFor(ctx, settings)) return ctx.error(`${emoji("error")} Tag management is locked for members.`);
+    const tag = settings.tags.find((t) => t.name?.toLowerCase() === name.toLowerCase());
+    if (!tag) return ctx.error(`${emoji("error")} Tag does not exist.`);
+    settings.tags.pull(tag);
+    await settings.save();
+    return ctx.reply(`${emoji("success")} Successfully removed tag \`${tag.name}\`.`);
+  }
 
-    const tagName = await interaction.options.getString("name");
-    const tagDesc = await interaction.options.getString("description");
-
-    const indexes = require("../../tools/infoStuff.json");
-
-    const tag = db.tags.find((t) => t.name == tagName);
-    const btag = indexes.find((t) => t.name == tagName);
-
-    if (tag || btag) return interaction.followUp(`${this.container.emojis.error} Tag already exists.`);
-    if (tagName.length > 12) {
-      return interaction.followUp(`${this.container.emojis.error} Tag name is too long.`);
-    }
-    if (tagDesc.length > 2048) {
-      return interaction.followUp(`${this.container.emojis.error} Tag description is too long.`);
-    }
-    if (!(await require("../../tools/premiumCheck")(interaction.guild)) && db.tags.length > 25) {
-      return interaction.followUp(
-        `${this.container.emojis.error} You've maxed out on the maximum of tags you can hold in the server. Limit is 25, upgradable with plus.`,
-      );
-    }
-    if (db.tags.length > 500) return interaction.followUp(`${this.container.emojis.error} You've maxed out on the maximum of tags you can hold in the server. Limit is 500.`)
-
-    db.tags.push({
-      name: tagName,
-      description: tagDesc,
-      creator: interaction.user.username,
+  async info(ctx, { name }) {
+    const settings = await getSettings(ctx.guild.id);
+    const found = this.find(settings, name);
+    if (!found) return ctx.error(`${emoji("error")} Tag not found.`);
+    return ctx.reply({
+      content: `**${found.tag.name}** : Created by ${found.tag.creator}${found.builtIn ? " : Built-in tag" : ""}\nContent: \`\`\`${found.tag.description}\`\`\``.slice(0, 2000),
+      allowedMentions: { parse: [] },
     });
-
-    db.save()
-      .then(() => {
-        interaction.followUp(
-          `${this.container.emojis.success} Successfully added tag \`${tagName}\`.`,
-        );
-      })
-      .catch((err) => {
-        interaction.followUp(`${this.container.emojis.error} ${err}`);
-      });
-  }
-
-  async chatInputRemove(interaction) {
-    await interaction.deferReply();
-    const db = await serverSettings
-      .findById(interaction.guild.id, serverSettings.upsert)
-      .cacheQuery();
-    const tagName = await interaction.options.getString("name");
-
-    const tag = db.tags.find((t) => t.name == tagName);
-
-    if (!tag) return interaction.followUp(`${this.container.emojis.error} Tag does not exist.`);
-
-    for (let i = 0; i < db.tags.length; i++) {
-      if (db.tags[i].name == tagName) db.tags.splice(i, 1);
-    }
-
-    db.save()
-      .then(() => {
-        interaction.followUp(
-          `${this.container.emojis.success} Successfully removed tag \`${tagName}\`.`,
-        );
-      })
-      .catch((err) => {
-        interaction.followUp(`${this.container.emojis.error} ${err}`);
-      });
-  }
-
-  async chatInputList(interaction) {
-    await interaction.deferReply();
-    const db = await serverSettings
-      .findById(interaction.guild.id, serverSettings.upsert)
-      .cacheQuery();
-
-    const indexes = require("../../tools/infoStuff.json");
-
-    let srvTags = db.tags;
-    if (srvTags == null) {
-      srvTags = [];
-    }
-
-    interaction.followUp(
-      `The following indexes are available.${db.lockTags ? " Tags in this server can only be managed by a server manager." : ""}\n\n**Built-in:** ${indexes.map((i) => `\`${i.name}\``)}\n**Server tags:** ${srvTags.length > 0 ? srvTags.map((r) => `\`${r.name}\``) : "No tags created."}`,
-    );
-  }
-
-  async chatInputDisplay(interaction) {
-    await interaction.deferReply();
-    const tagName = await interaction.options.getString("name");
-
-    const db = await serverSettings
-      .findById(interaction.guild.id, serverSettings.upsert)
-      .cacheQuery();
-
-    const indexes = require("../../tools/infoStuff.json");
-
-    const tag = db.tags.find((t) => t.name == tagName);
-    if (tag) {
-      interaction.followUp(
-        `${await require("../../tools/textParser").parse(tag.description, interaction.member)}`,
-      );
-    } else {
-      const btag = indexes.find((t) => t.name == tagName);
-      if (btag) {
-        interaction.followUp(
-          `${await require("../../tools/textParser").parse(btag.description, interaction.member)}`,
-        );
-      } else {
-        interaction.followUp(`${this.container.emojis.error} Tag not found.`);
-      }
-    }
-  }
-
-  async chatInputInfo(interaction) {
-    await interaction.deferReply();
-    const tagName = await interaction.options.getString("name");
-
-    const db = await serverSettings
-      .findById(interaction.guild.id, serverSettings.upsert)
-      .cacheQuery();
-
-    const indexes = require("../../tools/infoStuff.json");
-
-    const tag = db.tags.find((t) => t.name == tagName);
-    if (tag) {
-      interaction.followUp(
-        `**${tag.name}** : Created by ${tag.creator}\nContent: \`\`\`${tag.description}\`\`\``,
-      );
-    } else {
-      const btag = indexes.find((t) => t.name == tagName);
-      if (btag) {
-        interaction.followUp(
-          `**${btag.name}** : Created by ${btag.creator} : Built-in tag\nContent: \`\`\`${btag.description}\`\`\``,
-        );
-      } else {
-        interaction.followUp(`${this.container.emojis.error} Tag not found.`);
-      }
-    }
-  }
-
-  async messageLock(message, args) {
-    const db = await serverSettings
-      .findById(message.guild.id, serverSettings.upsert)
-      .cacheQuery();
-
-    const option = await args.pick("boolean");
-
-    db.lockTags = option;
-
-    db.save()
-      .then(() => {
-        message.reply(
-          `${this.container.emojis.success} ${option ? "locked tags. You now need to be a server manager to manage tags." : "unlocked tags."}`,
-        );
-      })
-      .catch((err) => {
-        message.reply(`${this.container.emojis.error} ${err}`);
-      });
-  }
-
-  async messageAdd(message, args) {
-    const db = await serverSettings
-      .findById(message.guild.id, serverSettings.upsert)
-      .cacheQuery();
-
-    const tagName = await args.pick("string");
-    const tagDesc = await args.rest("string");
-
-    const indexes = require("../../tools/infoStuff.json");
-
-    const tag = db.tags.find((t) => t.name == tagName);
-    const btag = indexes.find((t) => t.name == tagName);
-
-    if (tag || btag) return message.reply(`${this.container.emojis.error} Tag already exists.`);
-    if (tagName.length > 12) return message.reply(`${this.container.emojis.error} Tag name is too long.`);
-    if (tagDesc.length > 2048) {
-      return message.reply(`${this.container.emojis.error} Tag description is too long.`);
-    }
-    if (!(await require("../../tools/premiumCheck")(message.guild)) && db.tags.length > 25) {
-      return message.reply(
-        `${this.container.emojis.error} You've maxed out on the maximum of tags you can hold in the server. Limit is 25, upgradable with plus.`,
-      );
-    }
-    if (db.tags.length > 500) return message.reply(`${this.container.emojis.error} You've maxed out on the maximum of tags you can hold in the server. Limit is 500.`)
-
-    db.tags.push({
-      name: tagName,
-      description: tagDesc,
-      creator: message.author.username,
-    });
-
-    db.save()
-      .then(() => {
-        message.reply(
-          `${this.container.emojis.success} Successfully added tag \`${tagName}\`.`,
-        );
-      })
-      .catch((err) => {
-        message.reply(`${this.container.emojis.error} ${err}`);
-      });
-  }
-
-  async messageRemove(message, args) {
-    const db = await serverSettings
-      .findById(message.guild.id, serverSettings.upsert)
-      .cacheQuery();
-    const tagName = await args.pick("string");
-
-    const tag = db.tags.find((t) => t.name == tagName);
-
-    if (!tag) return message.reply(`${this.container.emojis.error} Tag does not exist.`);
-
-    for (let i = 0; i < db.tags.length; i++) {
-      if (db.tags[i].name == tagName) db.tags.splice(i, 1);
-    }
-
-    db.save()
-      .then(() => {
-        message.reply(
-          `${this.container.emojis.success} Successfully removed tag \`${tagName}\`.`,
-        );
-      })
-      .catch((err) => {
-        message.reply(`${this.container.emojis.error} ${err}`);
-      });
-  }
-
-  async messageList(message) {
-    const db = await serverSettings
-      .findById(message.guild.id, serverSettings.upsert)
-      .cacheQuery();
-
-    const indexes = require("../../tools/infoStuff.json");
-
-    let srvTags = db.tags;
-    if (srvTags == null) {
-      srvTags = [];
-    }
-
-    message.reply(
-      `The following indexes are available.${db.lockTags ? " Tags in this server can only be managed by a server manager." : ""}\n\n**Built-in:** ${indexes.map((i) => `\`${i.name}\``)}\n**Server tags:** ${srvTags.length > 0 ? srvTags.map((r) => `\`${r.name}\``) : "No tags created."}`,
-    );
-  }
-
-  async messageDisplay(message, args) {
-    const tagName = await args.pick("string").catch(() => undefined);
-
-    if (!tagName) return this.messageList(message);
-
-    const db = await serverSettings
-      .findById(message.guild.id, serverSettings.upsert)
-      .cacheQuery();
-
-    const indexes = require("../../tools/infoStuff.json");
-
-    const tag = db.tags.find((t) => t.name == tagName);
-    if (tag) {
-      message.reply(
-        `${await require("../../tools/textParser").parse(tag.description, message.member)}`,
-      );
-    } else {
-      const btag = indexes.find((t) => t.name == tagName);
-      if (btag) {
-        message.reply(
-          `${await require("../../tools/textParser").parse(btag.description, message.member)}`,
-        );
-      } else {
-        message.reply(`${this.container.emojis.error} Tag not found.`);
-      }
-    }
-  }
-
-  async messageInfo(message, args) {
-    const tagName = await args.pick("string");
-
-    const db = await serverSettings
-      .findById(message.guild.id, serverSettings.upsert)
-      .cacheQuery();
-
-    const indexes = require("../../tools/infoStuff.json");
-
-    const tag = db.tags.find((t) => t.name == tagName);
-    if (tag) {
-      message.reply(
-        `**${tag.name}** : Created by ${tag.creator}\nContent: \`\`\`${tag.description}\`\`\``,
-      );
-    } else {
-      const btag = indexes.find((t) => t.name == tagName);
-      if (btag) {
-        message.reply(
-          `**${btag.name}** : Created by ${btag.creator} : Built-in tag\nContent: \`\`\`${btag.description}\`\`\``,
-        );
-      } else {
-        messsage.reply(`${this.container.emojis.error} Tag not found.`);
-      }
-    }
   }
 }
-module.exports = {
-  PingCommand,
-};
+
+module.exports = { TagsCommand };

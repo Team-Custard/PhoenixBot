@@ -1,5 +1,5 @@
 const { Command } = require("@sapphire/framework");
-const { PermissionFlagsBits, Colors, EmbedBuilder } = require("discord.js");
+const { PermissionFlagsBits } = require("discord.js");
 const serverSettings = require("../../tools/SettingsSchema");
 
 

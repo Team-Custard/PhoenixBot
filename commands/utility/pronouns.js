@@ -1,83 +1,31 @@
-const { Command } = require("@sapphire/framework");
 const { PermissionFlagsBits } = require("discord.js");
+const { PhoenixCommand } = require("../../tools/PhoenixCommand");
+const { emoji } = require("../../tools/errorReporter");
 const UserDB = require("../../tools/UserDB");
 
-class PingCommand extends Command {
+class PronounsCommand extends PhoenixCommand {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "pronouns",
       aliases: ["pronoun"],
-      description: "Displays a user's pronouns.",
-      detailedDescription: {
-        usage: "pronouns [user]",
-        examples: ["pronouns @sylveondev"],
-        args: ["user: The user you're getting pronouns for"],
-      },
+      description: "Displays a user's pronouns (from UserDB).",
+      examples: ["pronouns @sylveondev"],
+      args: [{ name: "user", type: "user", description: "Whose pronouns to show (defaults to you)" }],
+      slash: { group: "userdb" },
+      guildOnly: false,
       cooldownDelay: 3_000,
       requiredClientPermissions: [PermissionFlagsBits.SendMessages],
-      preconditions: ["module"]
+      preconditions: ["module"],
     });
   }
 
-  async chatInputRun(interaction) {
-    await interaction.deferReply();
-    let user = await interaction.options.getUser("user");
-
-    if (!user) user = interaction.user;
-
-    const usersettings = await UserDB.findById(
-      user.id,
-      UserDB.upsert,
-    ).cacheQuery();
-
-    if (!usersettings) {
-      return interaction.followUp(
-        `${this.container.emojis.error} **${user.username}** does not have pronouns set through UserDB.`,
-      );
-    }
-    if (!usersettings.pronouns) {
-      return interaction.followUp(
-        `${this.container.emojis.error} **${user.username}** does not have pronouns set through UserDB.`,
-      );
-    }
-
-    await interaction.followUp(
-      `**${user.username}**'s pronouns are **${usersettings.pronouns}**.`,
-    );
-  }
-
-  async messageRun(message, args) {
-    const user = await args.pick("user").catch(() => message.author);
-
-    const usersettings = await UserDB.findById(
-      user.id,
-      UserDB.upsert,
-    ).cacheQuery();
-    if (!usersettings) {
-      return message.reply(
-        `${this.container.emojis.error} **${user.username}** does not have pronouns set through UserDB.`,
-      );
-    }
-    if (!usersettings.pronouns) {
-      return message.reply(
-        `${this.container.emojis.error} **${user.username}** does not have pronouns set through UserDB.`,
-      );
-    }
-
-    await message.reply(
-      `**${user.username}**'s pronouns are **${usersettings.pronouns}**.`,
-    );
-
-    const moment = require("moment-timezone");
-    const date = new Date();
-    const strTime = moment(date).tz(usersettings.timezone).format("hh:mm:ss");
-    const strDate = moment(date).tz(usersettings.timezone).format("MM-DD-YYYY");
-    await message.reply(
-      `**${user.username}**'s time is **${strTime}** (${strDate}).`,
-    );
+  async run(ctx, { user }) {
+    user = user ?? ctx.user;
+    const prefs = await UserDB.findById(user.id).lean().cacheQuery();
+    if (!prefs?.pronouns) return ctx.error(`${emoji("error")} **${user.username}** does not have pronouns set through UserDB.`);
+    return ctx.reply({ content: `**${user.username}**'s pronouns are **${prefs.pronouns}**.`, allowedMentions: { parse: [] } });
   }
 }
-module.exports = {
-  PingCommand,
-};
+
+module.exports = { PronounsCommand };

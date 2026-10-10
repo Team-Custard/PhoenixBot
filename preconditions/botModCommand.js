@@ -1,10 +1,9 @@
 const { Precondition } = require("@sapphire/framework");
-const serverSettings = require("../tools/SettingsSchema");
-const { PermissionFlagsBits } = require("discord.js");
 
-class tagLockPrecondition extends Precondition {
+class BotModPrecondition extends Precondition {
   async messageRun(message) {
     // for Message Commands
+    if (!message.member) return this.error({ message: "This command is bot admin only" });
     return this.checkLockStatus(message.member);
   }
 
@@ -19,9 +18,6 @@ class tagLockPrecondition extends Precondition {
   }
 
   async checkLockStatus(member) {
-    const db = await serverSettings
-      .findById(member.guild.id, serverSettings.upsert)
-      .cacheQuery();
     if (member.guild.id != "1251025316701405284") return this.error({ message: "This command cannot be ran outside the Phoenix support server" });
     return member.roles.cache.has("1276464446264573995")
       ? this.ok()
@@ -29,5 +25,5 @@ class tagLockPrecondition extends Precondition {
   }
 }
 module.exports = {
-  tagLockPrecondition,
+  BotModPrecondition,
 };

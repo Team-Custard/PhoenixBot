@@ -1,192 +1,101 @@
-const { Command, Args } = require("@sapphire/framework");
-const {
-  ApplicationCommandType,
-  EmbedBuilder,
-  Colors,
-  PermissionFlagsBits,
-  GuildMemberFlags,
-  ChatInputCommandInteraction,
-  Message,
-} = require("discord.js");
-const serverSettings = require("../../tools/SettingsSchema");
+const { PermissionFlagsBits, EmbedBuilder, Colors } = require("discord.js");
+const { PhoenixCommand } = require("../../tools/PhoenixCommand");
+const { emoji } = require("../../tools/errorReporter");
+const premiumCheck = require("../../tools/premiumCheck");
 
-class UserCommand extends Command {
+const EMOJI_LIMITS = [50, 100, 150, 250];
+
+class ServerInfoCommand extends PhoenixCommand {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "serverinfo",
       aliases: ["si", "server", "guildinfo"],
-      description: "Displays info on the server.",
-      detailedDescription: {
-        usage: "serverinfo [id]",
-        examples: ["serverinfo"],
-        args: [
-          "id: The id of a server",
-        ],
-      },
-      cooldownDelay: 3_000,
-      requiredClientPermissions: [
-        PermissionFlagsBits.SendMessages,
-        PermissionFlagsBits.EmbedLinks,
+      description: "Displays info about this server, or another server by id.",
+      examples: ["serverinfo", "serverinfo 1251025316701405284"],
+      args: [
+        { name: "server", type: "string", maxLength: 25, description: "A server id to look up (defaults to this server)" },
+        { name: "widget", type: "boolean", aliases: ["w"], description: "Fall back to the server widget if needed" },
       ],
+      slash: { name: "server_info" },
+      cooldownDelay: 3_000,
+      requiredClientPermissions: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks],
       preconditions: ["module"],
-      flags: true
     });
   }
 
-  registerApplicationCommands(registry) {
-    registry.idHints = ["1223311343768305794", "1223311342207762482"];
-    registry
-      .registerChatInputCommand((builder) =>
-        builder
-          .setName("server_info")
-          .setDescription("Displays information of a server.")
-          .addStringOption((option) =>
-            option
-              .setName("server")
-              .setDescription("The server id to lookup")
-              .setRequired(false),
-          )
-          .setDMPermission(false),
-      );
-  }
+  async run(ctx, { server, widget }) {
+    await ctx.defer();
+    const id = server ?? ctx.guild.id;
+    const client = this.container.client;
+    const guild = id === ctx.guild.id ? ctx.guild : await client.guilds.fetch(id).catch(() => undefined);
 
-  /**
-   * 
-   * @param {ChatInputCommandInteraction} interaction 
-   */
-  async chatInputRun(interaction) {
-    await interaction.deferReply();
-    const guildid = await interaction.options.getString("server");
-    let guild = interaction.guild;
-    if (guildid) {
-        const fetchedGuild = await this.container.client.guilds.fetch(guildid).catch(() => undefined);
-        if (fetchedGuild) return interaction.followUp(`${this.container.emojis.error} The specified server was not found.`);
-        guild = fetchedGuild;
+    if (guild) return ctx.reply({ embeds: [await this.guildEmbed(guild)] });
+
+    const preview = await client.fetchGuildPreview(id).catch(() => undefined);
+    if (preview) {
+      return ctx.reply({
+        embeds: [
+          base(preview.name, preview.iconURL({ size: 512 }))
+            .setDescription([
+              `**Name:** ${preview.name}`,
+              `**ID:** ${preview.id}`,
+              `**Created:** <t:${Math.floor(preview.createdTimestamp / 1000)}:R>`,
+              `**Users:** ${preview.approximateMemberCount}`,
+              `**Emojis:** ${preview.emojis.size}`,
+              `**Stickers:** ${preview.stickers.size}`,
+              "",
+              "**Fetched method:** Discovery",
+            ].join("\n")),
+        ],
+      });
     }
 
-    const embed = new EmbedBuilder()
-    .setAuthor({
-        name: guild.name,
-        iconURL: guild.iconURL({dynamic:true, size: 512})
-    })
-    .setDescription(`**Name:** ${guild.name}\n`+
-        `**ID:** ${guild.id}\n`+
-        `**Owner:** <@${guild.ownerId}>\n`+
-        `**Created:** <t:${Math.floor(guild.createdTimestamp / 1000)}:R>\n`+
-        `**Shard:** ${guild.shardId}\n`+
-        `**Premium:** ${await require("../../tools/premiumCheck")(guild) ? this.container.emojis.success : this.container.emojis.error}\n` +
-        `\n**Users:** ${guild.memberCount} / ${guild.maximumMembers}\n`+
-        `**Roles:** ${guild.roles.cache.size} / 250\n`+
-        `**Channels:** ${guild.channels.cache.size} / 250\n`+
-        `**Emojis:** ${guild.emojis.cache.filter(e => e.animated == false).size} / ${guild.premiumTier == 3 ? 250 : (guild.premiumTier == 2 ? 150 : (guild.premiumTier == 3 ? 100 : 50))}\n`+
-        `**Boosts:** ${guild.premiumSubscriptionCount} (Level ${guild.premiumTier})\n`+
-        `\n**Verification:** ${guild.verificationLevel} / 4\n`+
-        `**Explicit filter:** ${guild.explicitContentFilter} / 2\n`+
-        `**Notifications:** ${guild.defaultMessageNotifications == 1 ? `@mention` : `all`}`
-    )
-    .setThumbnail(guild.iconURL({dynamic:true, size: 512}))
-    .setColor(Colors.Orange)
-    .setFooter({ text: `Triggered` })
-    .setTimestamp(new Date());
-    
-    interaction.followUp({ embeds: [embed] });
+    if (!widget) {
+      return ctx.reply(`${emoji("error")} Couldn't display the server information. The server must be discoverable or have Phoenix in it. Phoenix can also try the server widget with the widget option, but it's not recommended.`);
+    }
+    const fetchedWidget = await client.fetchGuildWidget(id).catch(() => undefined);
+    if (!fetchedWidget) {
+      return ctx.reply(`${emoji("error")} Couldn't display the server information. The server must be discoverable, have its widget enabled, or have Phoenix in it.`);
+    }
+    return ctx.reply({
+      embeds: [
+        base(fetchedWidget.name).setDescription(`**Name:** ${fetchedWidget.name}\n**ID:** ${fetchedWidget.id}\n\n**Fetched method:** Widget`),
+      ],
+    });
   }
 
-  /**
-   * 
-   * @param {Message} message 
-   * @param {Args} args 
-   * @returns 
-   */
-  async messageRun(message, args) {
-    const rawguild = await args.pick("string").catch(() => message.guild.id);
-    let guild = await this.container.client.guilds.fetch(rawguild).catch(() => undefined);
-    let widgetflag = args.getFlags("widget", "w");
-    console.log(guild);
-
-    if (!guild) {
-      const discovery = await this.container.client.fetchGuildPreview(rawguild).catch(() => undefined);
-      console.log(discovery);
-      
-      
-      if (!discovery || discovery?.code) {
-        if (!widgetflag) {
-          return message.reply(`${this.container.emojis.error} Couldn't display the server information. For Phoenix to be able to display server information, the server must be discoverable, or also have Phoenix in the server. Phoenix can also display server information using the widget with the --widget flag, but it's not recommended.`);
-        }
-
-        const widget = await this.container.client.fetchGuildWidget(rawguild).catch(() => undefined);
-        
-        if ((!widget || widget?.code)) {
-          return message.reply(`${this.container.emojis.error} Couldn't display the server information. For Phoenix to be able to display server information, the server must be discoverable, have widget enabled, or also have Phoenix in the server.`);
-        }
-        
-        guild = widget;
-        console.log(guild);
-        const embed = new EmbedBuilder()
-        .setAuthor({
-          name: guild.name
-        })
-        .setDescription(`**Name:** ${guild.name}\n`+
-          `**ID:** ${guild.id}\n`+
-          `\n**Fetched method:** Widget\n`
-        )
-        .setColor(Colors.Orange)
-        .setFooter({ text: `Triggered` })
-        .setTimestamp(new Date());
-        
-        return message.reply({ embeds: [embed] });
-      }
-      
-      const embed = new EmbedBuilder()
-      .setAuthor({
-        name: discovery.name,
-        iconURL: discovery.iconURL({dynamic:true, size: 512})
-      })
-      .setDescription(`**Name:** ${discovery.name}\n`+
-        `**ID:** ${discovery.id}\n`+
-        `**Created:** <t:${Math.floor(discovery.createdTimestamp / 1000)}:R>\n`+
-        `**Users:** ${discovery.approximateMemberCount}\n`+
-        `**Emojis:** ${discovery.emojis.size}\n`+
-        `**Stickers:** ${discovery.stickers.size}\n`+
-        `\n**Fetched method:** Discovery`
-      )
-      .setThumbnail(discovery.iconURL({dynamic:true, size: 512}))
-      .setColor(Colors.Orange)
-      .setFooter({ text: `Triggered` })
-      .setTimestamp(new Date());
-      return message.reply({ embeds: [embed] });
-    }
-    
-    const embed = new EmbedBuilder()
-    .setAuthor({
-      name: guild.name,
-      iconURL: guild.iconURL({dynamic:true, size: 512})
-    })
-    .setDescription(`**Name:** ${guild.name}\n`+
-        `**ID:** ${guild.id}\n`+
-        `**Owner:** <@${guild.ownerId}>\n`+
-        `**Created:** <t:${Math.floor(guild.createdTimestamp / 1000)}:R>\n`+
-        `**Shard:** ${guild.shardId}\n`+
-        `**Premium:** ${await require("../../tools/premiumCheck")(guild) ? this.container.emojis.success : this.container.emojis.error}\n` +
-        `\n**Users:** ${guild.memberCount} / ${guild.maximumMembers}\n`+
-        `**Roles:** ${guild.roles.cache.size} / 250\n`+
-        `**Channels:** ${guild.channels.cache.size} / 250\n`+
-        `**Emojis:** ${guild.emojis.cache.filter(e => e.animated == false).size} / ${guild.premiumTier == 3 ? 250 : (guild.premiumTier == 2 ? 150 : (guild.premiumTier == 3 ? 100 : 50))}\n`+
-        `**Boosts:** ${guild.premiumSubscriptionCount} (Level ${guild.premiumTier})\n`+
-        `\n**Verification:** ${guild.verificationLevel} / 4\n`+
-        `**Explicit filter:** ${guild.explicitContentFilter} / 2\n`+
-        `**Notifications:** ${guild.defaultMessageNotifications == 1 ? `@mention` : `all`}\n`+
-        `\n**Fetch method:** Directly`
-    )
-    .setThumbnail(guild.iconURL({dynamic:true, size: 512}))
-    .setColor(Colors.Orange)
-    .setFooter({ text: `Triggered` })
-    .setTimestamp(new Date());
-
-    message.reply({ embeds: [embed] });
+  async guildEmbed(guild) {
+    const staticEmojis = guild.emojis.cache.filter((e) => !e.animated).size;
+    return base(guild.name, guild.iconURL({ size: 512 }))
+      .setDescription([
+        `**Name:** ${guild.name}`,
+        `**ID:** ${guild.id}`,
+        `**Owner:** <@${guild.ownerId}>`,
+        `**Created:** <t:${Math.floor(guild.createdTimestamp / 1000)}:R>`,
+        `**Shard:** ${guild.shardId}`,
+        `**Premium:** ${(await premiumCheck(guild).catch(() => false)) ? emoji("success") : emoji("error")}`,
+        "",
+        `**Users:** ${guild.memberCount} / ${guild.maximumMembers ?? "?"}`,
+        `**Roles:** ${guild.roles.cache.size} / 250`,
+        `**Channels:** ${guild.channels.cache.size} / 500`,
+        `**Emojis:** ${staticEmojis} / ${EMOJI_LIMITS[guild.premiumTier] ?? 50}`,
+        `**Boosts:** ${guild.premiumSubscriptionCount ?? 0} (Level ${guild.premiumTier})`,
+        "",
+        `**Verification:** ${guild.verificationLevel} / 4`,
+        `**Explicit filter:** ${guild.explicitContentFilter} / 2`,
+        `**Notifications:** ${guild.defaultMessageNotifications === 1 ? "@mention" : "all"}`,
+      ].join("\n"))
+      .setThumbnail(guild.iconURL({ size: 512 }));
   }
 }
-module.exports = {
-  UserCommand,
-};
+
+function base(name, iconURL) {
+  return new EmbedBuilder()
+    .setAuthor({ name, iconURL: iconURL ?? undefined })
+    .setColor(Colors.Orange)
+    .setFooter({ text: "Triggered" })
+    .setTimestamp(new Date());
+}
+
+module.exports = { ServerInfoCommand };

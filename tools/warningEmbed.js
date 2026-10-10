@@ -1,112 +1,61 @@
-const {
-  EmbedBuilder,
-  Colors,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  Message,
-} = require("discord.js");
+const { EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const { emoji } = require("./errorReporter");
+const { CommandContext } = require("./CommandContext");
 
-const { container } = require("@sapphire/framework");
+const TIMEOUT = 15_000;
+
+function buildPrompt(reason, { footer, disabled = false } = {}) {
+  const embed = new EmbedBuilder().setTitle("Confirm your action").setDescription(reason).setColor(Colors.Orange);
+  if (footer) embed.setFooter({ text: footer });
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setLabel("Confirm")
+      .setCustomId("ConfirmButton")
+      .setEmoji(emoji("success"))
+      .setStyle(ButtonStyle.Success)
+      .setDisabled(disabled),
+    new ButtonBuilder()
+      .setLabel("Cancel")
+      .setCustomId("CancelButton")
+      .setEmoji(emoji("error"))
+      .setStyle(ButtonStyle.Danger)
+      .setDisabled(disabled),
+  );
+  return { embeds: [embed], components: [row] };
+}
 
 /**
- * Send a warning prompt in the server. If the user accepts, returns true, otherwise false.
- * @param {Message} message The message the warning is replying to.
- * @param {String} reason The text to display as the warning description.
+ * Asks the user to confirm an action with buttons. Resolves true if they confirm.
+ * @param {CommandContext|import("discord.js").Message} target A command context or a message to reply to.
+ * @param {string} reason The text shown in the prompt.
  */
-async function warnMessage(message, reason) {
-  const embed = new EmbedBuilder()
-    .setTitle(`Confirm your action`)
-    .setDescription(reason)
-    .setColor(Colors.Orange);
+async function confirm(target, reason) {
+  const userId = target instanceof CommandContext ? target.user.id : target.author.id;
+  const prompt = await target.reply(buildPrompt(reason)).catch(() => undefined);
+  // Deny the request if the prompt failed to send.
+  if (!prompt) return false;
 
-  const actionRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setLabel(`Confirm`)
-      .setCustomId(`ConfirmButton`)
-      .setEmoji(`${container.emojis.success}`)
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setLabel(`Cancel`)
-      .setCustomId(`CancelButton`)
-      .setEmoji(`${container.emojis.error}`)
-      .setStyle(ButtonStyle.Danger),
-  );
-
-  const msg = await message
-    .reply({ embeds: [embed], components: [actionRow] })
-    .catch(() => undefined);
-  // Deny the request if the message failed to send.
-  if (!msg) return false;
-
-  const filter = (interaction) =>
-    (interaction.customId === "ConfirmButton" ||
-      interaction.customId === "CancelButton") &&
-    interaction.user.id === message.author.id;
-  const response = await msg
-    .awaitMessageComponent({ filter, time: 15_000 })
-    .then(function (interaction) {
-      if (interaction.customId === `ConfirmButton`) {
-        interaction.deferUpdate();
-        setTimeout(function () {
-          msg.delete();
-        }, 500);
-        return true;
-      }
-      if (interaction.customId === `CancelButton`) {
-        interaction.deferUpdate();
-        const tembed = new EmbedBuilder()
-          .setTitle(`Confirm your action`)
-          .setDescription(reason)
-          .setFooter({ text: `Declined.` })
-          .setColor(Colors.Orange);
-
-        const tactionRow = new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setLabel(`Confirm`)
-            .setCustomId(`ConfirmButton`)
-            .setEmoji(`${container.emojis.success}`)
-            .setStyle(ButtonStyle.Success)
-            .setDisabled(true),
-          new ButtonBuilder()
-            .setLabel(`Cancel`)
-            .setCustomId(`CancelButton`)
-            .setEmoji(`${container.emojis.error}`)
-            .setStyle(ButtonStyle.Danger)
-            .setDisabled(true),
-        );
-        msg.edit({ embeds: [tembed], components: [tactionRow] });
-        return false;
-      }
-    })
-    .catch(function () {
-      const tembed = new EmbedBuilder()
-        .setTitle(`Confirm your action`)
-        .setDescription(reason)
-        .setFooter({ text: `Timed out.` })
-        .setColor(Colors.Orange);
-
-      const tactionRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setLabel(`Confirm`)
-          .setCustomId(`ConfirmButton`)
-          .setEmoji(`${container.emojis.success}`)
-          .setStyle(ButtonStyle.Success)
-          .setDisabled(true),
-        new ButtonBuilder()
-          .setLabel(`Cancel`)
-          .setCustomId(`CancelButton`)
-          .setEmoji(`${container.emojis.error}`)
-          .setStyle(ButtonStyle.Danger)
-          .setDisabled(true),
-      );
-      msg.edit({ embeds: [tembed], components: [tactionRow] });
-      return false;
+  try {
+    const press = await prompt.awaitMessageComponent({
+      filter: (i) => (i.customId === "ConfirmButton" || i.customId === "CancelButton") && i.user.id === userId,
+      time: TIMEOUT,
     });
-  if (response) return true;
-  else return false;
+    await press.deferUpdate().catch(() => undefined);
+    if (press.customId === "ConfirmButton") {
+      await prompt.edit(buildPrompt(reason, { footer: "Confirmed.", disabled: true })).catch(() => undefined);
+      return true;
+    }
+    await prompt.edit(buildPrompt(reason, { footer: "Declined.", disabled: true })).catch(() => undefined);
+    return false;
+  }
+  catch {
+    await prompt.edit(buildPrompt(reason, { footer: "Timed out.", disabled: true })).catch(() => undefined);
+    return false;
+  }
 }
 
 module.exports = {
-  warnMessage,
+  confirm,
+  /** @deprecated Use confirm(). Kept for older commands. */
+  warnMessage: confirm,
 };

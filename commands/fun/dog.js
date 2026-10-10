@@ -1,41 +1,29 @@
-const { Command } = require("@sapphire/framework");
-const { BucketScope } = require("@sapphire/framework");
-const bent = require("bent");
 const { PermissionFlagsBits } = require("discord.js");
+const { BucketScope } = require("@sapphire/framework");
+const { PhoenixCommand } = require("../../tools/PhoenixCommand");
+const { getJson } = require("../../tools/http");
 
-class PingCommand extends Command {
+class DogCommand extends PhoenixCommand {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "dog",
-      aliases: [],
-      description: "Displays a random dog picture from dog.ceo.",
-      detailedDescription: {
-        usage: "cat",
-        examples: ["dog"],
-      },
+      description: "Sends a random dog picture.",
+      slash: { group: "utilities" },
+      guildOnly: false,
       cooldownDelay: 60_000,
       cooldownLimit: 10,
       cooldownScope: BucketScope.Guild,
-      requiredClientPermissions: [
-        PermissionFlagsBits.SendMessages,
-        PermissionFlagsBits.AttachFiles,
-      ],
-      preconditions: ["module"]
+      requiredClientPermissions: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles],
+      preconditions: ["module"],
     });
   }
 
-  async messageRun(message) {
-    const getStream = await bent("https://dog.ceo");
-    const stream = await getStream("/api/breeds/image/random");
-
-    if (stream.statusCode != 200) return message.reply(`${this.container.emojis.error} ${stream.status}`);
-
-    const obj = await stream.json();
-
-    await message.reply({ files: [obj.message] });
+  async run(ctx) {
+    await ctx.defer();
+    const { message } = await getJson("https://dog.ceo/api/breeds/image/random");
+    return ctx.reply({ files: [message] });
   }
 }
-module.exports = {
-  PingCommand,
-};
+
+module.exports = { DogCommand };

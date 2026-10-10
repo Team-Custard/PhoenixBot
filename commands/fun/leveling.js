@@ -1,739 +1,163 @@
-const premiumCheck = require("../../tools/premiumCheck");
-
-const { ChatInputCommandInteraction, PermissionFlagsBits, PermissionsBitField, Message, EmbedBuilder, Colors } = require("discord.js");
-const settings = require("../../tools/SettingsSchema");
-const { emojibarv2 } = require("emoji-progressbar");
-const { Subcommand } = require("@sapphire/plugin-subcommands");
-const { BucketScope, ApplicationCommandRegistry, Args } = require("@sapphire/framework");
+const fs = require("fs");
+const path = require("path");
+const { PermissionFlagsBits, EmbedBuilder, Colors } = require("discord.js");
 const { PaginatedMessage } = require("@sapphire/discord.js-utilities");
-const search = require("youtube-search");
-const calculateLevel = require("../../tools/xpToLevel");
-const fs = require('fs');
+const { emojibarv2 } = require("emoji-progressbar");
+const { PhoenixCommand } = require("../../tools/PhoenixCommand");
+const { getSettings } = require("../../tools/guildSettings");
+const { emoji } = require("../../tools/errorReporter");
+const { confirm } = require("../../tools/warningEmbed");
+const { LevelMember, xpForLevel, getRank, getLeaderboard } = require("../../tools/leveling");
 
-const { RankCardBuilder, Font } = require("canvacord");
+const RANKCARD_DIR = path.join(__dirname, "../../static/rankcards");
+const PAGE_SIZE = 10;
+const BAR = [
+  "<:caw_bar_xo:1321053069777174560>", "<:caw_bar_xo:1321053069777174560>", "<:caw_bar_xi:1321053716186529803>",
+  "<:caw_bar_oo:1321055114718609408>", "<:caw_bar_io:1321053105810444369>", "<:caw_bar_io:1321053105810444369>",
+  "<:caw_bar_ii:1321053135221035038>", "<:caw_bar_ox:1321053007361605642>", "<:caw_bar_ix:1321054189836701758>",
+  "<:caw_bar_ix:1321054189836701758>",
+];
 
-class PingCommand extends Subcommand {
+class LevelingCommand extends PhoenixCommand {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "leveling",
-      aliases: ["lvl", 'level', 'rank'],
-      description: "Commands relating to leveling.",
-      detailedDescription: {
-        usage: "leveling [subcommand] [option]",
-        examples: [
-          "leveling toggle on",
-          "leveling rank",
-          "leveling rewards",
-        ],
-        args: [
-          "subcommand: The subcommand. Defaults to rank.",
-          "option: The option to the subcommand",
-        ],
-      },
+      aliases: ["lvl", "level", "rank"],
+      description: "Levels and the leaderboard. Leveling settings are on the dashboard.",
+      examples: ["rank", "rank sylveondev", "leveling leaderboard", "leveling set_level sylveondev 10"],
       subcommands: [
         {
-          name: "toggle",
-          chatInputRun: "chatInputToggle",
-          messageRun: "messageToggle",
-        },
-        {
           name: "rank",
-          chatInputRun: "chatInputRank",
-          messageRun: "messageRank",
+          description: "Shows someone's level",
           default: true,
+          run: "rank",
+          args: [{ name: "member", type: "member", description: "Whose level to show (defaults to you)" }],
         },
+        { name: "leaderboard", aliases: ["lb", "top"], description: "Shows the server's leaderboard", run: "leaderboard" },
         {
-            name: "set_level",
-            chatInputRun: "chatInputSetLevel",
-            messageRun: "messageSetLevel"
-        },
-        {
-          name: "set_message",
-          chatInputRun: "chatInputSetMessage",
-          messageRun: "messageSetMessage"
-        },
-        {
-          name: "set_background",
-          chatInputRun: "chatInputSetBackground",
-          messageRun: "messageSetBackground"
-        },
-        {
-          name: "set_embeds",
-          chatInputRun: "chatInputSetLegacy",
-          messageRun: "messageSetLegacy"
-        },
-        {
-          name: "rewards",
-          type: "group",
-          entries: [
-            {name: `list`, chatInputRun: `chatInputListReward`, messageRun: `messageListReward`, default: true},
-            {name: `add`, chatInputRun: `chatInputAddReward`, messageRun: `messageAddReward`},
-            {name: `remove`, chatInputRun: `chatInputRemoveReward`, messageRun: `messageRemoveReward`},
-            {name: `set_stacking`, chatInputRun: `chatInputStackRoles`, messageRun: `messageStackRoles`},
-          ]
-        },
-        {
-          name: "clear",
-          type: "group",
-          entries: [
-            {name: `user`, chatInputRun: `chatInputClearUser`, messageRun: `messageClearUser`, default: true},
-            {name: `all`, chatInputRun: `chatInputClearAll`, messageRun: `messageClearAll`}
+          name: "set_level",
+          description: "Sets a member's level (Manage Server)",
+          run: "setLevel",
+          args: [
+            { name: "member", type: "member", required: true, description: "The member" },
+            { name: "level", type: "integer", required: true, minValue: 0, maxValue: 10_000, description: "The new level" },
           ],
         },
         {
-          name: "leaderboard",
-          chatInputRun: "chatInputLeaderboard",
-          messageRun: "messageLeaderboard"
+          name: "clear",
+          description: "Resets a member's level back to zero (Manage Server)",
+          run: "clearMember",
+          args: [{ name: "member", type: "member", required: true, description: "The member to reset" }],
         },
+        { name: "clear_all", description: "Resets everyone's level in this server (Manage Server)", run: "clearAll" },
       ],
-      cooldownDelay: 30_000,
-      cooldownLimit: 6,
-      cooldownScope: BucketScope.Guild,
+      cooldownDelay: 5_000,
       preconditions: ["module"],
     });
   }
 
-  /**
-   * 
-   * @param {ApplicationCommandRegistry} registry 
-   */
-  registerApplicationCommands(registry) {
-    registry.idHints = ["1227016558778519622"];
-    registry.registerChatInputCommand((builder) =>
-      builder
-        .setName("leveling")
-        .setDescription("Leveling related commands")
-        .addSubcommand((command) =>
-          command
-            .setName("toggle")
-            .setDescription("This toggles if users should gain levels in the server")
-        )
-        .addSubcommand((command) =>
-          command
-            .setName("rank")
-            .setDescription("Displays a member's rank card")
-            .addUserOption((option) =>
-              option
-                .setName("member")
-                .setDescription("The member to search")
-                .setRequired(false),
-            ),
-        )
-        .addSubcommand((command) =>
-          command
-            .setName("set_level")
-            .setDescription("Sets the member's level")
-            .addUserOption((option) =>
-              option
-                .setName("member")
-                .setDescription("The member to set")
-                .setRequired(true),
-            )
-            .addIntegerOption((option) => option.setName("level").setDescription("The level to assign").setRequired(true))
-          )
-        .addSubcommand((command) =>
-          command
-            .setName("set_message")
-            .setDescription("Sets the level up message")
-            .addStringOption((option) =>
-              option
-                .setName("message")
-                .setDescription("The message to set as the level up message. Leave empty to disable.")
-                .setRequired(true),
-            )
-            .addChannelOption((option) =>
-              option
-                .setName("channel")
-                .setDescription("The channel to post level up messages to. Leave blank to post in the current channel.")
-                .setRequired(false),
-            )
-          )
-          .addSubcommand(command => command
-            .setName(`set_background`)
-            .setDescription(`Sets the background for the rank card`)
-            .addAttachmentOption(option =>
-              option
-                .setName("image")
-                .setDescription("The image to use. Should be 930x280px, and only png files allowed.")
-            )
-            .addIntegerOption(option =>
-              option
-                .setName("transparency")
-                .setDescription("The transparency of the inner border. Default 90.")
-                .setMinValue(0)
-                .setMaxValue(100)
-            )
-          )
-          .addSubcommand(command => command
-            .setName(`set_embeds`)
-            .setDescription(`If enabled, send an embed instead of a rank card.`)
-          )
-          .addSubcommandGroup((group) => group
-            .setName(`rewards`)
-            .setDescription(`Level role management`)
-            .addSubcommand(command => command
-              .setName(`list`)
-              .setDescription(`Shows all the current level roles in the server.`)
-            )
-            .addSubcommand(command => command
-              .setName(`add`)
-              .setDescription(`Creates a level role`)
-              .addRoleOption(option => option
-                .setName("role")
-                .setDescription("The role to assign.")
-                .setRequired(true)
-              )
-              .addIntegerOption(option => option
-                .setName("level")
-                .setDescription("The level to give the role at.")
-                .setMinValue(1)
-                .setMaxValue(1000)
-                .setRequired(true)
-              )
-            )
-            .addSubcommand(command => command
-              .setName(`remove`)
-              .setDescription(`Removes a level role`)
-              .addRoleOption(option => option
-                .setName("role")
-                .setDescription("The role to remove.")
-                .setRequired(true)
-              )
-            )
-            .addSubcommand(command => command
-              .setName(`set_stacking`)
-              .setDescription(`Toggles stacking of level roles.`)
-            )
-          )
-          .addSubcommandGroup((group) => group
-            .setName(`clear`)
-            .setDescription(`Clears the levels from someone`)
-            .addSubcommand(command => command
-              .setName(`user`)
-              .setDescription(`Resets a user's level back to zero.`)
-              .addUserOption(option => option
-                .setName(`member`)
-                .setDescription(`The member to clear`)
-              )
-            )
-            .addSubcommand(command => command
-              .setName(`all`)
-              .setDescription(`Clears the entire server's levels`)
-            )
-          )
-          .addSubcommand(command => command
-            .setName(`leaderboard`)
-            .setDescription(`Shows the server's leaderboard`)
-          )
-        .setDMPermission(false),
+  requireManager(ctx) {
+    if (ctx.member.permissions.has(PermissionFlagsBits.ManageGuild)) return null;
+    return ctx.reply(`${emoji("error")} Only members with \`Manage Server\` can do this.`);
+  }
+
+  async rank(ctx, { member }) {
+    member = member ?? ctx.member;
+    await ctx.defer();
+    const [settings, entry] = await Promise.all([
+      getSettings(ctx.guild.id),
+      LevelMember.findOne({ guildId: ctx.guild.id, userId: member.id }).lean(),
+    ]);
+    if (!entry) return ctx.reply(`${emoji("info")} No level exists for this user yet. Keep chatting to gain levels.`);
+
+    const rank = await getRank(ctx.guild.id, entry);
+    const required = xpForLevel(entry.level);
+
+    if (settings.leveling?.useEmbed) {
+      const embed = new EmbedBuilder()
+        .setAuthor({ name: member.displayName, iconURL: member.displayAvatarURL() })
+        .setThumbnail(member.displayAvatarURL())
+        .setColor(Colors.Orange)
+        .setTimestamp(new Date())
+        .setDescription(`**Level ${entry.level}**\n-# Rank ${rank}\n${emojibarv2(...BAR, entry.xp, required, 10)}\n${entry.xp} / ${required}xp`);
+      return ctx.reply({ embeds: [embed] });
+    }
+
+    const { RankCardBuilder, Font } = require("canvacord");
+    const background = await fs.promises.readFile(path.join(RANKCARD_DIR, `${ctx.guild.id}-rankcard.png`)).catch(() => null);
+    Font.loadDefault();
+    const card = new RankCardBuilder()
+      .setUsername(member.user.username)
+      .setDisplayName(member.displayName)
+      .setAvatar(member.displayAvatarURL({ extension: "png", forceStatic: true, size: 512 }))
+      .setCurrentXP(entry.xp)
+      .setRequiredXP(required)
+      .setBackground(background)
+      .setOverlay(settings.leveling?.backgroundTransparency ?? 90)
+      .setRank(rank)
+      .setStatus(member.presence?.status)
+      .setLevel(entry.level);
+    return ctx.reply({ files: [await card.build({ format: "png" })] });
+  }
+
+  async leaderboard(ctx) {
+    await ctx.defer();
+    const total = await LevelMember.countDocuments({ guildId: ctx.guild.id });
+    if (total === 0) {
+      return ctx.reply(`${emoji("error")} Oh no, there is no leaderboard yet! Don't worry, there'll be one once someone starts talking.`);
+    }
+    const own = await LevelMember.findOne({ guildId: ctx.guild.id, userId: ctx.user.id }).lean();
+    const ownRank = own ? await getRank(ctx.guild.id, own) : null;
+
+    // Only the top 100 are paged through, so huge servers don't load everyone.
+    const top = await getLeaderboard(ctx.guild.id, { limit: 100 });
+    const pages = [];
+    for (let i = 0; i < top.length; i += PAGE_SIZE) {
+      const lines = top
+        .slice(i, i + PAGE_SIZE)
+        .map((r, index) => `\` ${i + index + 1} \` <@${r.userId}> : lvl ${r.level}\n> ${r.xp} / ${xpForLevel(r.level)} xp`);
+      pages.push(
+        new EmbedBuilder()
+          .setAuthor({ name: ctx.guild.name, iconURL: ctx.guild.iconURL() ?? undefined })
+          .setDescription(`${i === 0 ? `${ownRank ? `You are ranked \`${ownRank}\`` : "You aren't ranked yet"} on the leaderboard.\n\n` : ""}${lines.join("\n")}`)
+          .setColor(Colors.Orange)
+          .setTimestamp(new Date()),
+      );
+    }
+    if (pages.length === 1) return ctx.reply({ embeds: pages });
+    const paginated = new PaginatedMessage();
+    for (const page of pages) paginated.addPageEmbed(page);
+    return paginated.run(ctx.source, ctx.user);
+  }
+
+  async setLevel(ctx, { member, level }) {
+    const denied = this.requireManager(ctx);
+    if (denied) return denied;
+    await LevelMember.updateOne(
+      { guildId: ctx.guild.id, userId: member.id },
+      { $set: { level, xp: 0 } },
+      { upsert: true },
     );
+    return ctx.reply(`${emoji("success")} Set **${member.user.tag}**'s level to \` ${level} \` successfully.`);
   }
 
-  async getLeaderboard(guild) {
-    const db = await settings.findById(guild.id).cacheQuery();
-    
-    const lb = db.leveling.users.sort(((a, b) => {
-      if (a.level == b.level) {
-        return (b.xp - a.xp);
-      } else if (a.level > b.level) return 1; else if (a.level < b.level) return -1; else return 0;
-    })).reverse();
-
-    return lb;
+  async clearMember(ctx, { member }) {
+    const denied = this.requireManager(ctx);
+    if (denied) return denied;
+    const result = await LevelMember.updateOne({ guildId: ctx.guild.id, userId: member.id }, { $set: { level: 0, xp: 0 } });
+    if (result.matchedCount === 0) return ctx.reply(`${emoji("error")} This user does not have a level yet.`);
+    return ctx.reply(`${emoji("success")} Reset ${member.user.tag}'s level.`);
   }
 
-  /**
-   * @param {ChatInputCommandInteraction} interaction 
-   */
-  async chatInputRank(interaction) {
-    let member = interaction.options.getMember('member');
-    if (!member) member = interaction.member;
-    await interaction.deferReply();
-    const db = await settings.findById(interaction.guild.id).cacheQuery();
-    const level = db.leveling.users.find(u => u.id == member.user.id);
-    if (!level) return interaction.followUp(`${this.container.emojis.info} No level exists for this user yet. Keep chatting to gain levels.`)
-    if (db.leveling.useEmbed) {
-      const leaderboard = await this.getLeaderboard(interaction.guild)
-      const rank = leaderboard.findIndex(r => r.id === member.user.id);
-      const embed = new EmbedBuilder()
-      .setAuthor({
-        name: member.displayName,
-        iconURL: member.displayAvatarURL({ dynamic: true })
-      })
-      .setThumbnail(member.displayAvatarURL({ dynamic: true }))
-      .setColor(Colors.Orange)
-      .setTimestamp(new Date())
-      .setDescription(`**Level ${level.level}**${rank > -1 ? `\n-# Rank ${rank+1}`: ``}\n${emojibarv2('<:caw_bar_xo:1321053069777174560>', '<:caw_bar_xo:1321053069777174560>', '<:caw_bar_xi:1321053716186529803>', '<:caw_bar_oo:1321055114718609408>', '<:caw_bar_io:1321053105810444369>', '<:caw_bar_io:1321053105810444369>', '<:caw_bar_ii:1321053135221035038>', '<:caw_bar_ox:1321053007361605642>', '<:caw_bar_ix:1321054189836701758>', '<:caw_bar_ix:1321054189836701758>', level.xp, calculateLevel(level.level), 10)}\n${level.xp} / ${ calculateLevel(level.level)}xp`)
-      return await interaction.followUp({embeds: [embed]});
-    }
-    let image = null;
-    try {
-      image = await fs.readFileSync(__dirname+`/../../static/rankcards/${interaction.guild.id}-rankcard.png`);
-    }
-    catch (err) {
-      console.log(`No rank card found. Continuing.`);
-    }
-
-    const leaderboard = await this.getLeaderboard(interaction.guild)
-    const rank = leaderboard.findIndex(r => r.id === member.user.id);
-    
-    Font.loadDefault();
-    const rankCard = new RankCardBuilder()
-    .setUsername(member.user.username)
-    .setDisplayName(member.displayName)
-    .setAvatar(member.displayAvatarURL({ extension: "png", forceStatic: true, size: 512 }))
-    .setCurrentXP(level.xp)
-    .setRequiredXP(calculateLevel(level.level))
-    .setBackground(image)
-    .setOverlay(db.leveling.backgroundTransparency)
-    .setRank(rank > -1 ? rank+1 : null)
-    .setStatus(member.presence?.status)
-    .setLevel(level.level);
-
-    await interaction.followUp({ files: [(await rankCard.build({ format: 'png' }))] });
-  }
-  /**
-   * @param {Message} message 
-   * @param {Args} args 
-   * @returns 
-   */
-  async messageRank(message, args) {
-    let member = await args.pick('member').catch(() => message.member);
-    const db = await settings.findById(message.guild.id).cacheQuery();
-    const level = db.leveling.users.find(u => u.id == member.user.id);
-    if (!level) return message.reply(`${this.container.emojis.info} No level exists for this user yet. Keep chatting to gain levels.`)
-    if (db.leveling.useEmbed) {
-      const leaderboard = await this.getLeaderboard(message.guild)
-      const rank = leaderboard.findIndex(r => r.id === member.user.id);
-      const embed = new EmbedBuilder()
-      .setAuthor({
-        name: member.displayName,
-        iconURL: member.displayAvatarURL({ dynamic: true })
-      })
-      .setThumbnail(member.displayAvatarURL({ dynamic: true }))
-      .setColor(Colors.Orange)
-      .setTimestamp(new Date())
-      .setDescription(`**Level ${level.level}**${rank > -1 ? `\n-# Rank ${rank+1}`: ``}\n${emojibarv2('<:caw_bar_xo:1321053069777174560>', '<:caw_bar_xo:1321053069777174560>', '<:caw_bar_xi:1321053716186529803>', '<:caw_bar_oo:1321055114718609408>', '<:caw_bar_io:1321053105810444369>', '<:caw_bar_io:1321053105810444369>', '<:caw_bar_ii:1321053135221035038>', '<:caw_bar_ox:1321053007361605642>', '<:caw_bar_ix:1321054189836701758>', '<:caw_bar_ix:1321054189836701758>', level.xp, calculateLevel(level.level), 10)}\n${level.xp} / ${ calculateLevel(level.level)}xp`)
-      return await message.reply({embeds: [embed]});
-    }
-    let image = null;
-    try {
-      image = await fs.readFileSync(__dirname+`/../../static/rankcards/${message.guild.id}-rankcard.png`);
-    }
-    catch (err) {
-      console.log(`No rank card found. Continuing.`);
-    }
-
-    const leaderboard = await this.getLeaderboard(message.guild)
-    const rank = leaderboard.findIndex(r => r.id === member.user.id);
-    
-    Font.loadDefault();
-    const rankCard = new RankCardBuilder()
-    .setUsername(member.user.username)
-    .setDisplayName(member.displayName)
-    .setAvatar(member.displayAvatarURL({ extension: "png", forceStatic: true, size: 512 }))
-    .setCurrentXP(level.xp)
-    .setRequiredXP(calculateLevel(level.level))
-    .setBackground(image)
-    .setOverlay(db.leveling.backgroundTransparency)
-    .setRank(rank > -1 ? rank+1 : null)
-    .setStatus(member.presence?.status)
-    .setLevel(level.level);
-
-    await message.reply({ files: [(await rankCard.build({ format: 'png' }))] });
-
-  }
-
-  async chatInputSetLegacy(interaction) {
-    if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) return interaction.reply({content: `${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`, ephemeral: true});
-    await interaction.deferReply();
-    const db = await settings.findById(interaction.guild.id).cacheQuery();
-    db.leveling.useEmbed = !db.leveling.useEmbed;
-    await db.save();
-    interaction.followUp(`${this.container.emojis.success} ${db.leveling.useEmbed ? `Now using embeds instead of rank cards.` : `Now using rank cards again.`}`);
-  }
-  async messageSetLegacy(message) {
-    if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) return message.reply(`${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`);
-    const db = await settings.findById(message.guild.id).cacheQuery();
-    db.leveling.useEmbed = !db.leveling.useEmbed;
-    await db.save();
-    message.reply(`${this.container.emojis.success} ${db.leveling.useEmbed ? `Now using embeds instead of rank cards.` : `Now using rank cards again.`}`);
-  }
-
-  async chatInputLeaderboard(interaction) {
-    await interaction.deferReply();
-    const db = await settings.findById(interaction.guild.id).cacheQuery();
-    const leaderboard = await this.getLeaderboard(interaction.guild);
-    if (!leaderboard) return interaction.reply(`${this.container.client.error} Oh no, there is no leaderboard yet! Don't worry, there'll be one once someone starts talking.`)
-    const rank = leaderboard.findIndex(r => r.id === interaction.user.id);
-
-    const paginated = new PaginatedMessage();
-
-    for (let i = 0; i < leaderboard.length; i += 10) {
-      console.log(i)
-      await paginated.addPageBuilder(page => page
-        .setEmbeds([new EmbedBuilder()
-          .setAuthor({
-            name: interaction.guild.name,
-            iconURL: interaction.guild.iconURL({ dynamic: true })
-          })
-          .setDescription(`${i == 0 ? `You are ranked \`${rank+1}\` on the leaderboard.\n\n` : ''}${leaderboard.slice(i, i+10).map((r) => `\` ${leaderboard.findIndex(m => m.id === r.id)+1} \` <@${r.id}> : lvl ${r.level}\n> ${r.xp} / ${calculateLevel(r.level)} xp`).join(`\n`)}`)
-          .setColor(Colors.Orange)
-          .setTimestamp(new Date())
-        ])
-      )
-    }
-
-    await paginated.run(interaction, interaction.user);
-  }
-  async messageLeaderboard(message) {
-    const db = await settings.findById(message.guild.id).cacheQuery();
-    const leaderboard = await this.getLeaderboard(message.guild);
-    if (!leaderboard) return message.reply(`${this.container.client.error} Oh no, there is no leaderboard yet! Don't worry, there'll be one once someone starts talking.`)
-    const rank = leaderboard.findIndex(r => r.id === message.author.id);
-
-    const paginated = new PaginatedMessage();
-
-    for (let i = 0; i < leaderboard.length; i += 10) {
-      console.log(i)
-      await paginated.addPageBuilder(page => page
-        .setEmbeds([new EmbedBuilder()
-          .setAuthor({
-            name: message.guild.name,
-            iconURL: message.guild.iconURL({ dynamic: true })
-          })
-          .setDescription(`${i == 0 ? `You are ranked \`${rank+1}\` on the leaderboard.\n\n` : ''}${leaderboard.slice(i, i+10).map((r) => `\` ${leaderboard.findIndex(m => m.id === r.id)+1} \` <@${r.id}> : lvl ${r.level}\n> ${r.xp} / ${calculateLevel(r.level)} xp`).join(`\n`)}`)
-          .setColor(Colors.Orange)
-          .setTimestamp(new Date())
-        ])
-      )
-    }
-
-    await paginated.run(message, message.author);
-  }
-
-  /**
-   * @param {ChatInputCommandInteraction} interaction 
-   */
-  async chatInputSetBackground(interaction) {
-    if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) return interaction.reply({content: `${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`, ephemeral: true});
-    await interaction.deferReply();
-    const db = await settings.findById(interaction.guild.id).cacheQuery();
-    let image = interaction.options.getAttachment('image');
-    let transparency = interaction.options.getInteger('transparency');
-    db.leveling.backgroundTransparency = transparency ?? 90;
-    await db.save();
-
-    if (!image) {
-      await fs.rm(__dirname+`/../../static/rankcards/${interaction.guild.id}-rankcard.png`, { recursive: false }, (err) => {
-        if (err) return interaction.followUp(`${this.container.emojis.error} There is no rank card set.`);
-        return interaction.followUp(`${this.container.emojis.success} The rank card has been deleted.`);
-      });
-      return;
-    }
-    if (image.contentType != `image/png`) return interaction.followUp(`${this.container.emojis.error} Invalid image format. Only png files are supported.`);
-    try {
-      const imgBuffer = Buffer.from(await ((await fetch(image.url)).arrayBuffer()))
-      await fs.writeFileSync(__dirname+`/../../static/rankcards/${interaction.guild.id}-rankcard.png`, imgBuffer);
-      return interaction.followUp(`${this.container.emojis.success} Successfully set the rank card background.`);
-    }
-    catch (err) {
-      return interaction.followUp(`${this.container.emojis.error} ${err}`);
-    }
-    
-  }
-  async messageSetBackground(message, args) {
-    if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) return message.reply(`${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`);
-    const db = await settings.findById(message.guild.id).cacheQuery();
-    let transparency = await args.pick('integer').catch(() => 90);
-    if (transparency > 100 || transparency < 0) return message.reply(`${this.container.emojis.error} Invalid transparency value.`)
-    let image = message.attachments?.first();
-    db.leveling.backgroundTransparency = transparency ?? 90;
-    await db.save();
-
-    if (!image) {
-      await fs.rm(__dirname+`/../../static/rankcards/${message.guild.id}-rankcard.png`, { recursive: false }, (err) => {
-        if (err) return message.reply(`${this.container.emojis.error} There is no rank card set.`);
-        return message.reply(`${this.container.emojis.success} The rank card has been deleted.`);
-      });
-      return;
-    }
-    if (image.contentType != `image/png`) return message.reply(`${this.container.emojis.error} Invalid image format. Only png files are supported.`);
-    try {
-      const imgBuffer = Buffer.from(await ((await fetch(image.url)).arrayBuffer()));
-      await fs.writeFileSync(__dirname+`/../../static/rankcards/${message.guild.id}-rankcard.png`, imgBuffer);
-      return message.reply(`${this.container.emojis.success} Successfully set the rank card background.`);
-    }
-    catch (err) {
-      return message.reply(`${this.container.emojis.error} ${err}`);
-    }
-    
-  }
-  
-  /**
-   * @param {ChatInputCommandInteraction} interaction 
-   */
-  async chatInputToggle(interaction) {
-    if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) return interaction.reply({content: `${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`, ephemeral: true});
-    await interaction.deferReply();
-    const db = await settings.findById(interaction.guild.id).cacheQuery();
-    db.leveling.enable = !db.leveling.enable;
-    await db.save();
-    interaction.followUp(`${this.container.emojis.success} ${db.leveling.enable ? `Enabled leveling. Users will now start leveling up.` : `Disabled leveling. Users won't gain any new xp from chatting.`}`);
-  }
-  async messageToggle(message) {
-    if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) return message.reply(`${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`);
-    const db = await settings.findById(message.guild.id).cacheQuery();
-    db.leveling.enable = !db.leveling.enable;
-    await db.save();
-    message.reply(`${this.container.emojis.success} ${db.leveling.enable ? `Enabled leveling. Users will now start leveling up.` : `Disabled leveling. Users won't gain any new xp from chatting.`}`);
-  }
-
-  /**
-   * @param {ChatInputCommandInteraction} interaction 
-   */
-  async chatInputSetLevel(interaction) {
-    if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) return interaction.reply({content: `${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`, ephemeral: true});
-    await interaction.deferReply();
-    const db = await settings.findById(interaction.guild.id).cacheQuery();
-    let member = interaction.options.getMember('member');
-    let level = interaction.options.getInteger('level');
-    const userlevel = db.leveling.users.find(u => u.id == member.id);
-    if (!userlevel) return interaction.followUp(`${this.container.emojis.error} This user does not yet have a level. They need to chat first before you can set their level.`)
-    userlevel.level = level;
-    userlevel.xp = 0;
-    await db.save();
-    interaction.followUp(`${this.container.emojis.success} Set **${member.user.tag}**'s level to \` ${level} \` successfully.`)
-  }
-  async messageSetLevel(message, args) {
-    if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) return message.reply(`${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`);
-    const db = await settings.findById(message.guild.id).cacheQuery();
-    let member = await args.pick('member');
-    let level = await args.pick('integer');
-    const userlevel = db.leveling.users.find(u => u.id == member.id);
-    if (!userlevel) return message.reply(`${this.container.emojis.error} This user does not yet have a level. They need to chat first before you can set their level.`)
-    userlevel.level = level;
-    userlevel.xp = 0;
-    await db.save();
-    message.reply(`${this.container.emojis.success} Set **${member.user.tag}**'s level to \` ${level} \` successfully.`)
-  }
-
-  /**
-   * @param {ChatInputCommandInteraction} interaction 
-   */
-  async chatInputSetMessage(interaction) {
-    if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) return interaction.reply({content: `${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`, ephemeral: true});
-    await interaction.deferReply();
-    const db = await settings.findById(interaction.guild.id).cacheQuery();
-    let message = interaction.options.getString('message');
-    let channel = interaction.options.getChannel('channel');
-    if (!message) {
-      db.leveling.message = null;
-      await db.save();
-      interaction.followUp(`${this.container.emojis.success} Disabled the leveling message.`)
-    } else {
-      db.leveling.message = message;
-      db.leveling.announceChannel = channel?.id;
-      await db.save();
-      interaction.followUp(`${this.container.emojis.success} Set the leveling message successfully.`)
-    }
-  }
-  async messageSetMessage(message, args) {
-    if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) return message.reply(`${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`);
-    const db = await settings.findById(message.guild.id).cacheQuery();
-    let channel = await args.pick('channel').catch(() => undefined);
-    let msg = await args.rest('string').catch(() => undefined);
-    console.log(msg);
-    console.log(channel);
-    if (!message) {
-      db.leveling.message = null;
-      await db.save();
-      message.reply(`${this.container.emojis.success} Disabled the leveling message.`)
-    } else {
-      db.leveling.message = msg;
-      db.leveling.announceChannel = channel?.id;
-      console.log(db.leveling);
-      await db.save();
-      message.reply(`${this.container.emojis.success} Set the leveling message successfully.`)
-    }
-  }
-
-  
-
-  /**
-   * @param {ChatInputCommandInteraction} interaction 
-   */
-  async chatInputClearUser(interaction) {
-    if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) return interaction.reply({content: `${this.container.emojis.error} Only members with \`Manage Server\` can clear levels.`, ephemeral: true});
-    const member = interaction.options.getMember('member');
-    await interaction.deferReply();
-    const db = await settings.findById(interaction.guild.id).cacheQuery();
-    const userlevel = db.leveling.users.find(u => u.id == member.id);
-    if (!userlevel) return interaction.reply(`${this.container.emojis.error} This user does not yet have a level. They need to chat first before you can set their level.`)
-    userlevel.level = 0;
-    userlevel.xp = 0;
-    await db.save();
-    interaction.followUp(`${this.container.emojis.success} Reset ${member.user.tag}'s level.`);
-  }
-  async messageClearUser(message, args) {
-    if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) return message.reply(`${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`);
-    const db = await settings.findById(message.guild.id).cacheQuery();
-    let member = await args.pick('member');
-    const userlevel = db.leveling.users.find(u => u.id == member.id);
-    if (!userlevel) return message.reply(`${this.container.emojis.error} This user does not yet have a level. They need to chat first before you can set their level.`)
-    userlevel.level = 0;
-    userlevel.xp = 0;
-    await db.save();
-    message.reply(`${this.container.emojis.success} Reset ${member.user.tag}'s level.`);
-  }
-  
-  /**
-   * @param {ChatInputCommandInteraction} interaction 
-   */
-  async chatInputClearAll(interaction) {
-    if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) return interaction.reply({content: `${this.container.emojis.error} Only members with \`Manage Server\` can clear levels.`, ephemeral: true});
-    await interaction.deferReply();
-    const db = await settings.findById(interaction.guild.id).cacheQuery();
-    db.leveling.users = [];
-    await db.save();
-    interaction.followUp(`${this.container.emojis.success} Cleared the server's levels.`);
-  }
-  async messageClearAll(interaction) {
-    if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) return message.reply(`${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`);
-    const db = await settings.findById(message.guild.id).cacheQuery();
-    db.leveling.users = [];
-    await db.save();
-    message.reply(`${this.container.emojis.success} Cleared the server's levels.`);
-  }
-
-  /**
-   * @param {ChatInputCommandInteraction} interaction
-   */
-  async chatInputListReward(interaction) {
-    await interaction.deferReply();
-    const db = await settings.findById(interaction.guild.id).cacheQuery();
-    const embed = new EmbedBuilder()
-    .setAuthor({
-      name: interaction.guild.name,
-      iconURL: interaction.guild.iconURL({ dynamic: true })
-    })
-    .setDescription(db.leveling.levelRoles.sort((a, b) => a.level - b.level).map(r => `${r.level} -> <@&${r.roleId}>`).join('\n') || 'There is no level roles to display.')
-    .setFooter({
-      text: `Level roles ${db.leveling.stackRoles ? 'stacks' : 'do not stack'}`
-    })
-    .setTimestamp(new Date())
-    .setColor(Colors.Orange);
-
-    interaction.followUp({embeds: [embed]});
-  }
-  async messageListReward(message) {
-    const db = await settings.findById(message.guild.id).cacheQuery();
-    const embed = new EmbedBuilder()
-    .setAuthor({
-      name: message.guild.name,
-      iconURL: message.guild.iconURL({ dynamic: true })
-    })
-    .setDescription(db.leveling.levelRoles.sort((a, b) => a.level - b.level).map(r => `${r.level} -> <@&${r.roleId}>`).join('\n') || 'There is no level roles to display.')
-    .setFooter({
-      text: `Level roles ${db.leveling.stackRoles ? 'stacks' : 'do not stack'}`
-    })
-    .setTimestamp(new Date())
-    .setColor(Colors.Orange);
-
-    message.reply({embeds: [embed]});
-  }
-
-  /**
-   * @param {ChatInputCommandInteraction} interaction
-   */
-  async chatInputAddReward(interaction) {
-    if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) return interaction.reply({content: `${this.container.emojis.error} Only members with \`Manage Server\` can clear levels.`, ephemeral: true});
-    await interaction.deferReply();
-    const db = await settings.findById(interaction.guild.id).cacheQuery();
-    if (((await premiumCheck(interaction.guild)) == false) && db.leveling.levelRoles > 10) return interaction.followUp(`${this.container.emojis.error} You've reached the maximum amount of level roles allowed. Buy plus to extend the limit.`);
-    if (db.leveling.levelRoles > 50) return interaction.followUp(`${this.container.emojis.error} You've reached the maximum amount of level roles allowed.`);
-    const role = interaction.options.getRole('role');
-    const lvl = interaction.options.getInteger('level');
-    const found = db.leveling.levelRoles.findIndex(r => (r.roleId == role.id && r.level == lvl));
-    if (found > -1) {
-      db.leveling.levelRoles[found].roleId = role.id;
-      db.leveling.levelRoles[found].level = lvl.id;
-    }
-    else db.leveling.levelRoles.push({ roleId: role.id, level: lvl });
-    await db.save();
-    
-    interaction.followUp({ content: `${this.container.emojis.success} Now assigning ${role} on level ${lvl}`, allowedMentions:{parse:[]} });
-  }
-  async messageAddReward(message, args) {
-    if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) return message.reply(`${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`);
-    const db = await settings.findById(message.guild.id).cacheQuery();
-    if (((await premiumCheck(message.guild)) == false) && db.leveling.levelRoles > 10) return message.reply(`${this.container.emojis.error} You've reached the maximum amount of level roles allowed. Buy plus to extend the limit.`);
-    if (db.leveling.levelRoles > 50) return message.reply(`${this.container.emojis.error} You've reached the maximum amount of level roles allowed.`);
-    const role = await args.pick('role');
-    const lvl = await args.pick('integer');
-    if (lvl > 1000 || lvl < 0) return message.reply(`${this.container.emojis.error} Level must be between 0 and 1000.`)
-
-    const found = db.leveling.levelRoles.findIndex(r => (r.roleId == role.id && r.level == lvl));
-    if (found > -1) {
-      db.leveling.levelRoles[found].roleId = role.id;
-      db.leveling.levelRoles[found].level = lvl.id;
-    }
-    else db.leveling.levelRoles.push({ roleId: role.id, level: lvl });
-    await db.save();
-    
-    message.reply({ content: `${this.container.emojis.success} Now assigning ${role} on level ${lvl}`, allowedMentions:{parse:[]} });
-  }
-
-  /**
-   * @param {ChatInputCommandInteraction} interaction
-   */
-  async chatInputRemoveReward(interaction) {
-    if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) return interaction.reply({content: `${this.container.emojis.error} Only members with \`Manage Server\` can clear levels.`, ephemeral: true});
-    await interaction.deferReply();
-    const db = await settings.findById(interaction.guild.id).cacheQuery();
-    const role = interaction.options.getRole('role');
-    const found = db.leveling.levelRoles.findIndex(r => (r.roleId == role.id));
-    if (found > -1) {
-      db.leveling.levelRoles.splice(found, 1);
-      await db.save();
-      interaction.followUp({ content: `${this.container.emojis.success} Removed ${role} from the level roles.`, allowedMentions:{parse:[]} });
-    }
-    else return interaction.followUp(`${this.container.emojis.error} That role doesn't exist as a level role.`)
-    
-  }
-  async messageRemoveReward(message, args) {
-    if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) return message.reply(`${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`);
-    const db = await settings.findById(message.guild.id).cacheQuery();
-    const role = await args.pick('role');
-    const found = db.leveling.levelRoles.findIndex(r => (r.roleId == role.id));
-    if (found > -1) {
-      db.leveling.levelRoles.splice(found, 1);
-      await db.save();
-      message.reply({ content: `${this.container.emojis.success} Removed ${role} from the level roles.`, allowedMentions:{parse:[]} });
-    }
-    else return message.reply(`${this.container.emojis.error} That role doesn't exist as a level role.`)
-    
-  }
-
-  /**
-   * @param {ChatInputCommandInteraction} interaction 
-   */
-  async chatInputStackRoles(interaction) {
-    if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) return interaction.reply({content: `${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`, ephemeral: true});
-    await interaction.deferReply();
-    const db = await settings.findById(interaction.guild.id).cacheQuery();
-    db.leveling.stackRoles = !db.leveling.stackRoles;
-    await db.save();
-    interaction.followUp(`${this.container.emojis.success} ${db.leveling.stackRoles ? `Level roles will now stack.` : `No longer stacking level roles.`}`);
-  }
-  async messageStackRoles(message) {
-    if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) return message.reply(`${this.container.emojis.error} Only members with \`Manage Server\` can toggle leveling.`);
-    const db = await settings.findById(message.guild.id).cacheQuery();
-    db.leveling.stackRoles = !db.leveling.stackRoles;
-    await db.save();
-    message.reply(`${this.container.emojis.success} ${db.leveling.stackRoles ? `Level roles will now stack.` : `No longer stacking level roles.`}`);
+  async clearAll(ctx) {
+    const denied = this.requireManager(ctx);
+    if (denied) return denied;
+    const confirmed = await confirm(ctx, "This will reset **everyone's** level in this server. This can't be undone. Continue?");
+    if (!confirmed) return undefined;
+    const result = await LevelMember.deleteMany({ guildId: ctx.guild.id });
+    return ctx.reply(`${emoji("success")} Cleared the server's levels (${result.deletedCount} members).`);
   }
 }
-module.exports = {
-  PingCommand,
-};
+
+module.exports = { LevelingCommand };

@@ -1,5 +1,5 @@
 const { Command } = require("@sapphire/framework");
-const { PermissionFlagsBits, Colors } = require("discord.js");
+const { PermissionFlagsBits } = require("discord.js");
 const serverSettings = require("../../tools/SettingsSchema");
 
 
@@ -29,7 +29,7 @@ class PingCommand extends Command {
         guild,
         serverSettings.upsert,
       ).cacheQuery();
-    if (!db) return message.reply(`Invalid server specified.`)
+    if (!db) return message.reply(`Invalid server specified.`);
 
     if (!db.blacklisted) return message.reply(`The specified server is not blacklisted.`);
     await message.reply(`The specified server is blacklisted. The reason specified was:\`\`\`${db.blacklistReason}\`\`\``);

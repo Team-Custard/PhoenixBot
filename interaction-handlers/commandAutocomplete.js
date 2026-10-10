@@ -1,68 +1,29 @@
-const {
-    InteractionHandler,
-    InteractionHandlerTypes,
-  } = require("@sapphire/framework");
-const {
-    ModalBuilder,
-    ActionRowBuilder,
-    TextInputBuilder,
-    TextInputStyle,
-} = require("discord.js");
-const serverSettings = require("../tools/SettingsSchema");
+const { InteractionHandler, InteractionHandlerTypes } = require("@sapphire/framework");
 
-  
-  class MenuHandler extends InteractionHandler {
-    constructor(ctx, options) {
-      super(ctx, {
-        ...options,
-        interactionHandlerType: InteractionHandlerTypes.Autocomplete,
-      });
-    }
-  
-    async parse(interaction) {
-      if (
-        interaction.commandName !== `toggle` &&
-        interaction.commandName !== `override`
-      ) return this.none();
-
-      const focusedOption = interaction.options.getFocused(true);
-  
-      switch (focusedOption.name) {
-        case 'command': {
-          // Search your API or similar. This is example code!
-          const db = await serverSettings
-            .findById(interaction.guild.id, serverSettings.upsert)
-            .cacheQuery();
-
-          // const searchResult = await myApi.searchForSomething(focusedOption.value);
-  
-          // Map the search results to the structure required for Autocomplete
-          if (focusedOption.value) {
-            const cmd = this.container.client.stores
-            .get("commands")
-            .filter((i) => (i.name.includes(focusedOption.value)))
-            if (cmd)
-                return this.some(cmd.map((match) => ({ name: `${match.name}${db.disabledCommands.includes(match.name) ? ` (disabled)` : ``}`, value: match.name })).splice(0, 25));
-            else
-                return this.none();
-          }
-          else {
-            // return this.some(cmd.map((match) => ({ name: `${match.name}${db.disabledCommands.includes(match) ? ` (disabled)` : ``}`, value: match.name })));
-            return this.some(this.container.client.stores.get("commands").filter((i) => (i.name.includes(focusedOption.value))).map((match) => ({ name: `${match.name}${db.disabledCommands.includes(match) ? ` (disabled)` : ``}`, value: match.name })).splice(0, 25));
-          }
-          
-        }
-        default:
-          return this.none();
-      }  
-    }
-  
-    async run(interaction, result) {
-        return interaction.respond(result);
-    }
+// Suggests command names for /help.
+class CommandAutocomplete extends InteractionHandler {
+  constructor(ctx, options) {
+    super(ctx, { ...options, interactionHandlerType: InteractionHandlerTypes.Autocomplete });
   }
-  
-  module.exports = {
-    MenuHandler,
-  };
-  
+
+  parse(interaction) {
+    if (interaction.commandName !== "help") return this.none();
+    const focused = interaction.options.getFocused(true);
+    if (focused.name !== "command") return this.none();
+
+    const query = String(focused.value ?? "").toLowerCase();
+    const choices = [...this.container.stores.get("commands").values()]
+      .filter((c) => (!c.isSlashGroup || c.subcommandDefs) && c.category !== "dev")
+      .filter((c) => c.name.includes(query) || c.aliases.some((a) => a.includes(query)))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .slice(0, 25)
+      .map((c) => ({ name: c.name, value: c.name }));
+    return this.some(choices);
+  }
+
+  run(interaction, choices) {
+    return interaction.respond(choices);
+  }
+}
+
+module.exports = { CommandAutocomplete };

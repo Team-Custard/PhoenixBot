@@ -1,74 +1,37 @@
-const { Command } = require("@sapphire/framework");
-const { PermissionFlagsBits } = require("discord.js");
+const { PermissionFlagsBits, ChannelType } = require("discord.js");
+const { PhoenixCommand } = require("../../tools/PhoenixCommand");
+const { emoji } = require("../../tools/errorReporter");
 
-class PingCommand extends Command {
+const ANNOUNCEMENT_CHANNEL = "1251238477484396575";
+
+class UpdatesCommand extends PhoenixCommand {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "updates",
       aliases: ["subscribe"],
-      description:
-        "Follows the Phoenix update logs and announcements channels so you can recieve updates reguarding Phoenix.",
-      detailedDescription: {
-        usage: "updates <channel>",
-        examples: ["updates #updates"],
-        args: ["channel: The channel to post Phoenix update logs to."],
-      },
+      description: "Follows the Phoenix update log and announcements in one of your channels.",
+      examples: ["updates #bot-news"],
+      args: [{
+        name: "channel",
+        type: "channel",
+        required: true,
+        channelTypes: [ChannelType.GuildText, ChannelType.GuildAnnouncement],
+        description: "The channel that should receive announcements",
+      }],
       cooldownDelay: 3_000,
-      requiredClientPermissions: [PermissionFlagsBits.SendMessages],
+      requiredClientPermissions: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageWebhooks],
       suggestedUserPermissions: [PermissionFlagsBits.ManageGuild],
-      preconditions: ["module"]
+      preconditions: ["module"],
     });
   }
 
-  registerApplicationCommands(registry) {
-    registry.idHints = [];
-    registry.registerChatInputCommand((builder) =>
-      builder
-        .setName("updates")
-        .setDescription(
-          "Follows the Phoenix update logs and announcement channels.",
-        )
-        .addChannelOption((option) =>
-          option
-            .setName("channel")
-            .setDescription("The channel to subscribe to")
-            .setRequired(true),
-        )
-        .setDMPermission(false)
-        .setDefaultMemberPermissions(32),
-    );
-  }
-
-  async chatInputRun(interaction) {
-    await interaction.deferReply();
-    const channel = await interaction.options.getChannel("channel");
-    const newschannel = await this.container.client.channels.fetch(
-      "1251238477484396575",
-    );
-    await newschannel.addFollower(
-      channel,
-      `(${interaction.user.username}) Subscribing to bot announcements.`,
-    );
-    interaction.followUp(
-      `${this.container.emojis.success} Phoenix announcements are now being sent to ${channel}.`,
-    );
-  }
-
-  async messageRun(message, args) {
-    const channel = await args.pick("channel");
-    const newschannel = await this.container.client.channels.fetch(
-      "1251238477484396575",
-    );
-    await newschannel.addFollower(
-      channel,
-      `(${message.author.username}) Subscribing to bot announcements.`,
-    );
-    message.reply(
-      `${this.container.emojis.success} Phoenix announcements are now being sent to ${channel}.`,
-    );
+  async run(ctx, { channel }) {
+    await ctx.defer();
+    const news = await this.container.client.channels.fetch(ANNOUNCEMENT_CHANNEL);
+    await news.addFollower(channel, `(${ctx.user.username}) Subscribing to bot announcements.`);
+    return ctx.reply(`${emoji("success")} Phoenix announcements are now being sent to ${channel}.`);
   }
 }
-module.exports = {
-  PingCommand,
-};
+
+module.exports = { UpdatesCommand };

@@ -1,39 +1,28 @@
-const { Command } = require("@sapphire/framework");
-const { BucketScope } = require("@sapphire/framework");
-const bent = require("bent");
 const { PermissionFlagsBits } = require("discord.js");
+const { BucketScope } = require("@sapphire/framework");
+const { PhoenixCommand } = require("../../tools/PhoenixCommand");
+const { getAttachment } = require("../../tools/http");
 
-class PingCommand extends Command {
+class CatCommand extends PhoenixCommand {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "cat",
-      aliases: [],
-      description: "Displays a random cat picture from cataas.",
-      detailedDescription: {
-        usage: "cat",
-        examples: ["cat"],
-      },
+      description: "Sends a random cat picture from cataas.",
+      slash: { group: "utilities" },
+      guildOnly: false,
       cooldownDelay: 60_000,
       cooldownLimit: 10,
       cooldownScope: BucketScope.Guild,
-      requiredClientPermissions: [
-        PermissionFlagsBits.SendMessages,
-        PermissionFlagsBits.AttachFiles,
-      ],
-      preconditions: ["module"]
+      requiredClientPermissions: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles],
+      preconditions: ["module"],
     });
   }
 
-  async messageRun(message) {
-    const getStream = await bent("https://cataas.com");
-    const stream = await getStream("/cat");
-
-    if (stream.statusCode != 200) return message.reply(`${this.container.emojis.error} ${stream.status}`);
-
-    await message.reply({ files: [stream] });
+  async run(ctx) {
+    await ctx.defer();
+    return ctx.reply({ files: [await getAttachment("https://cataas.com/cat", "cat")] });
   }
 }
-module.exports = {
-  PingCommand,
-};
+
+module.exports = { CatCommand };

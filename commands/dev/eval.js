@@ -7,7 +7,8 @@ function clean(text) {
     return text
       .replace(/`/g, "`" + String.fromCharCode(8203))
       .replace(/@/g, "@" + String.fromCharCode(8203));
-  } else {
+  }
+ else {
     return text;
   }
 }
@@ -55,10 +56,12 @@ class PingCommand extends Command {
           ],
           code: "xl",
         });
-      } else {
+      }
+ else {
         message.react(`✅`);
       }
-    } catch (err) {
+    }
+ catch (err) {
       message.reply(`The code returned an error. ${clean(err)}`);
     }
   }

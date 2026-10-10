@@ -1,76 +1,68 @@
-const { Precondition, Command } = require("@sapphire/framework");
-const serverSettings = require("../tools/SettingsSchema");
-const { PermissionFlagsBits, Message, InteractionContextType, ApplicationCommandType, Guild, GuildMember, PermissionsBitField } = require("discord.js");
+const { Precondition } = require("@sapphire/framework");
+const { PermissionsBitField } = require("discord.js");
+const ServerSettings = require("../tools/SettingsSchema");
 
-class tagLockPrecondition extends Precondition {
-
-  /**
-   * 
-   * @param {Message} message
-   * @returns 
-   */
+/**
+ * Per-server command rules set on the dashboard:
+ * - disabled commands can't be used at all
+ * - permission overrides let a role use a command without its usual permission
+ * - otherwise the member needs one of the command's suggestedUserPermissions
+ */
+class ModulePrecondition extends Precondition {
   async messageRun(message, command) {
-    // for Message Commands
-    return this.checkLockStatus(command.name, message.guild, message.member, command);
+    if (!message.guild) return this.ok();
+    return this.check(command, message.guild.id, message.member);
   }
 
-  /**
-   * 
-   * @param {import("discord.js").Interaction} interaction 
-   * @param {*} command 
-   * @returns 
-   */
   async chatInputRun(interaction, command) {
-    // for Slash Commands
-    console.log(interaction.authorizingIntegrationOwners)
-    if (!interaction.guild) return this.ok();
-    if (!interaction.authorizingIntegrationOwners[0]) return this.ok();
-    return this.checkLockStatus(command.name, interaction.guild, interaction.member, command);
+    // DMs and user-installed contexts in servers the bot isn't in.
+    if (!interaction.guild || !interaction.member?.roles?.cache) return this.ok();
+    if (!interaction.authorizingIntegrationOwners?.[0]) return this.ok();
+    return this.check(command, interaction.guild.id, interaction.member);
   }
 
   async contextMenuRun(interaction, command) {
-    // for Context Menu Command
-    if (!interaction.authorizingIntegrationOwners[0]) return this.ok();
-    return this.checkLockStatus(command.name, interaction.guild, interaction.member, command);
+    if (!interaction.guild || !interaction.member?.roles?.cache) return this.ok();
+    if (!interaction.authorizingIntegrationOwners?.[0]) return this.ok();
+    return this.check(command, interaction.guild.id, interaction.member);
   }
 
   /**
-   * @param {String} module 
-   * @param {Guild} guild 
-   * @param {GuildMember} member 
-   * @param {Command} command
+   * @param {import("@sapphire/framework").Command} command
+   * @param {string} guildId
+   * @param {import("discord.js").GuildMember} member
    */
-  async checkLockStatus(module, guild, member, command) {
-    const db = await serverSettings
-      .findById(guild.id, serverSettings.upsert)
+  async check(command, guildId, member) {
+    const name = command.name;
+    if (name === "toggle") return this.ok();
+
+    const db = await ServerSettings.findById(guildId)
+      .select("disabledCommands permissionOverrides")
+      .lean()
       .cacheQuery();
-    if (module == "toggle") return this.ok();
-    let allowedCommand = false;
-    for (let i = 0; i < member.roles.cache.size; i++) {
-      let role = member.roles.cache.at(i);
-      const grants = db.permissionOverrides.find(r => r.role_id == role.id);
-      if (grants) {
-        if (grants.grant.find(g => g == module)) {
-          console.log('Grant passed');
-          allowedCommand = true;
-        }
-      }
+
+    if (db?.disabledCommands?.includes(name)) {
+      return this.error({
+        message: "Sorry, this command has been disabled by the server admins",
+        context: { silent: true },
+      });
     }
 
-    if (command.options.suggestedUserPermissions) {
-      for (let i = 0; i < command.options.suggestedUserPermissions.length; i++) {
-        const permission = command.options.suggestedUserPermissions.at(i);
-        if (member.permissions.has(new PermissionsBitField(permission))) allowedCommand = true;
-      }
-    } else allowedCommand = true;
-    
-    if (db.disabledCommands.find(c => c == module)) this.error({ message: "Sorry, this command has been disabled by the server admins", context: {silent: true} })
-    
-    return !allowedCommand
-      ? this.error({ message: `You are missing the needed permissions or role to use this command. You need the following permissions to use this command: **${new PermissionsBitField(command.options.suggestedUserPermissions).toArray().join(", ")}**`})
-      : this.ok();
+    const needed = command.options.suggestedUserPermissions;
+    if (!needed?.length) return this.ok();
+    if (needed.some((permission) => member.permissions.has(new PermissionsBitField(permission)))) return this.ok();
+
+    const granted = (db?.permissionOverrides ?? []).some(
+      (override) => member.roles.cache.has(override.role_id) && override.grant?.includes(name),
+    );
+    if (granted) return this.ok();
+
+    return this.error({
+      message: `You are missing the needed permissions or role to use this command. You need the following permissions to use this command: **${new PermissionsBitField(needed).toArray().join(", ")}**`,
+    });
   }
 }
+
 module.exports = {
-  tagLockPrecondition,
+  ModulePrecondition,
 };

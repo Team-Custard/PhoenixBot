@@ -1,10 +1,10 @@
-const { ButtonInteraction, Colors, ModalBuilder, TextInputStyle, ActionRowBuilder, TextInputBuilder } = require("discord.js");
+const { ModalBuilder, TextInputStyle, ActionRowBuilder, TextInputBuilder } = require("discord.js");
 const serverSettings = require("../tools/SettingsSchema");
 const {
     InteractionHandler,
     InteractionHandlerTypes,
   } = require("@sapphire/framework");
-  
+
   class MenuHandler extends InteractionHandler {
     constructor(ctx, options) {
       super(ctx, {
@@ -12,19 +12,19 @@ const {
         interactionHandlerType: InteractionHandlerTypes.Button,
       });
     }
-  
+
     parse(interaction) {
       if (
         interaction.customId.startsWith("BOTADMIN")
       ) {
         return this.some();
       }
-  
+
       return this.none();
     }
-  
+
     /**
-     * @param {ButtonInteraction} interaction 
+     * @param {ButtonInteraction} interaction
      */
     async run(interaction) {
       if (interaction.customId.startsWith("BOTADMIN")) {
@@ -45,7 +45,7 @@ const {
             const db = await serverSettings
                 .findById(guild.id, serverSettings.upsert)
                 .cacheQuery();
-                
+
             const modal = new ModalBuilder()
                     .setCustomId("ModalBlacklistReason")
                     .setTitle("Blacklist")
@@ -58,14 +58,14 @@ const {
                         .setStyle(TextInputStyle.Paragraph)
                         .setRequired(true)
                       ),
-                    ])
+                    ]);
                     try {
                         await interaction.showModal(modal);
                         const modalResponse = await interaction.awaitModalSubmit({ filter: (i) => (i.customId == "ModalBlacklistReason" && i.user.id == interaction.user.id), time: 900_000 });
                         await modalResponse.deferReply({ ephemeral: true });
-                      
+
                         db.blacklisted = true;
-                        db.blacklistReason = `(${interaction.user.tag}) ${await modalResponse.fields.getTextInputValue('ModalReasonField')}`
+                        db.blacklistReason = `(${interaction.user.tag}) ${await modalResponse.fields.getTextInputValue('ModalReasonField')}`;
                         await db.save();
                         await guild.leave();
 
@@ -78,15 +78,14 @@ const {
                         }
                     }
                     catch (err) {
-                      console.error('Error executing author embed. ',err);
+                      console.error('Error executing author embed. ', err);
                       interaction.followUp({ content: `${this.container.emojis.error} ${err}`, ephemeral: true });
                     }
         }
       }
     }
   }
-  
+
   module.exports = {
     MenuHandler,
   };
-  
