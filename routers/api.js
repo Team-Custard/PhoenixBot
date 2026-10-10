@@ -2,7 +2,6 @@ const express = require("express");
 const UserDB = require("../tools/UserDB");
 const serverSettings = require("../tools/SettingsSchema");
 const { request } = require("undici");
-const { container } = require("@sapphire/framework")
 const settings = require("../config.json");
 
 const router = express.Router();
@@ -36,39 +35,38 @@ router.get("/api/login", async (req, res) => {
     res.redirect(`/success`);
   })
   .catch(() => res.status(500).send("Bot add failed"));
-})
+});
 
-router.post("/api/utilities/activate", 
+router.post("/api/utilities/activate",
   /**
-   * 
-   * @param {Request} req 
-   * @param {Response} res 
+   *
+   * @param {Request} req
+   * @param {Response} res
    */
-  async function (req, res) {
+  async function(req, res) {
     const pubkey = req.body.pubkey;
     const serverid = req.body.server;
     if (pubkey !== process.env["UTILSPUBKEY"]) return res.status(400).send(`The public key for your extension is invalid. Unfortunately you cannot use custom extension self hosts with Phoenix yet, however it is planned soon. Join the [Phoenix support server](https://discord.gg/PnUYnBbxER ) for more info on that`);
-    const guild = await container.client.guilds.fetch(serverid)
-    .catch(async () => {
-      await res.status(400).send(`The selected bot is not in the server. Make sure you selected the right branch`);
-      throw "Utiltiies post failed, bot not in server";
-    })
+    const guild = await require("../web/discord").getGuild(String(serverid)).catch(() => null);
+    if (!guild) {
+      return res.status(400).send(`The selected bot is not in the server. Make sure you selected the right branch`);
+    }
     try {
-      const db = await serverSettings
-        .findById(message.guild.id, serverSettings.upsert)
-        .cacheQuery();
+      const db = await serverSettings.findById(guild.id);
+      if (!db) return res.status(400).send(`This server has no Phoenix settings yet.`);
 
-      db.utilities = true
+      db.utilities = true;
       await db.save();
       await res.status(200).send("Success");
-    } catch (err) {
+    }
+ catch (err) {
       await res.status(400).send(`Unknown error, ${err}`);
     }
-    
-    
+
+
 });
 
-router.get("/api/timefor/:id", async function (req, res) {
+router.get("/api/timefor/:id", async function(req, res) {
   const member = req.params.id;
   const usersettings = await UserDB.findById(
     member,
@@ -91,7 +89,7 @@ router.get("/api/timefor/:id", async function (req, res) {
   await res.send({ status: 200, id: member, time: strTime, date: strDate });
 });
 
-router.get("/api/pronouns/:id", async function (req, res) {
+router.get("/api/pronouns/:id", async function(req, res) {
   const member = req.params.id;
   const usersettings = await UserDB.findById(
     member,
@@ -110,7 +108,7 @@ router.get("/api/pronouns/:id", async function (req, res) {
   await res.send({ status: 200, id: member, pronouns: usersettings.pronouns });
 });
 
-router.get("/api/socials/:id", async function (req, res) {
+router.get("/api/socials/:id", async function(req, res) {
   const member = req.params.id;
   const usersettings = await UserDB.findById(
     member,
@@ -130,7 +128,7 @@ router.get("/api/socials/:id", async function (req, res) {
   });
 });
 
-router.get("/api/profile/:id", async function (req, res) {
+router.get("/api/profile/:id", async function(req, res) {
   const member = req.params.id;
   const usersettings = await UserDB.findById(
     member,
@@ -156,7 +154,7 @@ router.get("/api/profile/:id", async function (req, res) {
   });
 });
 
-router.get("/api", async function (req, res) {
+router.get("/api", async function(req, res) {
   res.render("pages/api", { title: "Api reference" });
 });
 
