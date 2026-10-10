@@ -13,13 +13,7 @@ export function RankCardBackground({ data, onChange }) {
     if (file.size > 8 * 1024 * 1024) return toast("The background can be at most 8 MB.", "error");
     setBusy(true);
     try {
-      const image = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      await api.put(`/guilds/${data.guild.id}/leveling/background`, { image });
+      await api.upload(`/guilds/${data.guild.id}/leveling/background`, file, "image/png");
       onChange(true);
       toast("Rank card background updated.");
     }
@@ -53,7 +47,17 @@ export function RankCardBackground({ data, onChange }) {
       <div className="row">
         <label className="button" style={{ flex: "none" }}>
           {busy ? "Uploading..." : "Upload PNG"}
-          <input type="file" accept="image/png" className="visually-hidden" disabled={busy} onChange={(e) => upload(e.target.files?.[0])} />
+          <input
+            type="file"
+            accept="image/png"
+            className="visually-hidden"
+            disabled={busy}
+            onChange={(e) => {
+              upload(e.target.files?.[0]);
+              // Let the same file be picked again after an error.
+              e.target.value = "";
+            }}
+          />
         </label>
         {hasCard && <button type="button" className="button danger" disabled={busy} onClick={remove}>Remove background</button>}
       </div>

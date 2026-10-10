@@ -6,7 +6,9 @@ const settings = require("../config.json");
 
 const router = express.Router();
 
-router.use(express.json());
+// Only parse JSON for the route that needs it. A router-wide parser here used to
+// run for every request on the site, including dashboard uploads, and rejected
+// anything over 100 KB before the dashboard got to see it.
 
 router.get("/api/login", async (req, res) => {
   const { code, branch } = req.query;
@@ -38,6 +40,7 @@ router.get("/api/login", async (req, res) => {
 });
 
 router.post("/api/utilities/activate",
+  express.json(),
   /**
    *
    * @param {Request} req

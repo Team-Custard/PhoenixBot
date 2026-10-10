@@ -1,4 +1,5 @@
 const { PhoenixCommand } = require("../../tools/PhoenixCommand");
+const { SAVED_LIMIT, fromDiscordEmbed } = require("../../tools/embeds");
 const serverSettings = require("../../tools/SettingsSchema");
 const { PermissionFlagsBits, EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, ModalBuilder, TextInputBuilder, TextInputStyle } = require("discord.js");
 
@@ -431,62 +432,20 @@ class EmbedCommand extends PhoenixCommand {
           const modalResponse = await collected.awaitModalSubmit({ filter: (i) => (i.customId == "ModalSave" && i.user.id == interaction.user.id), time: 900_000 });
           await modalResponse.deferReply({ ephemeral: true });
           const db = await serverSettings.findById(interaction.guild.id).cacheQuery();
-          const embeddb = db.embeds.find(e => e.name == modalResponse.fields.getTextInputValue("ModalNameField"));
-          if (!embeddb) {
-            const premiumCheck = await require("../../tools/premiumCheck")(interaction.guild);
-            if (db.embeds.length == 15 && !premiumCheck) return collected.reply({ content:'Too many embeds. You can only have up to 15 embeds, 100 with plus.', ephemeral: true });
-            if (db.embeds.length == 50) return collected.reply({ content:'Too many embeds. You can only have up to 100 embeds.', ephemeral: true });
-
-            db.embeds.push({
-              name: modalResponse.fields.getTextInputValue("ModalNameField"),
-              data: {
-                author: {
-                  name: embed.data.author?.name || null,
-                  icon_url: embed.data.author?.icon_url || null,
-                  url: embed.data.author?.url || null
-                },
-                title: embed.data.title || null,
-                url: embed.data.url || null,
-                description: embed.data.description || null,
-                thumbnail: embed.data.thumbnail?.url || null,
-                image: embed.data.image?.url || null,
-                fields: embed.data.fields?.map(f => { return { name: f.name, value: f.value, inline: f.inline }; }) || null,
-                footer: {
-                  text: embed.data.footer?.text || null,
-                  icon_url: embed.data.footer?.icon_url || null,
-                },
-                timestamp: embed.data.timestamp || null
-              }
-            });
-            await db.save();
-            modalResponse.followUp({ content: `Saved! There's now ${db.embeds.length} / ${premiumCheck ? 100 : 15} embeds.`, ephemeral: true });
+          const name = modalResponse.fields.getTextInputValue("ModalNameField");
+          const existing = db.embeds.findIndex(e => e.name == name);
+          const premiumCheck = await require("../../tools/premiumCheck")(interaction.guild);
+          const limit = premiumCheck ? SAVED_LIMIT.premium : SAVED_LIMIT.free;
+          if (existing === -1 && db.embeds.length >= limit) {
+            return modalResponse.followUp({ content: `Too many embeds. You can save up to ${SAVED_LIMIT.free} embeds, ${SAVED_LIMIT.premium} with Plus.`, ephemeral: true });
           }
- else {
-            const premiumCheck = await require("../../tools/premiumCheck")(interaction.guild);
-            db.embeds[await db.embeds.findIndex(e => e.name == modalResponse.fields.getTextInputValue("ModalNameField"))] = {
-              name: modalResponse.fields.getTextInputValue("ModalNameField"),
-              data: {
-                author: {
-                  name: embed.data.author?.name || null,
-                  icon_url: embed.data.author?.icon_url || null,
-                  url: embed.data.author?.url || null
-                },
-                title: embed.data.title || null,
-                url: embed.data.url || null,
-                description: embed.data.description || null,
-                thumbnail: embed.data.thumbnail?.url || null,
-                image: embed.data.image?.url || null,
-                fields: embed.data.fields.map(f => { return { name: f.name, value: f.value, inline: f.inline }; }) || null,
-                footer: {
-                  text: embed.data.footer?.text || null,
-                  icon_url: embed.data.footer?.icon_url || null,
-                },
-                timestamp: embed.data.timestamp || null
-              }
-            };
-            await db.save();
-            modalResponse.followUp({ content: `Updated! There's ${db.embeds.length} / ${premiumCheck ? 100 : 15} embeds.`, ephemeral: true });
-          }
+          // fromDiscordEmbed turns the builder's ISO timestamp into the number the
+          // database expects; saving used to fail whenever a timestamp was set.
+          const saved = { name, data: fromDiscordEmbed(embed.toJSON()) };
+          if (existing === -1) db.embeds.push(saved);
+          else db.embeds[existing] = saved;
+          await db.save();
+          modalResponse.followUp({ content: `${existing === -1 ? "Saved" : "Updated"}! There's now ${db.embeds.length} / ${limit} embeds.`, ephemeral: true });
         }
         catch (err) {
           console.error('Error executing delete field embed. ', err);
@@ -527,10 +486,11 @@ class EmbedCommand extends PhoenixCommand {
             .setImage(embeddb.data.image || null)
             .setFields(embeddb.data.fields?.map(f => { return { name: f.name || `???`, value: f.value || `???`, inline: f.inline || false }; }) || [])
             .setFooter({
-              text: embeddb.data.footer.text || null,
-              iconURL: embeddb.data.footer.icon_url || null
+              text: embeddb.data.footer?.text || null,
+              iconURL: embeddb.data.footer?.icon_url || null
             })
-            .setTimestamp(embeddb.data.timestamp || null);
+            .setTimestamp(embeddb.data.timestamp || null)
+            .setColor(embeddb.data.color ?? Colors.Orange);
             modalResponse.followUp({ content: `Embed loaded.`, ephemeral: true });
             await interaction.editReply({ embeds: [embed], components: [actionRowA, actionRowB, actionRowC] });
         }
@@ -566,7 +526,7 @@ class EmbedCommand extends PhoenixCommand {
             // This used to never save, so deleted embeds came back.
             await db.save();
             const premiumCheck = await require("../../tools/premiumCheck")(interaction.guild);
-            modalResponse.followUp({ content: `Deleted. There's now ${db.embeds.length} / ${premiumCheck ? 100 : 15} embeds.`, ephemeral: true });
+            modalResponse.followUp({ content: `Deleted. There's now ${db.embeds.length} / ${premiumCheck ? SAVED_LIMIT.premium : SAVED_LIMIT.free} embeds.`, ephemeral: true });
         }
  else {modalResponse.followUp({ content: `That embed doesn't exist.`, ephemeral: true });}
         }
@@ -579,7 +539,7 @@ class EmbedCommand extends PhoenixCommand {
         try {
           const db = await serverSettings.findById(interaction.guild.id).cacheQuery();
           const premiumCheck = await require("../../tools/premiumCheck")(interaction.guild);
-          await collected.reply({ content: `There are ${db.embeds.length} / ${premiumCheck ? 100 : 15} embeds registered in this server.\n\n### Embeds:\n${db.embeds.map(e => `\`${e.name}\``)}`, ephemeral: true });
+          await collected.reply({ content: `There are ${db.embeds.length} / ${premiumCheck ? SAVED_LIMIT.premium : SAVED_LIMIT.free} embeds registered in this server.\n\n### Embeds:\n${db.embeds.map(e => `\`${e.name}\``)}`, ephemeral: true });
         }
         catch (err) {
           console.error('Error executing delete field embed. ', err);

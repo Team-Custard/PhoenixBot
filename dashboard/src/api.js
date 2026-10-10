@@ -8,20 +8,23 @@ export class ApiError extends Error {
   }
 }
 
-async function request(method, path, body) {
+async function request(method, path, body, { contentType } = {}) {
+  const raw = body instanceof Blob;
   const response = await fetch(`/api/dashboard${path}`, {
     method,
     credentials: "same-origin",
     headers: {
       Accept: "application/json",
-      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(body !== undefined ? { "Content-Type": contentType ?? (raw ? body.type : "application/json") } : {}),
       // Required by the server for anything that changes data (CSRF protection).
       ...(method !== "GET" ? { "X-Phoenix-Dashboard": "1" } : {}),
     },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: body === undefined ? undefined : raw ? body : JSON.stringify(body),
   });
   const data = await response.json().catch(() => null);
-  if (!response.ok) throw new ApiError(response.status, data);
+  if (!response.ok) {
+    throw new ApiError(response.status, data ?? { message: `The server answered with an error (${response.status}). Try again in a moment.` });
+  }
   return data;
 }
 
@@ -31,6 +34,8 @@ export const api = {
   put: (path, body) => request("PUT", path, body),
   patch: (path, body) => request("PATCH", path, body),
   delete: (path) => request("DELETE", path),
+  /** Sends a file as the raw request body. */
+  upload: (path, file, contentType) => request("PUT", path, file, { contentType }),
 };
 
 export const loginUrl = (next = window.location.pathname) => `/dash/login?next=${encodeURIComponent(next)}`;

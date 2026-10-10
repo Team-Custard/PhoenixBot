@@ -2,7 +2,7 @@ const { SapphireClient, ApplicationCommandRegistries, RegisterBehavior } = requi
 const { GatewayIntentBits, Partials } = require("discord.js");
 const { ClusterClient, getInfo } = require("discord-hybrid-sharding");
 const ServerSettings = require("./SettingsSchema");
-const { settings, botmode } = require("./config");
+const { settings, defaultPrefix } = require("./config");
 
 // Replace the whole set of global slash commands with exactly what the code defines.
 // This removes commands that no longer exist (the old config commands like /welcomer)
@@ -21,7 +21,8 @@ class PhoenixClient extends SapphireClient {
 
       caseInsensitiveCommands: true,
       caseInsensitivePrefixes: true,
-      defaultPrefix: settings.prefix,
+      // "=" in prod, "==" in dev and "===" in test, so the bots don't answer each other's commands.
+      defaultPrefix,
       intents: [
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.Guilds,
@@ -66,7 +67,8 @@ class PhoenixClient extends SapphireClient {
   fetchPrefix = async (message) => {
     if (!message.content) return this.options.defaultPrefix;
     if (!message.inGuild()) return this.options.defaultPrefix;
-    if (botmode === "test") return settings.testingprefix;
+    // Test mode used to return the testing prefix here before reading the server's
+    // settings, so the dashboard's prefix and on/off switch did nothing for it.
 
     try {
       // Runs for every message, so only read the two fields we need, through the cache.

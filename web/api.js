@@ -11,6 +11,7 @@ const Case = require("../tools/models/Case");
 const LevelMember = require("../tools/models/LevelMember");
 const { buildModlogEmbed } = require("../tools/moderation");
 const xpForLevel = require("../tools/xpToLevel");
+const { SAVED_LIMIT, EmbedError, cleanEmbedData, toDiscordEmbed } = require("../tools/embeds");
 const { sections, fieldsByKey } = require("./spec");
 const discord = require("./discord");
 const { refreshGuilds, logout } = require("./session");
@@ -37,7 +38,8 @@ class ApiError extends Error {
 
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-router.use(express.json({ limit: "10mb" }));
+// Settings and embeds are small; images are uploaded as raw PNG bodies instead.
+router.use(express.json({ limit: "1mb" }));
 
 // ---------------------------------------------------------------------------
 // Auth, CSRF and rate limits
@@ -197,6 +199,10 @@ function roleMenusOf(doc) {
   return stripIds(plain(doc.rolesMenu ?? []));
 }
 
+function embedsOf(doc) {
+  return (doc.embeds ?? []).map((e) => ({ name: e.name, data: stripIds(plain(e.data)) }));
+}
+
 function tagsOf(doc) {
   return (doc.tags ?? []).map((t) => ({ name: t.name, description: t.description, creator: t.creator }));
 }
@@ -231,11 +237,13 @@ router.get("/guilds/:guildId", wrap(async (req, res) => {
     settings: settingsValues(doc),
     roleMenus: roleMenusOf(doc),
     tags: tagsOf(doc),
+    embeds: embedsOf(doc),
     stats: { cases: caseCount, levelMembers: levelCount, hasRankCard },
     limits: {
       roleMenus: premium ? LIMITS.roleMenus.premium : LIMITS.roleMenus.free,
       roleMenuRoles: LIMITS.roleMenuRoles,
       tags: premium ? LIMITS.tags.premium : LIMITS.tags.free,
+      embeds: premium ? SAVED_LIMIT.premium : SAVED_LIMIT.free,
     },
   });
 }));
@@ -558,6 +566,70 @@ router.delete("/guilds/:guildId/tags/:name", wrap(async (req, res) => {
 }));
 
 // ---------------------------------------------------------------------------
+// Saved embeds (the same ones /embed saves and loads)
+// ---------------------------------------------------------------------------
+
+function cleanEmbed(input) {
+  try {
+    return cleanEmbedData(input);
+  }
+  catch (err) {
+    if (err instanceof EmbedError) throw new ApiError(400, err.message);
+    throw err;
+  }
+}
+
+function embedName(raw) {
+  const name = validateField({ key: "name", type: "text", min: 1, max: 15 }, raw, {}, "Embed name");
+  return name;
+}
+
+router.put("/guilds/:guildId/embeds/:name", wrap(async (req, res) => {
+  const guildId = req.params.guildId;
+  const name = embedName(req.params.name);
+  const data = cleanEmbed(req.body?.data);
+  const [doc, premium] = await Promise.all([getSettingsDoc(guildId), discord.hasPremium(guildId)]);
+  const index = doc.embeds.findIndex((e) => e.name === name);
+  const limit = premium ? SAVED_LIMIT.premium : SAVED_LIMIT.free;
+  if (index === -1 && doc.embeds.length >= limit) {
+    throw new ApiError(400, premium
+      ? `You can save up to ${limit} embeds. Delete one to make room.`
+      : `Free servers can save ${limit} embeds. Delete one, or get Phoenix Plus for ${SAVED_LIMIT.premium}.`);
+  }
+  if (index === -1) doc.embeds.push({ name, data });
+  else doc.embeds.set(index, { name, data });
+  await doc.save();
+  res.json({ embeds: embedsOf(doc) });
+}));
+
+router.delete("/guilds/:guildId/embeds/:name", wrap(async (req, res) => {
+  const doc = await getSettingsDoc(req.params.guildId);
+  const entry = doc.embeds.find((e) => e.name === req.params.name);
+  if (!entry) throw new ApiError(404, "That embed doesn't exist.");
+  doc.embeds.pull(entry);
+  await doc.save();
+  res.json({ embeds: embedsOf(doc) });
+}));
+
+router.post("/guilds/:guildId/embeds/send", wrap(async (req, res) => {
+  const guildId = req.params.guildId;
+  const context = await getGuildContext(guildId);
+  const ctx = { ...context, guildId };
+  const channelId = validateField({ key: "channel", type: "channel", channelTypes: [0, 5], required: true }, req.body?.channelId, ctx, "Channel");
+  const content = validateField({ key: "content", type: "textarea", max: 2000 }, req.body?.content, ctx, "Message");
+  const data = cleanEmbed(req.body?.data);
+
+  await discord.sendMessage(channelId, {
+    content: content || undefined,
+    embeds: [toDiscordEmbed(data)],
+    allowed_mentions: { parse: [] },
+  }).catch((err) => {
+    throw new ApiError(400, `Discord refused the embed: ${err.message}. Check that Phoenix can send messages and embeds in that channel, and that image links point to images.`);
+  });
+  res.json({ ok: true });
+}));
+
+// ---------------------------------------------------------------------------
 // Cases
 // ---------------------------------------------------------------------------
 
@@ -639,19 +711,24 @@ router.get("/guilds/:guildId/leaderboard", wrap(async (req, res) => {
   });
 }));
 
-router.put("/guilds/:guildId/leveling/background", wrap(async (req, res) => {
-  const match = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/.exec(req.body?.image ?? "");
-  if (!match) throw new ApiError(400, "The background has to be a PNG image.");
-  const buffer = Buffer.from(match[1], "base64");
-  if (buffer.length > 8 * 1024 * 1024) throw new ApiError(400, "The background can be at most 8 MB.");
-  // PNG signature check, so only real images are stored.
-  if (!buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) {
-    throw new ApiError(400, "That file isn't a PNG image.");
-  }
-  await fs.promises.mkdir(RANKCARD_DIR, { recursive: true });
-  await fs.promises.writeFile(path.join(RANKCARD_DIR, `${req.params.guildId}-rankcard.png`), buffer);
-  res.json({ ok: true });
-}));
+const MAX_BACKGROUND = 8 * 1024 * 1024;
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+// The image is sent as the raw request body (Content-Type: image/png), not as
+// base64 in JSON, so it's a third smaller and isn't limited by the JSON parser.
+router.put(
+  "/guilds/:guildId/leveling/background",
+  express.raw({ type: "image/png", limit: MAX_BACKGROUND }),
+  wrap(async (req, res) => {
+    const buffer = req.body;
+    if (!Buffer.isBuffer(buffer) || buffer.length === 0) throw new ApiError(400, "The background has to be a PNG image.");
+    // Check the PNG signature, so only real images are stored.
+    if (!buffer.subarray(0, 8).equals(PNG_SIGNATURE)) throw new ApiError(400, "That file isn't a PNG image.");
+    await fs.promises.mkdir(RANKCARD_DIR, { recursive: true });
+    await fs.promises.writeFile(path.join(RANKCARD_DIR, `${req.params.guildId}-rankcard.png`), buffer);
+    res.json({ ok: true });
+  }),
+);
 
 router.delete("/guilds/:guildId/leveling/background", wrap(async (req, res) => {
   await fs.promises.rm(path.join(RANKCARD_DIR, `${req.params.guildId}-rankcard.png`), { force: true });
@@ -669,7 +746,9 @@ router.use((err, req, res, next) => {
   if (err instanceof ApiError) {
     return res.status(err.status).json({ error: err.extra.error ?? "invalid", message: err.message, ...err.extra });
   }
-  if (err?.type === "entity.too.large") return res.status(413).json({ error: "too_large", message: "That upload is too big." });
+  if (err?.type === "entity.too.large") {
+    return res.status(413).json({ error: "too_large", message: "That upload is too big. Backgrounds can be at most 8 MB." });
+  }
   console.error("[dashboard] API error", err);
   res.status(500).json({ error: "server_error", message: "Something went wrong on our side. Try again in a moment." });
 });

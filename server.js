@@ -35,13 +35,8 @@ app.use("/bootstrap-select", express.static(path.join(__dirname, "node_modules/b
 app.use(express.static(path.join(__dirname, "static")));
 app.use(express.urlencoded({ extended: false }));
 
-// Public pages and API.
-app.use(require("./routers/mainpage"));
-app.use(require("./routers/api"));
-app.use(require("./routers/userdb"));
-
 // Dashboard: login routes, JSON API and the React app.
-app.use(loadSession);
+app.use(["/dash", "/api/dashboard"], loadSession);
 app.use(require("./web/auth"));
 app.use("/api/dashboard", require("./web/api"));
 app.use("/dash/assets", express.static(path.join(DASHBOARD_DIST, "assets"), { maxAge: "7d", immutable: true }));
@@ -53,6 +48,11 @@ app.get(["/dash", "/dash/*"], (req, res) => {
   res.setHeader("Cache-Control", "no-cache");
   res.sendFile(index);
 });
+
+// Public pages and API.
+app.use(require("./routers/mainpage"));
+app.use(require("./routers/api"));
+app.use(require("./routers/userdb"));
 
 app.use((req, res) => {
   res.status(404);

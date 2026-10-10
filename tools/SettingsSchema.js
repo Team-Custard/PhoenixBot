@@ -6,7 +6,8 @@ const settingsSchema = new Schema({
   prefix: {
     type: String,
     required: false,
-    default: require("../config.json").process.botmode == "prod" ? "=" : "==",
+    // The bot mode's default prefix (= for prod, == for dev, === for test).
+    default: () => require("./config").defaultPrefix,
   },
   stagingprefix: { type: String, required: false, default: "==" },
   enablePrefix: { type: Boolean, required: false, default: true },
@@ -140,6 +141,8 @@ const settingsSchema = new Schema({
   embeds: [{
     name: String,
     data: {
+      // 0xRRGGBB; empty means Phoenix orange.
+      color: Number,
       author: {
         name: String,
         icon_url: String,
@@ -159,6 +162,7 @@ const settingsSchema = new Schema({
         text: String,
         icon_url: String,
       },
+      // Milliseconds since 1970.
       timestamp: Number
     }
   }]
