@@ -7,6 +7,7 @@ const { sendLog, truncate } = require("./logging");
 const automod = require("./automod");
 const { punish } = require("./punish");
 const { formatDuration } = require("./moderation");
+const { send } = require("./queue");
 
 const ACTION_TEXT = { delete: "Deleted the message", warn: "Warned", mute: "Muted", kick: "Kicked", ban: "Banned" };
 
@@ -39,6 +40,8 @@ async function runAutomod(message, { edited = false } = {}) {
   const settings = await peekSettings(message.guildId);
   const config = settings?.automod;
   if (!automod.anyFilterOn(config)) return;
+  // The honeypot listener deals with its own channel.
+  if (config.honeypot?.channel && config.honeypot.channel === message.channelId) return;
   const member = message.member ?? (await message.guild.members.fetch(message.author.id).catch(() => null));
   if (automod.isExempt(config, member, message.channel)) return;
   if (await yieldsToStaging(message.guild)) return;
@@ -80,9 +83,7 @@ async function runAutomod(message, { edited = false } = {}) {
   }
 
   if (config.notifyChannel !== false && automod.shouldPunish(`notice:${message.channelId}:${message.author.id}`, 5_000)) {
-    const notice = await message.channel
-      .send({ content: `${message.author}, ${automod.LABELS[hit.filter].toLowerCase()} isn't allowed here.`, allowedMentions: { users: [message.author.id] } })
-      .catch(() => null);
+    const notice = await send(message.channel, { content: `${message.author}, ${automod.LABELS[hit.filter].toLowerCase()} isn't allowed here.`, allowedMentions: { users: [message.author.id] } });
     if (notice) setTimeout(() => notice.delete().catch(() => undefined), 6_000);
   }
 

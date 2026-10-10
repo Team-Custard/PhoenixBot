@@ -96,7 +96,8 @@ function canManage(oauthGuild) {
 }
 
 function getGuild(guildId) {
-  return guildCache.wrap(guildId, () => rest.get(Routes.guild(guildId)));
+  // with_counts adds the member count, for placeholder previews.
+  return guildCache.wrap(guildId, () => rest.get(Routes.guild(guildId), { query: new URLSearchParams({ with_counts: "true" }) }));
 }
 
 function getChannels(guildId) {

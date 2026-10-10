@@ -6,7 +6,6 @@ const ServerSettings = require("../tools/SettingsSchema");
 const LevelMember = require("../tools/models/LevelMember");
 const xpForLevel = require("../tools/xpToLevel");
 const { getCatalog } = require("../tools/commandCatalog");
-const { botmode } = require("../tools/config");
 const { TtlCache } = require("../web/cache");
 const discord = require("../web/discord");
 
@@ -52,7 +51,7 @@ router.get("/api/public/stats", wrap(async (req, res) => {
     }
     return { servers, members, commands: getCatalog().commands.length };
   });
-  res.json({ ...stats, mode: botmode });
+  res.json(stats);
 }));
 
 router.get("/api/public/commands", (req, res) => {

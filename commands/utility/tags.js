@@ -3,7 +3,7 @@ const { BucketScope } = require("@sapphire/framework");
 const { PhoenixCommand } = require("../../tools/PhoenixCommand");
 const { getSettings } = require("../../tools/guildSettings");
 const { emoji } = require("../../tools/errorReporter");
-const { parse } = require("../../tools/textParser");
+const { buildMessage, contextFrom } = require("../../tools/placeholders");
 const premiumCheck = require("../../tools/premiumCheck");
 const builtInTags = require("../../tools/infoStuff.json");
 
@@ -17,7 +17,7 @@ class TagsCommand extends PhoenixCommand {
       ...options,
       name: "tags",
       aliases: ["t", "tag"],
-      description: "Shows and manages server tags. Placeholders like {{mention}} work in tag text.",
+      description: "Shows and manages server tags. Placeholders like {{mention}} work in tags, and tags can have embeds (set on the dashboard).",
       examples: ["tag list", "tag breezip", "tag add sylveon I like Sylveons"],
       subcommands: [
         { name: "display", description: "Displays a tag", args: [nameArg("The name of the tag")], run: "display", default: true },
@@ -60,7 +60,10 @@ class TagsCommand extends PhoenixCommand {
     const settings = await getSettings(ctx.guild.id);
     const found = this.find(settings, name);
     if (!found) return ctx.error(`${emoji("error")} Tag not found.`);
-    return ctx.reply({ content: await parse(found.tag.description, ctx.member), allowedMentions: { parse: ["users"] } });
+    // Tags can have a saved embed attached on the dashboard; placeholders work in both.
+    const message = buildMessage(settings, { content: found.tag.description, embed: found.tag.embed }, contextFrom({ member: ctx.member, channel: ctx.channel }));
+    if (!message) return ctx.error(`${emoji("error")} This tag is empty. Its embed may have been deleted.`);
+    return ctx.reply(message);
   }
 
   async list(ctx) {
@@ -102,7 +105,7 @@ class TagsCommand extends PhoenixCommand {
     const found = this.find(settings, name);
     if (!found) return ctx.error(`${emoji("error")} Tag not found.`);
     return ctx.reply({
-      content: `**${found.tag.name}** : Created by ${found.tag.creator}${found.builtIn ? " : Built-in tag" : ""}\nContent: \`\`\`${found.tag.description}\`\`\``.slice(0, 2000),
+      content: `**${found.tag.name}** : Created by ${found.tag.creator}${found.builtIn ? " : Built-in tag" : ""}${found.tag.embed ? ` : Embed \`${found.tag.embed}\`` : ""}\nContent: \`\`\`${found.tag.description || " "}\`\`\``.slice(0, 2000),
       allowedMentions: { parse: [] },
     });
   }

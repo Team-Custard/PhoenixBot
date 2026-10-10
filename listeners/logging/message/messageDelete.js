@@ -1,6 +1,7 @@
 const { Listener } = require("@sapphire/framework");
 const { AuditLogEvent } = require("discord.js");
 const { peekSettings } = require("../../../tools/guildSettings");
+const { wasOwnDelete } = require("../../../tools/ownDeletes");
 const { sendLog, logEmbed, findExecutor, withExecutor, logChannelId, isIgnoredChannel, truncate } = require("../../../tools/logging");
 
 class LoggerMessageDelete extends Listener {
@@ -10,7 +11,7 @@ class LoggerMessageDelete extends Listener {
 
   /** @param {import("discord.js").Message} message */
   async run(message) {
-    if (!message.guild) return;
+    if (!message.guild || wasOwnDelete(message.id)) return;
     const settings = await peekSettings(message.guild.id);
     if (!logChannelId(settings, "messages")) return;
     if (isIgnoredChannel(settings, message.channel)) return;

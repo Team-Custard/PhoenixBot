@@ -1,7 +1,6 @@
 // The public website: everything outside /dash.
 import { useEffect, useState } from "react";
 import { Link, matchPath, useRouter } from "../router.jsx";
-import { useStats } from "./publicApi.js";
 import { Home } from "./pages/Home.jsx";
 import { Commands } from "./pages/Commands.jsx";
 import { Leaderboard } from "./pages/Leaderboard.jsx";
@@ -33,21 +32,14 @@ const NAV = [
 
 function Header() {
   const { path } = useRouter();
-  const stats = useStats();
   const [open, setOpen] = useState(false);
-  const staging = stats?.mode && stats.mode !== "prod";
   useEffect(() => setOpen(false), [path]);
 
   return (
     <>
-      {staging && (
-        <div className="staging-banner" role="note">
-          You're on the <strong>{stats.mode}</strong> version of PhoenixBot. Looking for the main site? <a href="https://phoenix.sylveondev.xyz">phoenix.sylveondev.xyz</a>
-        </div>
-      )}
       <header className={`site-header${open ? " open" : ""}`}>
         <Link to="/" className="site-brand" aria-label="PhoenixBot home">
-          <img src={staging ? "/staginglogo.png" : "/phoenixlogo.png"} alt="" width={36} height={36} />
+          <img src="/phoenixlogo.png" alt="" width={36} height={36} />
           <span>Phoenix</span>
         </Link>
         <button type="button" className="menu-button" aria-expanded={open} aria-controls="site-nav" onClick={() => setOpen(!open)}>

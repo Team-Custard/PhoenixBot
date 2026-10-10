@@ -30,7 +30,7 @@ export function useJson(path) {
   return state;
 }
 
-// Shared by the header (staging banner) and the home page (numbers).
+// The home page's numbers.
 let statsPromise = null;
 export function useStats() {
   const [stats, setStats] = useState(null);

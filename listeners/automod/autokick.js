@@ -39,6 +39,22 @@ class AutomodMemberAdd extends Listener {
       }
     }
 
+    // Throwaway and raid accounts usually never set an avatar.
+    if (settings.automod.kickDefaultAvatar && !member.user.bot && !member.user.avatar) {
+      const reason = "Automod action: joined with the default Discord avatar.";
+      await member
+        .send(`${emoji("warning")} You have been automatically kicked from **${member.guild.name}** because your account has no profile picture. Set one in Discord's settings, then you're welcome to join again.`)
+        .catch(() => undefined);
+      try {
+        await member.kick(reason);
+        await sendAutomodLog(member.guild, settings, { title: "Kick (Automatic)", memberId: member.id, reason });
+        return;
+      }
+      catch (err) {
+        console.log(`Automatic default avatar kick failed: ${err}`);
+      }
+    }
+
     if (settings.automod.autokick?.duration) {
       await scheduleMemberTask(
         "autoKick",

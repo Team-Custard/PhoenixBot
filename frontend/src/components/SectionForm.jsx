@@ -5,6 +5,7 @@ import { Control, Field, isShown } from "./fields.jsx";
 import { MessagePreview } from "./Preview.jsx";
 import { SaveBar } from "./SaveBar.jsx";
 import { useToast } from "./Toasts.jsx";
+import { PlaceholderHelp } from "./PlaceholderHelp.jsx";
 
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
@@ -35,7 +36,7 @@ function groupFields(section) {
   return blocks;
 }
 
-export function SectionForm({ section, data, me, onSaved, children }) {
+export function SectionForm({ section, data, me, onSaved, focus, children }) {
   const toast = useToast();
   const saved = useMemo(
     () => Object.fromEntries(section.fields.map((f) => [f.key, data.settings[f.key] ?? null])),
@@ -49,6 +50,18 @@ export function SectionForm({ section, data, me, onSaved, children }) {
     setDraft(saved);
     setErrors({});
   }, [saved]);
+
+  // Coming from the search bar: scroll to the setting and make it flash.
+  useEffect(() => {
+    if (!focus?.key) return;
+    const el = document.querySelector(`[data-field="${CSS.escape(focus.key)}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.remove("flash");
+    void el.offsetWidth;
+    el.classList.add("flash");
+    el.querySelector("input, select, textarea, button")?.focus({ preventScroll: true });
+  }, [focus]);
 
   const changed = section.fields.filter((f) => !same(draft[f.key], saved[f.key]));
   const dirty = changed.length > 0;
@@ -83,7 +96,7 @@ export function SectionForm({ section, data, me, onSaved, children }) {
             onChange={(value) => setDraft((d) => ({ ...d, [field.key]: value }))}
             data={data}
             preview={field.preview ? (
-              <MessagePreview text={draft[field.key]} user={me.user} guild={data.guild} extra={{ level: "5" }} />
+              <MessagePreview text={draft[field.key]} data={data} me={me.user} extra={{ level: "5" }} />
             ) : null}
           />
         )}
@@ -93,6 +106,7 @@ export function SectionForm({ section, data, me, onSaved, children }) {
 
   return (
     <>
+      {section.placeholders && <div className="section-tools"><PlaceholderHelp data={data} only={section.id} /></div>}
       {groupFields(section).map((block) => {
         const shown = block.fields.filter((f) => isShown(f, (key) => draft[key]));
         if (!block.group) return <div key={block.key} className="fields">{shown.map(renderField)}</div>;
@@ -101,7 +115,7 @@ export function SectionForm({ section, data, me, onSaved, children }) {
         const toggle = block.fields.find((f) => f.groupToggle);
         const rest = shown.filter((f) => f !== toggle);
         return (
-          <section key={block.key} className={`field-group${toggle && !draft[toggle.key] ? " off" : ""}`}>
+          <section key={block.key} data-field={`group:${block.group}`} className={`field-group${toggle && !draft[toggle.key] ? " off" : ""}`}>
             <header>
               <div>
                 <h3>{meta.label}</h3>

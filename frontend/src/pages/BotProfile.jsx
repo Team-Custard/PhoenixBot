@@ -8,6 +8,7 @@ export function BotProfile({ data, onChange }) {
   const toast = useToast();
   const profile = data.bot.profile;
   const [nick, setNick] = useState(profile.nick ?? "");
+  const [bio, setBio] = useState(profile.bio ?? "");
   const [busy, setBusy] = useState(null);
   const shownName = nick.trim() || profile.username;
   const shownAvatar = profile.avatar ?? profile.userAvatar;
@@ -19,6 +20,7 @@ export function BotProfile({ data, onChange }) {
       const result = await action();
       onChange(result.profile);
       if (kind === "nick") setNick(result.profile.nick ?? "");
+      if (kind === "bio") setBio(result.profile.bio ?? "");
       toast(message);
     }
     catch (err) {
@@ -31,12 +33,16 @@ export function BotProfile({ data, onChange }) {
 
   const saveNick = (value) => run("nick", () => api.patch(`/guilds/${data.guild.id}/profile`, { nick: value }), value ? `Phoenix is now called ${value} here.` : "Reset Phoenix's nickname.");
 
-  function upload(file) {
+  const saveBio = (value) => run("bio", () => api.patch(`/guilds/${data.guild.id}/profile`, { bio: value }), value ? "Updated Phoenix's bio in this server." : "Removed Phoenix's server bio.");
+
+  function upload(kind, file) {
     if (!file) return;
-    if (!IMAGE_TYPES.includes(file.type)) return toast("The avatar has to be a PNG, JPEG, GIF or WebP image.", "error");
-    if (file.size > 8 * 1024 * 1024) return toast("The avatar can be at most 8 MB.", "error");
-    return run("avatar", () => api.upload(`/guilds/${data.guild.id}/profile/avatar`, file, file.type), "Updated Phoenix's avatar in this server.");
+    if (!IMAGE_TYPES.includes(file.type)) return toast("The image has to be a PNG, JPEG, GIF or WebP file.", "error");
+    if (file.size > 8 * 1024 * 1024) return toast("The image can be at most 8 MB.", "error");
+    return run(kind, () => api.upload(`/guilds/${data.guild.id}/profile/${kind}`, file, file.type), `Updated Phoenix's ${kind} in this server.`);
   }
+
+  const removeImage = (kind) => run(kind, () => api.delete(`/guilds/${data.guild.id}/profile/${kind}`), `Phoenix uses its normal ${kind} here again.`);
 
   return (
     <>
@@ -75,13 +81,13 @@ export function BotProfile({ data, onChange }) {
                   className="visually-hidden"
                   disabled={busy !== null}
                   onChange={(e) => {
-                    upload(e.target.files?.[0]);
+                    upload("avatar", e.target.files?.[0]);
                     e.target.value = "";
                   }}
                 />
               </label>
               {profile.avatar && (
-                <button type="button" className="button danger" disabled={busy !== null} onClick={() => run("avatar", () => api.delete(`/guilds/${data.guild.id}/profile/avatar`), "Phoenix uses its normal avatar here again.")}>
+                <button type="button" className="button danger" disabled={busy !== null} onClick={() => removeImage("avatar")}>
                   Remove
                 </button>
               )}
@@ -90,9 +96,54 @@ export function BotProfile({ data, onChange }) {
         </section>
       </div>
 
+      <div className="profile-grid">
+        <section className="panel">
+          <h3>Server banner</h3>
+          <p>Shown at the top of Phoenix's profile in this server. A wide image works best (about 600 × 240).</p>
+          {profile.banner && <img className="banner-preview" src={profile.banner} alt="Phoenix's banner in this server" />}
+          <div className="inline">
+            <label className="button" style={{ flex: "none" }}>
+              {busy === "banner" ? "Uploading..." : "Upload banner"}
+              <input
+                type="file"
+                accept={IMAGE_TYPES.join(",")}
+                className="visually-hidden"
+                disabled={busy !== null}
+                onChange={(e) => {
+                  upload("banner", e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            {profile.banner && <button type="button" className="button danger" disabled={busy !== null} onClick={() => removeImage("banner")}>Remove</button>}
+          </div>
+        </section>
+
+        <section className="panel">
+          <h3>Server bio</h3>
+          <p>The "About me" people see on Phoenix's profile in this server.</p>
+          <label className="visually-hidden" htmlFor="bot-bio">Bio</label>
+          <textarea id="bot-bio" className="textarea" maxLength={190} value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Your friendly server bot." />
+          <div className="char-count">{bio.length} / 190</div>
+          <div className="inline">
+            <button type="button" className="button primary" disabled={busy !== null || bio.trim() === (profile.bio ?? "")} onClick={() => saveBio(bio.trim())}>
+              {busy === "bio" ? "Saving..." : "Save bio"}
+            </button>
+            {profile.bio && <button type="button" className="button quiet small" disabled={busy !== null} onClick={() => saveBio("")}>Remove bio</button>}
+          </div>
+        </section>
+      </div>
+
       <section className="panel">
         <h3>How it looks</h3>
         <p>Phoenix's messages and server logs use this name and avatar.</p>
+        <div className="profile-mini" aria-label="Phoenix's profile in this server">
+          <div className="profile-mini-banner" style={profile.banner ? { backgroundImage: `url(${profile.banner})` } : undefined} />
+          <img src={shownAvatar} alt="" width={72} height={72} />
+          <strong>{shownName}</strong>
+          <span className="profile-mini-tag">{profile.username} <span className="app-tag">APP</span></span>
+          {(bio.trim() || profile.bio) && <p>{bio.trim() || profile.bio}</p>}
+        </div>
         <div className="discord-preview">
           <div className="discord-message">
             <img src={shownAvatar} alt="" width={40} height={40} />

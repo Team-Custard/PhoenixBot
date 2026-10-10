@@ -11,8 +11,9 @@ const Case = require("../tools/models/Case");
 const LevelMember = require("../tools/models/LevelMember");
 const { buildModlogEmbed } = require("../tools/moderation");
 const xpForLevel = require("../tools/xpToLevel");
-const { SAVED_LIMIT, EmbedError, cleanEmbedData, toDiscordEmbed } = require("../tools/embeds");
+const { SAVED_LIMIT, EmbedError, cleanEmbedData, toDiscordEmbed, isEmptyEmbed, embedUsers, describeUsers } = require("../tools/embeds");
 const { sections, fieldsByKey } = require("./spec");
+const { placeholderList, contextFrom, render, renderEmbed } = require("../tools/placeholders");
 const discord = require("./discord");
 const { refreshGuilds, logout } = require("./session");
 
@@ -144,7 +145,7 @@ async function getGuildContext(guildId) {
 }
 
 /** The bot's name and avatar in a server, for the Bot profile page. */
-function profileOf(guildId, member) {
+function profileOf(guildId, member, savedBio = null) {
   const user = member?.user ?? {};
   const userAvatar = user.avatar
     ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=256`
@@ -156,6 +157,10 @@ function profileOf(guildId, member) {
     avatar: member?.avatar
       ? `https://cdn.discordapp.com/guilds/${guildId}/users/${user.id}/avatars/${member.avatar}.png?size=256`
       : null,
+    banner: member?.banner
+      ? `https://cdn.discordapp.com/guilds/${guildId}/users/${user.id}/banners/${member.banner}.png?size=600`
+      : null,
+    bio: member?.bio ?? savedBio ?? null,
   };
 }
 
@@ -221,7 +226,15 @@ function embedsOf(doc) {
 }
 
 function tagsOf(doc) {
-  return (doc.tags ?? []).map((t) => ({ name: t.name, description: t.description, creator: t.creator }));
+  return (doc.tags ?? []).map((t) => ({ name: t.name, description: t.description ?? "", embed: t.embed ?? null, creator: t.creator }));
+}
+
+/** A tag's text and attached saved embed. A tag needs at least one of them. */
+function tagBody(doc, body) {
+  const description = validateField({ key: "description", type: "textarea", max: 2048 }, body?.description, {}, "Tag text");
+  const embed = validateField({ key: "embed", type: "embed" }, body?.embed, { embedNames: (doc.embeds ?? []).map((e) => e.name) }, "Embed");
+  if (!description?.trim() && !embed) throw new ApiError(400, "Give the tag some text or an embed.");
+  return { description: description ?? "", embed };
 }
 
 router.get("/guilds/:guildId", wrap(async (req, res) => {
@@ -237,7 +250,15 @@ router.get("/guilds/:guildId", wrap(async (req, res) => {
   const hasRankCard = fs.existsSync(path.join(RANKCARD_DIR, `${guildId}-rankcard.png`));
 
   res.json({
-    guild: { id: req.guild.id, name: req.guild.name, icon: req.guild.icon, ownerId: req.guild.owner_id },
+    guild: {
+      id: req.guild.id,
+      name: req.guild.name,
+      icon: req.guild.icon,
+      banner: req.guild.banner ?? null,
+      memberCount: req.guild.approximate_member_count ?? null,
+      ownerId: req.guild.owner_id,
+    },
+    placeholders: placeholderList(),
     premium,
     channels: [...context.channels.values()]
       .map((c) => ({ id: c.id, name: c.name, type: c.type, parentId: c.parent_id ?? null, position: c.position }))
@@ -249,7 +270,7 @@ router.get("/guilds/:guildId", wrap(async (req, res) => {
     bot: {
       topRolePosition: context.botTopPosition,
       permissions: context.botPermissions.toString(),
-      profile: profileOf(guildId, context.botMember),
+      profile: profileOf(guildId, context.botMember, doc.botProfile?.bio),
     },
     commands: commandList(),
     // null when Phoenix can't see the server's AutoMod rules (no Manage Server).
@@ -294,6 +315,7 @@ function validateField(field, value, ctx, label = field.label) {
       return text;
     }
     case "toggle":
+      if (empty) return field.default ?? false;
       if (typeof value !== "boolean") fail("must be on or off.");
       return value;
     case "number": {
@@ -301,14 +323,23 @@ function validateField(field, value, ctx, label = field.label) {
         if (field.required) fail("is required.");
         return null;
       }
-      const n = Number(value);
-      if (!Number.isInteger(n)) fail("must be a whole number.");
+      let n = Number(value);
+      if (field.decimal) {
+        if (!Number.isFinite(n)) fail("must be a number.");
+        n = Math.round(n * 100) / 100;
+      }
+      else if (!Number.isInteger(n)) {
+        fail("must be a whole number.");
+      }
       if (field.min !== undefined && n < field.min) fail(`must be at least ${field.min}.`);
       if (field.max !== undefined && n > field.max) fail(`must be at most ${field.max}.`);
       return field.storeAs === "string" ? String(n) : n;
     }
     case "duration": {
-      if (empty) return 0;
+      if (empty || Number(value) === 0) {
+        if (field.required) fail("is required.");
+        return 0;
+      }
       const n = Number(value);
       if (!Number.isFinite(n) || n < 0) fail("must be a length of time.");
       if (field.max !== undefined && n > field.max) fail("is too long.");
@@ -400,6 +431,12 @@ function validateField(field, value, ctx, label = field.label) {
       if (field.max && out.length > field.max) fail(`can have at most ${field.max} entries.`);
       return out;
     }
+    case "embed": {
+      if (empty) return null;
+      const name = String(value);
+      if (!(ctx.embedNames ?? []).includes(name)) fail(`there's no saved embed called “${name}”. Make it on the Embeds page first.`);
+      return name;
+    }
     case "automodRule": {
       if (empty) {
         if (field.required) fail("pick a rule.");
@@ -465,6 +502,30 @@ function checkSection(sectionId, values, doc) {
       }
     }
   }
+  if (sectionId === "automod" && get("automod.honeypot.channel")) {
+    if (get("automod.honeypot.action") === "shadowban" && !get("moderation.shadowBannedRole")) {
+      throw new ApiError(400, "Honeypot: shadowbanning needs a shadowban role (Moderation page).", { field: "automod.honeypot.action" });
+    }
+    if ((get("automod.exemptChannels") ?? []).includes(get("automod.honeypot.channel"))) {
+      throw new ApiError(400, "Honeypot: the honeypot channel can't also be an ignored channel.", { field: "automod.honeypot.channel" });
+    }
+  }
+  if (sectionId === "autoresponses") {
+    const { regexProblem } = require("../tools/autoresponse");
+    (get("autoresponses") ?? []).forEach((entry, index) => {
+      if (entry.match === "regex") {
+        const problem = regexProblem(entry.trigger, entry.matchCase);
+        if (problem) throw new ApiError(400, `Autoresponse ${index + 1}: the regex ${problem}`);
+      }
+      if (!entry.content && !entry.embed) throw new ApiError(400, `Autoresponse ${index + 1}: add a reply or an embed.`);
+    });
+  }
+  for (const [listKey, label] of [["timedMessages", "Timed message"], ["stickyMessages", "Sticky message"]]) {
+    if (sectionId !== (listKey === "timedMessages" ? "timed" : "sticky")) continue;
+    (get(listKey) ?? []).forEach((entry, index) => {
+      if (!entry.content && !entry.embed) throw new ApiError(400, `${label} ${index + 1}: add a message or an embed.`);
+    });
+  }
   if (sectionId === "leveling") {
     const min = get("leveling.rates.minimum") ?? 5;
     const max = get("leveling.rates.maximum") ?? 15;
@@ -485,7 +546,7 @@ router.patch("/guilds/:guildId/settings/:section", wrap(async (req, res) => {
     getGuildContext(guildId),
     needsRules ? discord.getAutomodRules(guildId) : null,
   ]);
-  const ctx = { ...context, guildId, commands: commandList(), automodRules };
+  const ctx = { ...context, guildId, commands: commandList(), automodRules, embedNames: (doc.embeds ?? []).map((e) => e.name) };
 
   const clean = {};
   for (const [key, value] of Object.entries(input)) {
@@ -610,6 +671,24 @@ router.post("/guilds/:guildId/verification/post", wrap(async (req, res) => {
 }));
 
 // ---------------------------------------------------------------------------
+// Honeypot warning
+// ---------------------------------------------------------------------------
+
+const HONEYPOT_WARNING = "⚠️ **Don't post in this channel.** It's a trap for spam bots: anyone who sends a message here is removed from the server automatically.";
+
+router.post("/guilds/:guildId/honeypot/warning", wrap(async (req, res) => {
+  const doc = await getSettingsDoc(req.params.guildId);
+  const honeypot = doc.automod?.honeypot;
+  if (!honeypot?.channel) throw new ApiError(400, "Pick and save a honeypot channel first.");
+  await discord.sendMessage(honeypot.channel, {
+    embeds: [new EmbedBuilder().setDescription(honeypot.warning || HONEYPOT_WARNING).setColor(Colors.Red).toJSON()],
+  }).catch((err) => {
+    throw new ApiError(400, `Discord refused to post the warning: ${err.message}. Check that Phoenix can send messages in that channel.`);
+  });
+  res.json({ ok: true });
+}));
+
+// ---------------------------------------------------------------------------
 // Tags
 // ---------------------------------------------------------------------------
 
@@ -618,14 +697,23 @@ router.post("/guilds/:guildId/tags", wrap(async (req, res) => {
   const [doc, premium] = await Promise.all([getSettingsDoc(guildId), discord.hasPremium(guildId)]);
   const ctx = { guildId };
   const name = validateField({ key: "name", type: "text", min: 1, max: 12, noSpaces: true }, req.body?.name, ctx, "Tag name");
-  const description = validateField({ key: "description", type: "textarea", min: 1, max: 2048 }, req.body?.description, ctx, "Tag text");
+  const { description, embed } = tagBody(doc, req.body);
   const builtIn = require("../tools/infoStuff.json");
   if (doc.tags.some((t) => t.name?.toLowerCase() === name.toLowerCase()) || builtIn.some((t) => t.name.toLowerCase() === name.toLowerCase())) {
     throw new ApiError(400, `A tag called ${name} already exists.`);
   }
   const limit = premium ? LIMITS.tags.premium : LIMITS.tags.free;
   if (doc.tags.length >= limit) throw new ApiError(400, `This server has reached its limit of ${limit} tags.`);
-  doc.tags.push({ name, description, creator: req.session.user.username });
+  doc.tags.push({ name, description, embed, creator: req.session.user.username });
+  await doc.save();
+  res.json({ tags: tagsOf(doc) });
+}));
+
+router.put("/guilds/:guildId/tags/:name", wrap(async (req, res) => {
+  const doc = await getSettingsDoc(req.params.guildId);
+  const tag = doc.tags.find((t) => t.name === req.params.name);
+  if (!tag) throw new ApiError(404, "That tag doesn't exist.");
+  Object.assign(tag, tagBody(doc, req.body));
   await doc.save();
   res.json({ tags: tagsOf(doc) });
 }));
@@ -680,6 +768,9 @@ router.delete("/guilds/:guildId/embeds/:name", wrap(async (req, res) => {
   const doc = await getSettingsDoc(req.params.guildId);
   const entry = doc.embeds.find((e) => e.name === req.params.name);
   if (!entry) throw new ApiError(404, "That embed doesn't exist.");
+  // Don't leave tags and messages pointing at an embed that's gone.
+  const users = embedUsers(doc, entry.name);
+  if (users.length) throw new ApiError(400, `This embed is used by ${describeUsers(users)}. Remove it from those first.`);
   doc.embeds.pull(entry);
   await doc.save();
   res.json({ embeds: embedsOf(doc) });
@@ -693,9 +784,14 @@ router.post("/guilds/:guildId/embeds/send", wrap(async (req, res) => {
   const content = validateField({ key: "content", type: "textarea", max: 2000 }, req.body?.content, ctx, "Message");
   const data = cleanEmbed(req.body?.data);
 
+  // Placeholders are filled in with you (the person sending it) as the member.
+  const user = req.session.user;
+  const fill = contextFrom({ user: { id: user.id, username: user.username, global_name: user.globalName, avatar: user.avatar }, guild: req.guild, channel: context.channels.get(channelId) });
+  const filled = renderEmbed(data, fill);
+  if (isEmptyEmbed(filled)) throw new ApiError(400, "The embed is empty once its placeholders are filled in.");
   await discord.sendMessage(channelId, {
-    content: content || undefined,
-    embeds: [toDiscordEmbed(data)],
+    content: content ? render(content, fill) : undefined,
+    embeds: [toDiscordEmbed(filled)],
     allowed_mentions: { parse: [] },
   }).catch((err) => {
     throw new ApiError(400, `Discord refused the embed: ${err.message}. Check that Phoenix can send messages and embeds in that channel, and that image links point to images.`);
@@ -865,7 +961,7 @@ router.delete("/guilds/:guildId/levels", wrap(async (req, res) => {
 const MAX_AVATAR = 8 * 1024 * 1024;
 const IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 
-async function updateBotMember(guildId, body) {
+async function updateBotMember(guildId, body, savedBio) {
   const member = await discord.rest
     .patch(`/guilds/${guildId}/members/@me`, { body, reason: "Changed on the Phoenix dashboard" })
     .catch((err) => {
@@ -873,32 +969,44 @@ async function updateBotMember(guildId, body) {
       if (err?.code === 50035) throw new ApiError(400, `Discord refused that: ${err.rawError?.errors ? JSON.stringify(err.rawError.errors).slice(0, 200) : err.message}`);
       throw new ApiError(400, `Discord refused that: ${err.message}`);
     });
-  return profileOf(guildId, member);
+  return profileOf(guildId, member, savedBio);
 }
 
+// Nickname and bio. Send only the ones that changed.
 router.patch("/guilds/:guildId/profile", wrap(async (req, res) => {
-  const nick = validateField({ key: "nick", type: "text", max: 32 }, req.body?.nick, {}, "Nickname");
-  res.json({ profile: await updateBotMember(req.params.guildId, { nick: nick ?? null }) });
+  const body = {};
+  if ("nick" in (req.body ?? {})) body.nick = validateField({ key: "nick", type: "text", max: 32 }, req.body.nick, {}, "Nickname") ?? null;
+  if ("bio" in (req.body ?? {})) body.bio = validateField({ key: "bio", type: "textarea", max: 190 }, req.body.bio, {}, "Bio")?.trim() || null;
+  if (!Object.keys(body).length) throw new ApiError(400, "Nothing to change.");
+  const doc = await getSettingsDoc(req.params.guildId);
+  const profile = await updateBotMember(req.params.guildId, body, "bio" in body ? body.bio : doc.botProfile?.bio);
+  if ("bio" in body) {
+    doc.set("botProfile.bio", body.bio);
+    await doc.save();
+  }
+  res.json({ profile });
 }));
 
 router.put(
-  "/guilds/:guildId/profile/avatar",
+  "/guilds/:guildId/profile/:image(avatar|banner)",
   express.raw({ type: IMAGE_TYPES, limit: MAX_AVATAR }),
   wrap(async (req, res) => {
     const buffer = req.body;
     const type = req.get("Content-Type")?.split(";")[0];
     if (!Buffer.isBuffer(buffer) || !buffer.length || !IMAGE_TYPES.includes(type)) {
-      throw new ApiError(400, "The avatar has to be a PNG, JPEG, GIF or WebP image.");
+      throw new ApiError(400, "The image has to be a PNG, JPEG, GIF or WebP file.");
     }
     if (!looksLikeImage(buffer, type)) throw new ApiError(400, "That file isn't the kind of image it says it is.");
     // Animated server avatars are a Nitro perk for people, but bots can always use them.
-    const avatar = `data:${type};base64,${buffer.toString("base64")}`;
-    res.json({ profile: await updateBotMember(req.params.guildId, { avatar }) });
+    const image = `data:${type};base64,${buffer.toString("base64")}`;
+    const doc = await getSettingsDoc(req.params.guildId);
+    res.json({ profile: await updateBotMember(req.params.guildId, { [req.params.image]: image }, doc.botProfile?.bio) });
   }),
 );
 
-router.delete("/guilds/:guildId/profile/avatar", wrap(async (req, res) => {
-  res.json({ profile: await updateBotMember(req.params.guildId, { avatar: null }) });
+router.delete("/guilds/:guildId/profile/:image(avatar|banner)", wrap(async (req, res) => {
+  const doc = await getSettingsDoc(req.params.guildId);
+  res.json({ profile: await updateBotMember(req.params.guildId, { [req.params.image]: null }, doc.botProfile?.bio) });
 }));
 
 function looksLikeImage(buffer, type) {

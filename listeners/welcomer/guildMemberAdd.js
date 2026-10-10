@@ -2,6 +2,8 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 const { Listener } = require("@sapphire/framework");
 const { peekSettings } = require("../../tools/guildSettings");
 const { parse } = require("../../tools/textParser");
+const { render, contextFrom } = require("../../tools/placeholders");
+const { send } = require("../../tools/queue");
 
 class WelcomerAdd extends Listener {
   constructor(context, options) {
@@ -16,7 +18,8 @@ class WelcomerAdd extends Listener {
 
     if (welcomer.channel && welcomer.message) {
       const channel = await member.guild.channels.fetch(welcomer.channel).catch(() => null);
-      await channel?.send({ content: await parse(welcomer.message, member), allowedMentions: { users: [member.id] } }).catch(() => undefined);
+      const content = render(welcomer.message, contextFrom({ member, channel })).slice(0, 2000);
+      await send(channel, { content, allowedMentions: { users: [member.id] } });
     }
 
     if (welcomer.dmtext) {

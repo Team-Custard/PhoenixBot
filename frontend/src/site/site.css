@@ -147,19 +147,6 @@
 
 /* ------------------------------------------------------------------- header */
 
-.staging-banner {
-  padding: 8px var(--gutter, 16px);
-  background: var(--ember);
-  color: #2a1a05;
-  text-align: center;
-  font-size: 14px;
-}
-
-.staging-banner a {
-  color: inherit;
-  font-weight: 700;
-}
-
 .site-header {
   position: sticky;
   top: 0;
@@ -2239,4 +2226,103 @@
   .demo-window {
     transform: none;
   }
+}
+
+/* ------------------------------------------------- the "your" clicker */
+
+.api-vanity {
+  margin: 0 0 32px;
+}
+
+.api-vanity h2 {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.api-vanity p {
+  color: var(--haze);
+}
+
+/* Looks like plain text on purpose: it's an easter egg. */
+.your-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: text;
+}
+
+.your-button:active {
+  transform: scale(0.97);
+}
+
+.clicker {
+  margin: 0 0 32px;
+  padding: 24px;
+  text-align: center;
+  border-radius: 18px;
+  border: 2px dashed var(--ember);
+  background: radial-gradient(circle at 50% 0%, rgba(255, 200, 87, 0.12), transparent 70%), var(--soot);
+}
+
+.clicker h2 {
+  font-size: 28px;
+}
+
+.clicker-count {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 800;
+  margin: 6px 0 10px;
+  color: var(--ember);
+  font-variant-numeric: tabular-nums;
+}
+
+.clicker h3 {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--haze-dim);
+}
+
+.clicker-achievement,
+.clicker-chat {
+  margin-top: 20px;
+}
+
+.clicker-achievement h4,
+.clicker-chat h4 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  margin: 0;
+}
+
+.clicker-achievement img {
+  max-width: min(320px, 100%);
+  border-radius: 12px;
+  margin-top: 8px;
+}
+
+.clicker-chat {
+  text-align: left;
+  max-width: 520px;
+  margin-inline: auto;
+}
+
+.clicker-line {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.clicker-line > img {
+  border-radius: 50%;
+  border: 3px solid var(--smoke);
+  flex: none;
+}
+
+.clicker-line img {
+  vertical-align: middle;
 }

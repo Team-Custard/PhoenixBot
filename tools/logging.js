@@ -5,6 +5,7 @@ const { container } = require("@sapphire/framework");
 const { EmbedBuilder, Colors } = require("discord.js");
 const { peekSettings } = require("./guildSettings");
 const webhookFetch = require("./webhookFetch");
+const { queue } = require("./queue");
 
 /**
  * Returns the configured log channel id for a log type, or null when that log is off.
@@ -23,6 +24,9 @@ function isIgnoredChannel(settings, channel) {
 
 /**
  * Sends a log entry to a server's log channel through the bot's webhook.
+ * Plain embed entries for the same channel are grouped into one message (up to 10
+ * embeds) for a moment, so a burst of events, like a purge or a raid, takes a few
+ * requests instead of hundreds. Everything goes through the send queue.
  * @param {import("discord.js").Guild} guild
  * @param {string} type The log type (see logChannelId).
  * @param {import("discord.js").WebhookMessageCreateOptions} payload
@@ -35,11 +39,67 @@ async function sendLog(guild, type, payload, settings) {
   // Fetch through the guild so a channel id from another server can't be used.
   const channel = await guild.channels.fetch(channelId).catch(() => null);
   if (!channel) return undefined;
-  return webhookFetch.send(channel, {
-    ...webhookIdentity(guild),
-    allowedMentions: { parse: [] },
-    ...payload,
+  const batchable = payload.embeds?.length && Object.keys(payload).every((key) => key === "embeds" || key === "allowedMentions");
+  if (batchable) return addToBatch(guild, channel, payload.embeds);
+  // Send any waiting entries first, so the log stays in order.
+  flush(channel.id);
+  return queue.run(channel.id, () => webhookFetch.send(channel, { ...webhookIdentity(guild), allowedMentions: { parse: [] }, ...payload }), { maxBacklog: LOG_BACKLOG });
+}
+
+const BATCH_WAIT = 1_500;
+// Logs matter most during raids and mass bans, so they can queue up much further than
+// other messages before anything is dropped.
+const LOG_BACKLOG = 1_000;
+const MAX_EMBEDS = 10;
+// Discord allows 6000 characters across a message's embeds.
+const MAX_CHARS = 5_500;
+const batches = new Map();
+
+function embedLength(embed) {
+  const data = typeof embed.toJSON === "function" ? embed.toJSON() : embed;
+  return [data.title, data.description, data.author?.name, data.footer?.text, ...(data.fields ?? []).flatMap((f) => [f.name, f.value])]
+    .reduce((sum, part) => sum + (part?.length ?? 0), 0);
+}
+
+function addToBatch(guild, channel, embeds) {
+  return new Promise((resolve) => {
+    for (const embed of embeds) {
+      const length = embedLength(embed);
+      let batch = batches.get(channel.id);
+      if (batch && (batch.embeds.length >= MAX_EMBEDS || batch.chars + length > MAX_CHARS)) {
+        flush(channel.id);
+        batch = null;
+      }
+      if (!batch) {
+        batch = { guild, channel, embeds: [], chars: 0, waiting: [], timer: setTimeout(() => flush(channel.id), BATCH_WAIT) };
+        batches.set(channel.id, batch);
+      }
+      batch.embeds.push(embed);
+      batch.chars += length;
+    }
+    batches.get(channel.id)?.waiting.push(resolve);
   });
+}
+
+function flush(channelId) {
+  const batch = batches.get(channelId);
+  if (!batch) return;
+  batches.delete(channelId);
+  clearTimeout(batch.timer);
+  const sendEmbeds = (embeds) => webhookFetch.send(batch.channel, { ...webhookIdentity(batch.guild), allowedMentions: { parse: [] }, embeds });
+  queue
+    .run(channelId, async () => {
+      const message = await sendEmbeds(batch.embeds);
+      // One bad entry fails the whole message; send them one by one so only it is lost.
+      if (!message && batch.embeds.length > 1) {
+        let last;
+        for (const embed of batch.embeds) last = (await sendEmbeds([embed])) ?? last;
+        return last;
+      }
+      return message;
+    }, { maxBacklog: LOG_BACKLOG })
+    .catch(() => undefined)
+    .then((message) => batch.waiting.forEach((resolve) => resolve(message)));
 }
 
 /**

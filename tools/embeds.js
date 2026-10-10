@@ -35,9 +35,13 @@ function text(value, max, label) {
   return trimmed;
 }
 
+const HAS_PLACEHOLDER = /\{\{\s*[\w.]+\s*\}\}/;
+
 function link(value, label) {
   const raw = text(value, LIMITS.url, label);
   if (!raw) return null;
+  // Placeholders like {{avatar}} become links when the embed is sent.
+  if (HAS_PLACEHOLDER.test(raw)) return raw;
   let url;
   try {
     url = new URL(raw);
@@ -108,6 +112,11 @@ function cleanEmbedData(input = {}) {
   return data;
 }
 
+/** True when an embed has nothing Discord would show (e.g. every placeholder was empty). */
+function isEmptyEmbed(data = {}) {
+  return !(data.title || data.description || data.author?.name || data.footer?.text || data.image || data.thumbnail || data.fields?.length);
+}
+
 /** Turns stored embed data into the JSON Discord expects (works with EmbedBuilder too). */
 function toDiscordEmbed(data = {}) {
   const embed = { color: data.color ?? Colors.Orange };
@@ -146,4 +155,19 @@ function fromDiscordEmbed(json = {}) {
   };
 }
 
-module.exports = { LIMITS, SAVED_LIMIT, EmbedError, cleanEmbedData, toDiscordEmbed, fromDiscordEmbed };
+/** What still uses a saved embed (tags, autoresponses, timed and sticky messages), to stop it being deleted. */
+function embedUsers(settings, name) {
+  return [
+    ...(settings.tags ?? []).filter((t) => t.embed === name).map((t) => `tag “${t.name}”`),
+    ...(settings.autoresponses ?? []).flatMap((a, i) => (a.embed === name ? [`autoresponse ${i + 1}`] : [])),
+    ...(settings.timedMessages ?? []).flatMap((t, i) => (t.embed === name ? [`timed message ${i + 1}`] : [])),
+    ...(settings.stickyMessages ?? []).flatMap((t, i) => (t.embed === name ? [`sticky message ${i + 1}`] : [])),
+  ];
+}
+
+/** "used by tag “faq”, autoresponse 2 and 3 more" */
+function describeUsers(users) {
+  return `${users.slice(0, 5).join(", ")}${users.length > 5 ? ` and ${users.length - 5} more` : ""}`;
+}
+
+module.exports = { LIMITS, SAVED_LIMIT, EmbedError, cleanEmbedData, toDiscordEmbed, fromDiscordEmbed, isEmptyEmbed, embedUsers, describeUsers };

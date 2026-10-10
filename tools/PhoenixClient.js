@@ -59,6 +59,11 @@ class PhoenixClient extends SapphireClient {
       allowedMentions: { parse: ["everyone", "roles", "users"], repliedUser: false },
     });
     this.cluster = new ClusterClient(this);
+    // discord.js waits out normal per-route limits by itself; a global limit means
+    // the whole bot is sending too much, which is worth knowing about.
+    this.rest.on("rateLimited", (info) => {
+      if (info.global) console.warn(`[rest] Hit Discord's global rate limit (${info.method} ${info.route}, waiting ${info.timeToReset}ms). Queue backlog: ${require("./queue").queue.size}`);
+    });
   }
 
   /**

@@ -1,6 +1,7 @@
 const { Listener } = require("@sapphire/framework");
 const { peekSettings } = require("../../tools/guildSettings");
-const { parse } = require("../../tools/textParser");
+const { render, contextFrom } = require("../../tools/placeholders");
+const { send } = require("../../tools/queue");
 
 class WelcomerRemove extends Listener {
   constructor(context, options) {
@@ -14,7 +15,7 @@ class WelcomerRemove extends Listener {
     const goodbyes = settings?.goodbyes;
     if (!goodbyes?.channel || !goodbyes.message) return;
     const channel = await member.guild.channels.fetch(goodbyes.channel).catch(() => null);
-    await channel?.send({ content: await parse(goodbyes.message, member), allowedMentions: { parse: [] } }).catch(() => undefined);
+    await send(channel, { content: render(goodbyes.message, contextFrom({ member, channel })).slice(0, 2000), allowedMentions: { parse: [] } });
   }
 }
 

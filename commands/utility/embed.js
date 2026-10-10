@@ -89,6 +89,29 @@ class EmbedCommand extends PhoenixCommand {
     .setDescription("Welcome, this is the sample embed. The embed builder allows you to easily make embeds and send them with the bot. You can save up to 15 embeds for free, and 100 with plus. You have two hours to edit your embed before the prompt times out.")
     .setColor(Colors.Orange);
 
+    // Links with placeholders ({{avatar}}, {{servericon}}...) aren't real links yet, so the
+    // preview shows them filled in for you and the originals are kept here for saving.
+    const { contextFrom, renderEmbed, renderUrl } = require("../../tools/placeholders");
+    const previewCtx = contextFrom({ member: interaction.member, channel: interaction.channel });
+    const rawUrls = {};
+    const link = (key, value) => {
+      if (value && /\{\{\s*[\w.]+\s*\}\}/.test(value)) {
+        rawUrls[key] = value;
+        return renderUrl(value, previewCtx);
+      }
+      delete rawUrls[key];
+      return value || null;
+    };
+    const shownUrl = (key, value) => rawUrls[key] ?? value ?? "";
+    const withRawUrls = (data) => {
+      for (const [key, value] of Object.entries(rawUrls)) {
+        const [a, b] = key.split(".");
+        if (b) data[a] = { ...(data[a] ?? {}), [b]: value };
+        else data[a] = value;
+      }
+      return data;
+    };
+
     interaction.reply({ embeds: [embed], components: [actionRowA, actionRowB, actionRowC], ephemeral: true });
     const message = await interaction.fetchReply();
     const collector = message.createMessageComponentCollector({ filter: (i) => i.user.id == interaction.user.id, componentType: ComponentType.Button, time: 7_200_000 });
@@ -114,7 +137,7 @@ class EmbedCommand extends PhoenixCommand {
             .setLabel("Author image")
             .setMaxLength(256)
             .setStyle(TextInputStyle.Short)
-            .setValue(embed.data.author?.icon_url ?? "")
+            .setValue(shownUrl("author.icon_url", embed.data.author?.icon_url))
             .setRequired(false)
           ),
           new ActionRowBuilder().addComponents(
@@ -123,14 +146,14 @@ class EmbedCommand extends PhoenixCommand {
             .setLabel("Author url link")
             .setMaxLength(256)
             .setStyle(TextInputStyle.Short)
-            .setValue(embed.data.author?.url ?? "")
+            .setValue(shownUrl("author.url", embed.data.author?.url))
             .setRequired(false)
           ),
         ]);
         try {
           await collected.showModal(modal);
           const modalResponse = await collected.awaitModalSubmit({ filter: (i) => (i.customId == "ModalEmbedAuthor" && i.user.id == interaction.user.id), time: 900_000 });
-          embed.setAuthor({ name: modalResponse.fields.getTextInputValue("ModalAuthorNameField") || null, iconURL: modalResponse.fields.getTextInputValue("ModalAuthorImageField") || null, url: modalResponse.fields.getTextInputValue("ModalAuthorUrlField") || null });
+          embed.setAuthor({ name: modalResponse.fields.getTextInputValue("ModalAuthorNameField") || null, iconURL: link("author.icon_url", modalResponse.fields.getTextInputValue("ModalAuthorImageField")), url: link("author.url", modalResponse.fields.getTextInputValue("ModalAuthorUrlField")) });
           await modalResponse.deferUpdate();
           await interaction.editReply({ embeds: [embed], components: [actionRowA, actionRowB, actionRowC] });
         }
@@ -159,14 +182,14 @@ class EmbedCommand extends PhoenixCommand {
             .setLabel("URL")
             .setMaxLength(256)
             .setStyle(TextInputStyle.Short)
-            .setValue(embed.data.url ?? "")
+            .setValue(shownUrl("url", embed.data.url))
             .setRequired(false)
           ),
         ]);
         try {
           await collected.showModal(modal);
           const modalResponse = await collected.awaitModalSubmit({ filter: (i) => (i.customId == "ModalEmbedTitle" && i.user.id == interaction.user.id), time: 900_000 });
-          embed.setTitle(modalResponse.fields.getTextInputValue("ModalTitleField") || null).setURL(modalResponse.fields.getTextInputValue("ModalURLField") || null);
+          embed.setTitle(modalResponse.fields.getTextInputValue("ModalTitleField") || null).setURL(link("url", modalResponse.fields.getTextInputValue("ModalURLField")));
           await modalResponse.deferUpdate();
           await interaction.editReply({ embeds: [embed], components: [actionRowA, actionRowB, actionRowC] });
         }
@@ -195,7 +218,7 @@ class EmbedCommand extends PhoenixCommand {
             .setLabel("Footer image")
             .setMaxLength(256)
             .setStyle(TextInputStyle.Short)
-            .setValue(embed.data.footer?.icon_url ?? "")
+            .setValue(shownUrl("footer.icon_url", embed.data.footer?.icon_url))
             .setRequired(false)
           ),
           new ActionRowBuilder().addComponents(
@@ -211,7 +234,7 @@ class EmbedCommand extends PhoenixCommand {
         try {
           await collected.showModal(modal);
           const modalResponse = await collected.awaitModalSubmit({ filter: (i) => (i.customId == "ModalEmbedFooter" && i.user.id == interaction.user.id), time: 900_000 });
-          embed.setFooter({ text: modalResponse.fields.getTextInputValue("ModalFooterTextField") || null, iconURL: modalResponse.fields.getTextInputValue("ModalFooterImageField") || null }).setTimestamp(modalResponse.fields.getTextInputValue("ModalTimestampField") ? new Date(modalResponse.fields.getTextInputValue("ModalTimestampField")) : null);
+          embed.setFooter({ text: modalResponse.fields.getTextInputValue("ModalFooterTextField") || null, iconURL: link("footer.icon_url", modalResponse.fields.getTextInputValue("ModalFooterImageField")) }).setTimestamp(modalResponse.fields.getTextInputValue("ModalTimestampField") ? new Date(modalResponse.fields.getTextInputValue("ModalTimestampField")) : null);
           await modalResponse.deferUpdate();
           await interaction.editReply({ embeds: [embed], components: [actionRowA, actionRowB, actionRowC] });
         }
@@ -231,7 +254,7 @@ class EmbedCommand extends PhoenixCommand {
             .setLabel("Thumbnail")
             .setMaxLength(256)
             .setStyle(TextInputStyle.Short)
-            .setValue(embed.data.thumbnail?.url ?? "")
+            .setValue(shownUrl("thumbnail", embed.data.thumbnail?.url))
             .setRequired(false)
           ),
           new ActionRowBuilder().addComponents(
@@ -240,14 +263,14 @@ class EmbedCommand extends PhoenixCommand {
             .setLabel("Image")
             .setMaxLength(256)
             .setStyle(TextInputStyle.Short)
-            .setValue(embed.data.image?.url ?? "")
+            .setValue(shownUrl("image", embed.data.image?.url))
             .setRequired(false)
           ),
         ]);
         try {
           await collected.showModal(modal);
           const modalResponse = await collected.awaitModalSubmit({ filter: (i) => (i.customId == "ModalEmbedImage" && i.user.id == interaction.user.id), time: 900_000 });
-          embed.setThumbnail(modalResponse.fields.getTextInputValue("ModalThumbnailField") || null).setImage(modalResponse.fields.getTextInputValue("ModalImageField") || null);
+          embed.setThumbnail(link("thumbnail", modalResponse.fields.getTextInputValue("ModalThumbnailField"))).setImage(link("image", modalResponse.fields.getTextInputValue("ModalImageField")));
           await modalResponse.deferUpdate();
           await interaction.editReply({ embeds: [embed], components: [actionRowA, actionRowB, actionRowC] });
         }
@@ -441,7 +464,7 @@ class EmbedCommand extends PhoenixCommand {
           }
           // fromDiscordEmbed turns the builder's ISO timestamp into the number the
           // database expects; saving used to fail whenever a timestamp was set.
-          const saved = { name, data: fromDiscordEmbed(embed.toJSON()) };
+          const saved = { name, data: withRawUrls(fromDiscordEmbed(embed.toJSON())) };
           if (existing === -1) db.embeds.push(saved);
           else db.embeds[existing] = saved;
           await db.save();
@@ -476,18 +499,18 @@ class EmbedCommand extends PhoenixCommand {
             embed
             .setAuthor({
               name: embeddb.data.author?.name || null,
-              iconURL: embeddb.data.author?.icon_url || null,
-              url: embeddb.data.author?.url || null
+              iconURL: link("author.icon_url", embeddb.data.author?.icon_url),
+              url: link("author.url", embeddb.data.author?.url)
             })
             .setTitle(embeddb.data.title || null)
-            .setURL(embeddb.data.url || null)
+            .setURL(link("url", embeddb.data.url))
             .setDescription(embeddb.data.description || null)
-            .setThumbnail(embeddb.data.thumbnail || null)
-            .setImage(embeddb.data.image || null)
+            .setThumbnail(link("thumbnail", embeddb.data.thumbnail))
+            .setImage(link("image", embeddb.data.image))
             .setFields(embeddb.data.fields?.map(f => { return { name: f.name || `???`, value: f.value || `???`, inline: f.inline || false }; }) || [])
             .setFooter({
               text: embeddb.data.footer?.text || null,
-              iconURL: embeddb.data.footer?.icon_url || null
+              iconURL: link("footer.icon_url", embeddb.data.footer?.icon_url)
             })
             .setTimestamp(embeddb.data.timestamp || null)
             .setColor(embeddb.data.color ?? Colors.Orange);
@@ -521,6 +544,11 @@ class EmbedCommand extends PhoenixCommand {
           await modalResponse.deferReply({ ephemeral: true });
           const db = await serverSettings.findById(interaction.guild.id).cacheQuery();
           const embeddb = db.embeds.find(e => e.name == modalResponse.fields.getTextInputValue("ModalNameField"));
+          const { embedUsers, describeUsers } = require("../../tools/embeds");
+          const users = embeddb ? embedUsers(db, embeddb.name) : [];
+          if (users.length) {
+            return modalResponse.followUp({ content: `${this.container.emojis.error} That embed is used by ${describeUsers(users)}. Remove it from those on the dashboard first.`, ephemeral: true });
+          }
           if (embeddb) {
             db.embeds.splice(db.embeds.findIndex(e => e.name == modalResponse.fields.getTextInputValue("ModalNameField")), 1);
             // This used to never save, so deleted embeds came back.
@@ -548,7 +576,13 @@ class EmbedCommand extends PhoenixCommand {
       }
 
       if (collected.customId == "EmbedSend") {
-        await message.channel.send({ embeds: [embed] }).then(async () => {
+        // Fill in placeholders like {{mention}} or {{servericon}} for whoever sends it.
+        const { toDiscordEmbed, isEmptyEmbed } = require("../../tools/embeds");
+        const filled = renderEmbed(withRawUrls(fromDiscordEmbed(embed.toJSON())), previewCtx);
+        if (isEmptyEmbed(filled)) {
+          return collected.reply({ content: `${this.container.emojis.error} The embed is empty once its placeholders are filled in.`, ephemeral: true });
+        }
+        await message.channel.send({ embeds: [toDiscordEmbed(filled)], allowedMentions: { parse: [] } }).then(async () => {
           await collector.dispose(interaction);
           await interaction.deleteReply();
         })

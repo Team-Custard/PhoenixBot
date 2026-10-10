@@ -2,6 +2,7 @@
 // embed builder preview looks like the message will. It never uses innerHTML.
 
 const INLINE = [
+  { type: "placeholder", re: /\{\{\s*([\w.]+)\s*\}\}/ },
   { type: "code", re: /`([^`\n]+)`/ },
   { type: "link", re: /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/ },
   { type: "bold", re: /\*\*([\s\S]+?)\*\*/ },
@@ -56,6 +57,15 @@ function inline(text, ctx, keyPrefix = "") {
     const k = `${keyPrefix}${key++}`;
     const inner = (value) => inline(value, ctx, `${k}-`);
     switch (rule.type) {
+      case "placeholder": {
+        // Placeholders are highlighted, filled in with an example when there is one.
+        const name = match[1].toLowerCase();
+        const value = ctx.values && Object.hasOwn(ctx.values, name) ? ctx.values[name] : undefined;
+        if (value === undefined) out.push(<span key={k} className="md-placeholder unknown" title="Not a placeholder Phoenix knows">{match[0]}</span>);
+        else if (typeof value === "object") out.push(<span key={k} className="md-placeholder mention" title={match[0]}>{value.mention}</span>);
+        else out.push(<span key={k} className="md-placeholder" title={match[0]}>{value || "(empty)"}</span>);
+        break;
+      }
       case "code": out.push(<code key={k}>{match[1]}</code>); break;
       case "link": out.push(<a key={k} href={match[2]} target="_blank" rel="noreferrer noopener">{inner(match[1])}</a>); break;
       case "bold": out.push(<strong key={k}>{inner(match[1])}</strong>); break;
@@ -108,7 +118,7 @@ export function Markdown({ text, ctx = {}, blocks = true }) {
     let list = [];
     const flushQuote = (i) => {
       if (!quote.length) return;
-      parts.push(<blockquote key={`q${chunkIndex}-${i}`}>{quote.map((l, j) => <div key={j}>{inline(l, ctx) }{"​"}</div>)}</blockquote>);
+      parts.push(<blockquote key={`q${chunkIndex}-${i}`}>{quote.map((l, j) => <div key={j}>{inline(l, ctx) }{"\u200b"}</div>)}</blockquote>);
       quote = [];
     };
     const flushList = (i) => {
@@ -142,7 +152,7 @@ export function Markdown({ text, ctx = {}, blocks = true }) {
         parts.push(<div key={key} className="md-subtext">{inline(sub[1], ctx)}</div>);
         return;
       }
-      parts.push(<div key={key} className="md-line">{line ? inline(line, ctx) : "​"}</div>);
+      parts.push(<div key={key} className="md-line">{line ? inline(line, ctx) : "\u200b"}</div>);
     });
     flushQuote(lines.length);
     flushList(lines.length);

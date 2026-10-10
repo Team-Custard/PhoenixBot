@@ -15,7 +15,7 @@ export function Timezone() {
       <div className="tz-box">
         <code>{zone || "Unknown"}</code>
         {zone && (
-          <button type="button" className="btn ghost" onClick={() => navigator.clipboard?.writeText(zone).then(() => setCopied(true))}>
+          <button type="button" className="btn ghost" onClick={() => navigator.clipboard?.writeText(zone).then(() => setCopied(true), () => undefined)}>
             <Icon name={copied ? "check" : "copy"} size={18} /> {copied ? "Copied" : "Copy"}
           </button>
         )}

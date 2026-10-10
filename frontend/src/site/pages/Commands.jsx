@@ -17,7 +17,7 @@ function CopyButton({ text }) {
         navigator.clipboard?.writeText(text).then(() => {
           setCopied(true);
           setTimeout(() => setCopied(false), 1500);
-        });
+        }, () => undefined);
       }}
     >
       <Icon name={copied ? "check" : "copy"} size={15} />

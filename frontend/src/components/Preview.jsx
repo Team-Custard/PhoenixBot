@@ -1,36 +1,17 @@
-// Shows how a message with {{placeholders}} will look, using the logged-in user as
-// the example member.
+// Shows how a message with {{placeholders}} will look, with the logged-in person as
+// the example member. Placeholders are highlighted.
+import { Markdown } from "./Markdown.jsx";
+import { sampleValues } from "../placeholders.js";
 
-const TOKEN = /\{\{(.*?)\}\}/g;
-
-export function MessagePreview({ text, user, guild, extra = {} }) {
+export function MessagePreview({ text, data, me, extra = {} }) {
   if (!text) return null;
-  const name = user?.globalName || user?.username || "member";
-  const values = {
-    username: user?.username ?? "member",
-    displayname: name,
-    nickname: name,
-    userid: user?.id ?? "0",
-    membercount: "1,024",
-    servername: guild?.name ?? "your server",
-    ...extra,
-  };
-
-  const parts = [];
-  let last = 0;
-  for (const match of text.matchAll(TOKEN)) {
-    parts.push(text.slice(last, match.index));
-    const token = match[1].trim();
-    if (token === "mention") parts.push(<span className="mention" key={match.index}>@{name}</span>);
-    else parts.push(values[token] ?? match[0]);
-    last = match.index + match[0].length;
-  }
-  parts.push(text.slice(last));
-
+  const values = sampleValues(data, me, extra);
   return (
     <>
       <div className="preview-label">Preview</div>
-      <div className="preview">{parts}</div>
+      <div className="preview">
+        <Markdown text={text} ctx={{ channels: data?.channels, roles: data?.roles, values, userName: (id) => (id === me?.id ? me.globalName || me.username : "user") }} />
+      </div>
     </>
   );
 }

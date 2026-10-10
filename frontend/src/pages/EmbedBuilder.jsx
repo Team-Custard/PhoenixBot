@@ -4,6 +4,8 @@ import { ChannelSelect } from "../components/fields.jsx";
 import { useToast } from "../components/Toasts.jsx";
 import { useUnsavedWarning } from "../components/SectionForm.jsx";
 import { Markdown } from "../components/Markdown.jsx";
+import { PlaceholderHelp } from "../components/PlaceholderHelp.jsx";
+import { HAS_PLACEHOLDER, fillUrl, sampleValues } from "../placeholders.js";
 
 const ORANGE = 0xff8a3d;
 const LIMITS = { title: 256, description: 4096, fields: 25, fieldName: 256, fieldValue: 1024, footer: 2048, author: 256, total: 6000, name: 15 };
@@ -87,11 +89,23 @@ function Group({ title, children, open = false }) {
 // Preview, drawn like Discord's own embeds
 // ---------------------------------------------------------------------------
 
-export function EmbedPreview({ embed, data, content, me }) {
+export function EmbedPreview({ embed: raw, data, content, me }) {
+  const values = sampleValues(data, me);
   const ctx = {
     channels: data.channels,
     roles: data.roles,
+    values,
     userName: (id) => (id === me?.id ? me.globalName || me.username : "user"),
+  };
+  // Image boxes with placeholders ({{avatar}}, {{servericon}}...) show the real image.
+  const img = (value) => (value && HAS_PLACEHOLDER.test(value) ? fillUrl(value, values) : value);
+  const embed = {
+    ...raw,
+    url: img(raw.url),
+    thumbnail: img(raw.thumbnail),
+    image: img(raw.image),
+    author: { ...raw.author, icon_url: img(raw.author.icon_url), url: img(raw.author.url) },
+    footer: { ...raw.footer, icon_url: img(raw.footer.icon_url) },
   };
   const fields = embed.fields.filter((f) => f.name.trim() || f.value.trim());
   // Discord puts up to three inline fields on a row.
@@ -102,7 +116,7 @@ export function EmbedPreview({ embed, data, content, me }) {
     else rows.push({ inline: field.inline, items: [field] });
   }
   const profile = data.bot.profile;
-  const empty = isEmpty(embed);
+  const empty = isEmpty(raw);
 
   return (
     <div className="discord-preview">
@@ -119,7 +133,7 @@ export function EmbedPreview({ embed, data, content, me }) {
                 {embed.author.name && (
                   <div className="discord-embed-author">
                     {embed.author.icon_url && <img src={embed.author.icon_url} alt="" width={24} height={24} />}
-                    {embed.author.url ? <a href={embed.author.url} target="_blank" rel="noreferrer">{embed.author.name}</a> : <span>{embed.author.name}</span>}
+                    {embed.author.url ? <a href={embed.author.url} target="_blank" rel="noreferrer"><Markdown text={embed.author.name} ctx={ctx} blocks={false} /></a> : <span><Markdown text={embed.author.name} ctx={ctx} blocks={false} /></span>}
                   </div>
                 )}
                 {embed.title && (
@@ -148,7 +162,7 @@ export function EmbedPreview({ embed, data, content, me }) {
                   <div className="discord-embed-footer">
                     {embed.footer.icon_url && embed.footer.text && <img src={embed.footer.icon_url} alt="" width={20} height={20} />}
                     <span>
-                      {embed.footer.text}
+                      <Markdown text={embed.footer.text} ctx={ctx} blocks={false} />
                       {embed.footer.text && embed.timestamp ? " • " : ""}
                       {embed.timestamp ? new Date(embed.timestamp).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" }) : ""}
                     </span>
@@ -286,6 +300,7 @@ export function EmbedBuilder({ data, me, onSaved }) {
           <input id="eb-name" className="input" maxLength={LIMITS.name} placeholder="e.g. rules" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="inline eb-actions">
+          <PlaceholderHelp data={data} />
           <button type="button" className="button primary" disabled={busy !== null || empty || overLimit} onClick={save}>{busy === "save" ? "Saving..." : "Save"}</button>
           <button type="button" className="button" onClick={startNew}>New</button>
           {loadedName && <button type="button" className="button danger" disabled={busy !== null} onClick={remove}>Delete</button>}
@@ -313,7 +328,7 @@ export function EmbedBuilder({ data, me, onSaved }) {
               </div>
             </div>
             <Input id="eb-title" label="Title" value={embed.title} max={LIMITS.title} onChange={(title) => set({ title })} />
-            <Input id="eb-url" label="Title link" type="url" placeholder="https://" value={embed.url} onChange={(url) => set({ url })} />
+            <Input id="eb-url" label="Title link" type="text" placeholder="https:// or a placeholder like {{avatar}}" value={embed.url} onChange={(url) => set({ url })} />
             <div className="eb-input">
               <label htmlFor="eb-description">Description</label>
               <textarea id="eb-description" className="textarea" rows={6} value={embed.description} onChange={(e) => set({ description: e.target.value })} placeholder="Supports **bold**, *italics*, [links](https://...), lists, quotes and more." />
@@ -323,13 +338,13 @@ export function EmbedBuilder({ data, me, onSaved }) {
 
           <Group title="Author">
             <Input id="eb-author" label="Name" value={embed.author.name} max={LIMITS.author} onChange={(v) => setNested("author", { name: v })} />
-            <Input id="eb-author-icon" label="Icon link" type="url" placeholder="https://" value={embed.author.icon_url} onChange={(v) => setNested("author", { icon_url: v })} />
-            <Input id="eb-author-url" label="Link" type="url" placeholder="https://" value={embed.author.url} onChange={(v) => setNested("author", { url: v })} />
+            <Input id="eb-author-icon" label="Icon link" type="text" placeholder="https:// or a placeholder like {{avatar}}" value={embed.author.icon_url} onChange={(v) => setNested("author", { icon_url: v })} />
+            <Input id="eb-author-url" label="Link" type="text" placeholder="https:// or a placeholder like {{avatar}}" value={embed.author.url} onChange={(v) => setNested("author", { url: v })} />
           </Group>
 
           <Group title="Images">
-            <Input id="eb-thumb" label="Thumbnail (small, top right)" type="url" placeholder="https://" value={embed.thumbnail} onChange={(thumbnail) => set({ thumbnail })} />
-            <Input id="eb-image" label="Image (large, at the bottom)" type="url" placeholder="https://" value={embed.image} onChange={(image) => set({ image })} />
+            <Input id="eb-thumb" label="Thumbnail (small, top right)" type="text" placeholder="https:// or a placeholder like {{avatar}}" value={embed.thumbnail} onChange={(thumbnail) => set({ thumbnail })} />
+            <Input id="eb-image" label="Image (large, at the bottom)" type="text" placeholder="https:// or a placeholder like {{avatar}}" value={embed.image} onChange={(image) => set({ image })} />
           </Group>
 
           <Group title={`Fields (${embed.fields.length} / ${LIMITS.fields})`} open={embed.fields.length > 0}>
@@ -367,7 +382,7 @@ export function EmbedBuilder({ data, me, onSaved }) {
 
           <Group title="Footer">
             <Input id="eb-footer" label="Text" value={embed.footer.text} max={LIMITS.footer} onChange={(v) => setNested("footer", { text: v })} />
-            <Input id="eb-footer-icon" label="Icon link" type="url" placeholder="https://" value={embed.footer.icon_url} onChange={(v) => setNested("footer", { icon_url: v })} />
+            <Input id="eb-footer-icon" label="Icon link" type="text" placeholder="https:// or a placeholder like {{avatar}}" value={embed.footer.icon_url} onChange={(v) => setNested("footer", { icon_url: v })} />
             <div className="eb-input">
               <label htmlFor="eb-time">Timestamp</label>
               <div className="inline">

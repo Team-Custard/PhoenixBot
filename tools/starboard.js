@@ -1,5 +1,6 @@
 const { EmbedBuilder, Colors } = require("discord.js");
 const { peekSettings } = require("./guildSettings");
+const { send } = require("./queue");
 
 // original message id -> starboard message id. Saves fetching the last 100
 // starboard messages on every star.
@@ -79,7 +80,7 @@ async function handleStarReaction(reaction, user, added) {
     await existing.edit({ content, embeds: [starEmbed(message)] }).catch(() => undefined);
     return;
   }
-  const sent = await channel.send({ content, embeds: [starEmbed(message)] }).catch(() => null);
+  const sent = await send(channel, { content, embeds: [starEmbed(message)] });
   if (sent) remember(message.id, sent.id);
 }
 

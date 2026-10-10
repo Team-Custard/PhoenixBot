@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTitle } from "../publicApi.js";
+import { Clicker, YourButton, useClicker } from "../Clicker.jsx";
 
 const ENDPOINTS = [
   { path: "/api/profile/[id]", text: "A user's whole UserDB profile: time zone, pronouns, description, socials and AFK status." },
@@ -14,6 +15,7 @@ export function ApiDocs() {
   useTitle("API");
   const [id, setId] = useState("");
   const [result, setResult] = useState(null);
+  const [clicks, click] = useClicker();
   const valid = /^\d{17,20}$/.test(id.trim());
 
   async function tryIt(path) {
@@ -59,6 +61,12 @@ export function ApiDocs() {
           </article>
         ))}
       </section>
+
+      <section className="api-vanity">
+        <h2>VanityDB</h2>
+        <p>Have an awesome custom vanity link for <YourButton onClick={click} /> server. This database isn't released yet and doesn't do anything at the moment.</p>
+      </section>
+      <Clicker clicks={clicks} />
 
       <section className="api-tester" aria-labelledby="tester-title">
         <h2 id="tester-title">Try it out</h2>

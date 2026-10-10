@@ -27,7 +27,7 @@ function canPunish(member, action) {
  * Carries out the action itself. Returns false if it couldn't be done.
  * @param {import("discord.js").GuildMember} member
  */
-async function carryOut(member, settings, action, duration, audit) {
+async function carryOut(member, settings, action, duration, audit, options = {}) {
   switch (action) {
     case "mute":
       if (duration && duration <= mod.MAX_TIMEOUT && member.moderatable) {
@@ -40,10 +40,16 @@ async function carryOut(member, settings, action, duration, audit) {
       }
       return false;
     case "kick":
+      if (options.cleanup && member.bannable) {
+        // A "softban": banning deletes their recent messages, then they're let back in.
+        await member.ban({ reason: audit, deleteMessageSeconds: 60 * 60 });
+        const lifted = await member.guild.bans.remove(member.id, "Softban: messages cleaned up, ban lifted").then(() => true, () => false);
+        return lifted ? "softban" : "softban-still-banned";
+      }
       await member.kick(audit);
-      return true;
+      return "kick";
     case "ban":
-      await member.ban({ reason: audit, deleteMessageSeconds: 60 * 60 });
+      await member.ban({ reason: audit, deleteMessageSeconds: options.cleanup === false ? 0 : 60 * 60 });
       return true;
     case "shadowban": {
       const role = settings.moderation?.shadowBannedRole;
@@ -82,9 +88,11 @@ async function scheduleUnmute(member, settings, caseDoc, duration) {
  * @param {string} options.reason Shown in the case, DM and audit log.
  * @param {string} [options.source] e.g. "Automod", shown in the audit log.
  * @param {boolean} [options.applySystem] Run the punishment system after a warn.
+ * @param {boolean} [options.cleanup] Kicks and bans also delete the past hour of messages
+ *   (on by default for bans, off for kicks).
  * @returns {Promise<{ ok: boolean, caseDoc?: object, followUp?: object }>}
  */
-async function punish({ member, settings, action, duration = null, reason, source = "Automod", applySystem = true }) {
+async function punish({ member, settings, action, duration = null, reason, source = "Automod", applySystem = true, cleanup }) {
   const guild = member.guild;
   const client = container.client;
   if (!canPunish(member, action)) return { ok: false };
@@ -130,7 +138,7 @@ async function punish({ member, settings, action, duration = null, reason, sourc
 
   let done = false;
   try {
-    done = await carryOut(member, settings, action, duration, audit);
+    done = await carryOut(member, settings, action, duration, audit, { cleanup });
   }
   catch (err) {
     console.log(`[punish] ${action} failed in ${guild.id}`, err?.message ?? err);
@@ -145,12 +153,19 @@ async function punish({ member, settings, action, duration = null, reason, sourc
   if (!leaves) notified = await mod.notifyUser(member, guild, notice);
 
   if (done === "role" && duration) await scheduleUnmute(member, settings, caseDoc, duration);
+  if (done === "softban-still-banned") {
+    // The ban couldn't be lifted again, so record what really happened.
+    caseDoc.punishment = "Ban";
+    caseDoc.reason = `${caseDoc.reason} (meant as a kick, but the ban couldn't be lifted)`;
+    await caseDoc.save().catch(() => undefined);
+  }
   if (action === "ban" && duration) {
     const { scheduleMemberTask } = require("./tasks");
     await scheduleMemberTask("tempBan", { guildid: guild.id, memberid: member.id, caseid: caseDoc.caseId }, duration);
   }
   await mod.sendModlog(guild, settings, caseDoc, { moderator: `${client.user}`, duration });
-  return { ok: true, caseDoc, notified };
+  // outcome: what happened, e.g. "kick", "softban" (kick + messages deleted) or "role" (mute role).
+  return { ok: true, caseDoc, notified, outcome: typeof done === "string" ? done : action };
 }
 
 /** The punishment system step for this many warnings, if there is one. */

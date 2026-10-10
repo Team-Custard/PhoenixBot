@@ -16,7 +16,7 @@ export function roleColor(role) {
 export function Field({ field, error, children, wide }) {
   const id = useId();
   return (
-    <div className={`field${wide || field.type === "list" ? " wide" : ""}`}>
+    <div className={`field${wide || field.type === "list" ? " wide" : ""}`} data-field={field.key}>
       <div>
         <label className="field-label" htmlFor={id}>{field.label}</label>
         {field.help && <div className="field-help">{field.help}</div>}
@@ -70,10 +70,10 @@ export function NumberInput({ id, field, value, onChange }) {
       id={id}
       className="input"
       type="number"
-      inputMode="numeric"
       min={field.min}
       max={field.max}
-      step={1}
+      step={field.step ?? 1}
+      inputMode={field.decimal ? "decimal" : "numeric"}
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
     />
@@ -383,21 +383,36 @@ export function isShown(field, get) {
   return rules.every((rule) => (typeof rule === "string" ? Boolean(get(rule)) : rule.in.includes(get(rule.key))));
 }
 
+/** Picks one of the server's saved embeds (made on the Embeds page). */
+export function EmbedSelect({ id, value, onChange, data }) {
+  const names = (data.embeds ?? []).map((e) => e.name);
+  const missing = value && !names.includes(value);
+  return (
+    <select id={id} className="select" value={value ?? ""} onChange={(e) => onChange(e.target.value || null)}>
+      <option value="">{names.length ? "No embed" : "No saved embeds yet"}</option>
+      {missing && <option value={value}>{value} (deleted)</option>}
+      {names.map((name) => <option key={name} value={name}>{name}</option>)}
+    </select>
+  );
+}
+
 // ---------------------------------------------------------------- lists
 
 export function ListInput({ field, value, onChange, data }) {
   const rows = value ?? [];
   const update = (index, key, next) => onChange(rows.map((row, i) => (i === index ? { ...row, [key]: next } : row)));
-  const blank = Object.fromEntries(field.fields.map((f) => [f.key, f.type === "commands" || f.type === "strings" ? [] : f.type === "duration" ? 0 : null]));
+  const blank = Object.fromEntries(field.fields.map((f) => [f.key, f.default ?? (["commands", "strings", "channels", "roles"].includes(f.type) ? [] : f.type === "duration" ? 0 : null)]));
 
   return (
     <>
       {rows.length === 0 && <p className="empty-hint">Nothing added yet.</p>}
+      {field.max && rows.length > 5 && <p className="field-help">{rows.length} of {field.max} used.</p>}
       <div className="list-rows">
         {rows.map((row, index) => (
-          <div className="list-row" key={index}>
+          <div className={`list-row${field.fields.some((f) => f.wide) ? " roomy" : ""}`} key={index}>
+            {field.max > 5 && <div className="list-row-number">#{index + 1}</div>}
             {field.fields.filter((sub) => isShown(sub, (key) => row[key])).map((sub) => (
-              <div key={sub.key}>
+              <div key={sub.key} className={sub.wide ? "wide" : undefined}>
                 <label htmlFor={`${field.key}-${index}-${sub.key}`}>{sub.label}</label>
                 <Control id={`${field.key}-${index}-${sub.key}`} field={sub} value={row[sub.key]} onChange={(v) => update(index, sub.key, v)} data={data} />
               </div>
@@ -409,7 +424,7 @@ export function ListInput({ field, value, onChange, data }) {
         ))}
       </div>
       {(!field.max || rows.length < field.max) && (
-        <button type="button" className="button small" onClick={() => onChange([...rows, blank])}>Add entry</button>
+        <button type="button" className="button small" onClick={() => onChange([...rows, blank])}>{field.addLabel ?? "Add entry"}</button>
       )}
     </>
   );
@@ -435,6 +450,7 @@ export function Control(props) {
     case "list": return <ListInput {...props} />;
     case "strings": return <StringsInput {...props} />;
     case "automodRule": return <AutomodRuleSelect {...props} />;
+    case "embed": return <EmbedSelect {...props} />;
     default: return <p className="field-error">Unknown setting type {props.field.type}</p>;
   }
 }

@@ -113,6 +113,16 @@ const settingsSchema = new Schema({
       neededRole: String
     },
     minimumAge: Number,
+    // Kick people who join with Discord's default avatar.
+    kickDefaultAvatar: { type: Boolean, default: false },
+    // A channel nobody should post in; whoever does is punished (listeners/automod/honeypot.js).
+    honeypot: {
+      channel: String,
+      action: { type: String, default: "ban" },
+      // Also delete their other messages from the past hour.
+      cleanup: { type: Boolean, default: true },
+      warning: String,
+    },
     // Message filters (listeners/automod/automodMessage.js, tools/automod.js).
     ignoreModerators: { type: Boolean, default: true },
     exemptRoles: [String],
@@ -146,6 +156,8 @@ const settingsSchema = new Schema({
     enable: { type: Boolean, default: false },
     // Show the top of the leaderboard on the website (/leaderboard/<server id>).
     publicLeaderboard: { type: Boolean, default: true },
+    // XP multipliers for roles: the biggest one a member has counts.
+    multipliers: [{ roleId: String, multiplier: Number }],
     blacklistRole: [String],
     blacklistChannels: [String],
     stackRoles: { type: Boolean, default: true },
@@ -162,6 +174,36 @@ const settingsSchema = new Schema({
     backgroundTransparency: { type: Number, default: 90 },
     useEmbed: Boolean,
   },
+  // The bot's server profile bio as last set on the dashboard (Discord doesn't send it back).
+  botProfile: { bio: String },
+  // Replies when a message matches a trigger (listeners/messages/autoresponse.js).
+  autoresponses: [{
+    trigger: String,
+    match: { type: String, default: "contains" },
+    matchCase: { type: Boolean, default: false },
+    content: String,
+    embed: String,
+    channels: [String],
+    reply: { type: Boolean, default: true },
+    enabled: { type: Boolean, default: true },
+  }],
+  // Posted every so often (tools/timedMessages.js).
+  timedMessages: [{
+    channel: String,
+    interval: Number,
+    onlyWhenActive: { type: Boolean, default: false },
+    content: String,
+    embed: String,
+    enabled: { type: Boolean, default: true },
+  }],
+  // Kept as the last message in a channel (listeners/messages/sticky.js).
+  stickyMessages: [{
+    channel: String,
+    content: String,
+    embed: String,
+    cooldown: { type: Number, default: 15_000 },
+    enabled: { type: Boolean, default: true },
+  }],
   embeds: [{
     name: String,
     data: {

@@ -1,6 +1,7 @@
 const { Listener, Events } = require("@sapphire/framework");
 const { peekSettings } = require("../../tools/guildSettings");
-const { parse } = require("../../tools/textParser");
+const { render, contextFrom } = require("../../tools/placeholders");
+const { send } = require("../../tools/queue");
 const { LevelMember, xpForLevel, rewardRoleChanges } = require("../../tools/leveling");
 const { yieldsToStaging } = require("../../tools/staging");
 
@@ -34,7 +35,8 @@ class LevelingMessageCreate extends Listener {
     cooldowns.set(key, Date.now());
     if (cooldowns.size > 100_000) pruneCooldowns();
 
-    const xp = randomXp(leveling.rates?.minimum ?? 5, leveling.rates?.maximum ?? 15);
+    const xp = Math.round(randomXp(leveling.rates?.minimum ?? 5, leveling.rates?.maximum ?? 15) * xpMultiplier(leveling, message.member));
+    if (xp <= 0) return;
     // One atomic update instead of loading and re-saving the whole settings document.
     let entry = await LevelMember.findOneAndUpdate(
       { guildId: message.guildId, userId: message.author.id },
@@ -61,13 +63,25 @@ class LevelingMessageCreate extends Listener {
     if (changes.remove.length) await message.member.roles.remove(changes.remove, "Level roles").catch(() => undefined);
 
     if (leveledUp && leveling.message && entry.level > 1) {
-      const text = await parse(leveling.message, message.member, { level: entry.level });
       const channel = leveling.announceChannel
         ? await message.guild.channels.fetch(leveling.announceChannel).catch(() => null)
         : message.channel;
-      await channel?.send(text).catch(() => undefined);
+      const content = render(leveling.message, contextFrom({ member: message.member, channel, extra: { level: entry.level } })).slice(0, 2000);
+      await send(channel, { content, allowedMentions: { users: [message.author.id] } });
     }
   }
+}
+
+/**
+ * Role XP multipliers set on the dashboard. If a member has several, the biggest
+ * one counts (they don't stack). Below 1 means less XP, and 0 means none.
+ */
+function xpMultiplier(leveling, member) {
+  let best = null;
+  for (const { roleId, multiplier } of leveling.multipliers ?? []) {
+    if (roleId && member.roles.cache.has(roleId) && Number.isFinite(multiplier)) best = Math.max(best ?? 0, multiplier);
+  }
+  return best ?? 1;
 }
 
 function pruneCooldowns() {

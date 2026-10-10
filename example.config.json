@@ -32,5 +32,6 @@
   "prefixDeprecation": {
     "notice": true,
     "cooldownHours": 24
-  }
+  },
+  "commandGuilds": []
 }
