@@ -259,6 +259,89 @@ so the public pages don't download it.
 3. `npm run build:web` only if you change `frontend/src`. The built site is committed.
 4. `npm test`, then restart the bot.
 
+## Part three: placeholders, message features and the send queue
+
+### Placeholders
+
+One placeholder system (`tools/placeholders.js`) now covers welcome and goodbye
+messages, level-up messages, tags, embeds, autoresponses, timed messages and sticky
+messages. New placeholders: `{{avatar}}`, `{{serveravatar}}`, `{{servericon}}`,
+`{{serverbanner}}`, `{{channel}}`, `{{channelname}}`, `{{date}}`, `{{time}}` and
+`{{datetime}}`, alongside the old ones.
+
+- `{{date}}` and `{{time}}` use Discord timestamps, so everyone sees their own time
+  zone. In places Discord shows text as is (embed titles, author names, footers) they
+  fall back to plain UTC.
+- Image placeholders work in an embed's image, thumbnail and icon boxes. Text that
+  gets too long once filled in is cut to Discord's limits instead of failing.
+- Member placeholders are empty in timed and sticky messages, which aren't about
+  anyone.
+- The dashboard has a Placeholders button on every page that uses them. The embed
+  editor highlights placeholders in its preview and shows the real images for image
+  placeholders. The `/embed` builder in Discord keeps placeholder links when saving.
+
+### New features
+
+- **Autoresponses** (dashboard → Autoresponses, up to 100): reply when a message
+  contains a phrase, a whole word, matches exactly, starts with it, or matches a regex.
+  Each one waits 15 seconds per channel after it fires. They can reply or just post,
+  be limited to channels, and have a saved embed. Regexes are checked when saved
+  (refusing ones that are likely to be slow) and run in a separate thread with a
+  100 ms limit (`tools/regexWorker.js`), so a bad regex can't freeze the bot. One
+  that times out is turned off until the next restart. They don't answer prefix
+  commands, messages automod is removing, or the honeypot channel.
+- **Timed messages** (up to 25): posted every so often (5 minutes to 30 days), with an
+  option to skip a round when nobody talked since the last one. Timers survive
+  restarts (`tools/models/TimedState.js`).
+- **Sticky messages** (one per channel, up to 25): when people talk, Phoenix deletes
+  its old copy and posts it again, at most once per cooldown (5 seconds or more).
+  Bots and webhooks don't count as talking, so two sticky bots can't loop. The last
+  copy is remembered across restarts (`tools/models/StickyState.js`).
+- **Tags with embeds:** tags can have a saved embed attached, and can be edited on
+  the dashboard. Saved embeds that tags or messages use can't be deleted until they're
+  removed from those (on the dashboard and in `/embed`).
+- **Role XP multipliers** (Leveling page): if a member has several roles with
+  multipliers, the biggest one counts. 0 stops them earning XP.
+- **Bot banner and bio** on the Bot profile page, next to the nickname and avatar.
+  Discord doesn't send the bio back, so the dashboard remembers what was last set.
+- **Honeypot channel** (Automod page): anyone except moderators who posts there has
+  the message deleted and is kicked, shadowbanned or banned, and it's logged. It can
+  also delete their messages from the past hour (kicks become a quick ban and unban).
+  A button posts a warning in the channel.
+- **Join gate:** kick new members who still have Discord's default avatar.
+- **Dashboard search:** a search bar at the top of every server page finds settings
+  by name or description and jumps to them. Press `/` or Ctrl+K to use it. The
+  sidebar is grouped into Setup, Moderation, Messages and Community.
+- **Unused commands:** when the bot starts, cluster 0 removes slash commands and
+  context menus Discord still has that no longer exist in the code
+  (`listeners/internal/commandCleanup.js`). Guild-only commands are checked in the
+  servers listed under `commandGuilds` in config.json.
+
+### Send queue
+
+Everything Phoenix posts on its own (logs, welcome and level-up messages, starboard,
+automod notes, autoresponses, timed and sticky messages) goes through
+`tools/queue.js`. It keeps the cluster under its share of Discord's global limit,
+takes turns between channels so one busy server can't hold up the rest, keeps each
+channel's messages in order, and drops the oldest waiting messages for a channel if
+it falls far behind. Command replies don't use it, since people are waiting for them.
+
+Server log entries for the same channel are grouped into one message (up to 10
+embeds) for a moment, so a purge or a raid takes a handful of requests instead of
+hundreds. If a grouped message fails, its entries are sent one by one. Logs can wait
+in the queue much longer than other messages before anything is dropped. A warning is
+logged if the bot ever hits Discord's global rate limit.
+
+### Website
+
+- The staging banner and staging logo are gone.
+- The "your" clicker is back on the API page: click "your" in the VanityDB section.
+
+### Deploying part three
+
+`npm install` isn't needed (no new packages). Run `npm test`, then restart. New
+collections (`stickystates`, `timedstates`) are created automatically.
+
 ## Things to check after deploying
 
 - **Logging:** log a message edit and delete, a ban and a role change, and check
@@ -277,3 +360,9 @@ so the public pages don't download it.
   check the webhook uses them.
 - **Embeds:** save an embed on the dashboard and load it with `/embed`, then send one.
 - **Website:** open the home page, commands and a leaderboard on a phone and a computer.
+- **Placeholders:** add a tag with `{{mention}}`, `{{servericon}}` in an attached
+  embed's thumbnail and `{{date}}`, and show it.
+- **Autoresponses, timed and sticky messages:** add one of each in a test channel and
+  check the 15 second autoresponse cooldown and that the sticky stays at the bottom.
+- **Honeypot:** with a test account, post in the honeypot channel.
+- **Startup:** look for the "[commands]" line saying which unused commands were removed.

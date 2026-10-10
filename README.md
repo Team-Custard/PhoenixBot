@@ -43,6 +43,10 @@ tools/             Shared code
   SlashGroup.js        Builds /mod etc. from the commands that join them
   moderation.js        Hierarchy checks, cases, mod-log, DM notices
   punish.js            Punishments Phoenix gives by itself (automod, punishment system)
+  placeholders.js      {{placeholders}} for messages, tags and embeds
+  queue.js             Send queue for everything Phoenix posts on its own
+  autoresponse.js      Autoresponse matching (regexes run in regexWorker.js)
+  timedMessages.js     Timed message scheduler
   automod.js           Automod filters; automodRun.js acts on them
   commandCatalog.js    The command list shown on the website
   logging.js           Server log helper used by listeners/logging
