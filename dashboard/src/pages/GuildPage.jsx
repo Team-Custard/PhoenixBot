@@ -4,7 +4,10 @@ import { Link, useRouter } from "../router.jsx";
 import { SectionForm } from "../components/SectionForm.jsx";
 import { ServerIcon } from "./ServerPicker.jsx";
 import { VerificationPanel } from "./VerificationPanel.jsx";
-import { Leaderboard, RankCardBackground } from "./LevelingExtras.jsx";
+import { RankCardBackground } from "./LevelingExtras.jsx";
+import { Levels } from "./Levels.jsx";
+import { BotProfile } from "./BotProfile.jsx";
+import { EmbedBuilder } from "./EmbedBuilder.jsx";
 import { RoleMenus } from "./RoleMenus.jsx";
 import { TagsManager } from "./TagsManager.jsx";
 import { Cases } from "./Cases.jsx";
@@ -13,9 +16,15 @@ import { Cases } from "./Cases.jsx";
 const CUSTOM_PAGES = {
   cases: { name: "Cases", description: "Every warning, mute, kick and ban made with Phoenix. Edit reasons or pardon warnings." },
   rolemenus: { name: "Role menus", description: "Dropdown menus members use to give themselves roles." },
+  profile: { name: "Bot profile", description: "Phoenix's nickname and avatar in this server. Server logs use them too." },
+  embeds: { name: "Embeds", description: "Build embeds, save them for later and send them to a channel. Saved embeds also show up under Load Embed in /embed.", wide: true },
+  levels: { name: "Levels", description: "Everyone's level in this server. Search, change or delete them." },
 };
 
-const ORDER = ["general", "moderation", "cases", "logging", "automod", "welcome", "verification", "rolemenus", "starboard", "leveling", "tags"];
+const ORDER = [
+  "general", "profile", "moderation", "cases", "logging", "joins", "automod", "discord-automod",
+  "welcome", "verification", "rolemenus", "embeds", "starboard", "leveling", "levels", "tags",
+];
 
 export function GuildPage({ me, guildId, sectionId }) {
   const { navigate } = useRouter();
@@ -90,7 +99,7 @@ export function GuildPage({ me, guildId, sectionId }) {
         </nav>
       </aside>
 
-      <main className="guild-main">
+      <main className={`guild-main${current.wide ? " wide" : ""}`}>
         <div className="guild-title">
           <ServerIcon guild={data.guild} />
           <h1>
@@ -110,7 +119,10 @@ export function GuildPage({ me, guildId, sectionId }) {
             {current.id === "leveling" && (
               <>
                 <RankCardBackground data={data} onChange={(hasRankCard) => setData((d) => ({ ...d, stats: { ...d.stats, hasRankCard } }))} />
-                <Leaderboard data={data} />
+                <section className="panel">
+                  <h3>Members' levels</h3>
+                  <p>See, change or delete people's levels on the <Link to={`/dash/${guildId}/levels`}>Levels</Link> page.</p>
+                </section>
               </>
             )}
             {current.id === "tags" && <TagsManager data={data} onChange={(tags) => setData((d) => ({ ...d, tags }))} />}
@@ -118,6 +130,9 @@ export function GuildPage({ me, guildId, sectionId }) {
         )}
         {current.id === "rolemenus" && <RoleMenus data={data} onSaved={(roleMenus) => setData((d) => ({ ...d, roleMenus }))} />}
         {current.id === "cases" && <Cases data={data} />}
+        {current.id === "levels" && <Levels data={data} />}
+        {current.id === "profile" && <BotProfile data={data} onChange={(profile) => setData((d) => ({ ...d, bot: { ...d.bot, profile } }))} />}
+        {current.id === "embeds" && <EmbedBuilder data={data} me={me?.user} onSaved={(embeds) => setData((d) => ({ ...d, embeds }))} />}
       </main>
     </div>
   );

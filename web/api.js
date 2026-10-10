@@ -139,6 +139,23 @@ async function getGuildContext(guildId) {
     roles: roleMap,
     botTopPosition,
     botPermissions,
+    botMember,
+  };
+}
+
+/** The bot's name and avatar in a server, for the Bot profile page. */
+function profileOf(guildId, member) {
+  const user = member?.user ?? {};
+  const userAvatar = user.avatar
+    ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=256`
+    : `https://cdn.discordapp.com/embed/avatars/${Number((BigInt(user.id ?? 0) >> 22n) % 6n)}.png`;
+  return {
+    username: user.global_name || user.username || "Phoenix",
+    nick: member?.nick ?? null,
+    userAvatar,
+    avatar: member?.avatar
+      ? `https://cdn.discordapp.com/guilds/${guildId}/users/${user.id}/avatars/${member.avatar}.png?size=256`
+      : null,
   };
 }
 
@@ -231,6 +248,7 @@ router.get("/guilds/:guildId", wrap(async (req, res) => {
     bot: {
       topRolePosition: context.botTopPosition,
       permissions: context.botPermissions.toString(),
+      profile: profileOf(guildId, context.botMember),
     },
     commands: commandList(),
     sections,
@@ -697,19 +715,146 @@ router.post("/guilds/:guildId/cases/:caseId/pardon", wrap(async (req, res) => {
 // Leveling
 // ---------------------------------------------------------------------------
 
-router.get("/guilds/:guildId/leaderboard", wrap(async (req, res) => {
-  const top = await LevelMember.find({ guildId: req.params.guildId }).sort({ level: -1, xp: -1 }).limit(50).lean();
-  const users = await Promise.all(top.map((m) => discord.getUser(m.userId)));
-  res.json({
-    members: top.map((m, i) => ({
-      userId: m.userId,
-      username: users[i]?.global_name || users[i]?.username || null,
-      level: m.level,
-      xp: m.xp,
-      needed: xpForLevel(m.level),
-    })),
-  });
+const LEVELS_PER_PAGE = 25;
+const MAX_LEVEL = 10_000;
+
+function avatarUrl(user) {
+  if (!user) return null;
+  return user.avatar
+    ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64`
+    : `https://cdn.discordapp.com/embed/avatars/${Number((BigInt(user.id) >> 22n) % 6n)}.png`;
+}
+
+async function levelRows(entries, rankOf) {
+  const users = await Promise.all(entries.map((m) => discord.getUser(m.userId)));
+  return Promise.all(entries.map(async (m, i) => ({
+    userId: m.userId,
+    username: users[i]?.username ?? null,
+    displayName: users[i]?.global_name || users[i]?.username || null,
+    avatar: avatarUrl(users[i]),
+    level: m.level,
+    xp: m.xp,
+    needed: xpForLevel(m.level),
+    rank: await rankOf(m, i),
+  })));
+}
+
+// Everyone's levels, best first, with search by user id or name.
+router.get("/guilds/:guildId/levels", wrap(async (req, res) => {
+  const guildId = req.params.guildId;
+  const search = String(req.query.search ?? "").trim().slice(0, 100);
+  const page = Math.max(0, Number.parseInt(req.query.page, 10) || 0);
+  const filter = { guildId };
+
+  if (SNOWFLAKE.test(search)) {
+    filter.userId = search;
+  }
+  else if (search) {
+    // Discord's member search matches the start of usernames and nicknames.
+    const found = await discord.rest
+      .get(`/guilds/${guildId}/members/search`, { query: new URLSearchParams({ query: search, limit: "100" }) })
+      .catch(() => []);
+    filter.userId = { $in: found.map((m) => m.user.id) };
+  }
+
+  const [entries, total] = await Promise.all([
+    LevelMember.find(filter).sort({ level: -1, xp: -1 }).skip(page * LEVELS_PER_PAGE).limit(LEVELS_PER_PAGE).lean(),
+    LevelMember.countDocuments(filter),
+  ]);
+  const { getRank } = require("../tools/leveling");
+  const members = await levelRows(entries, (m, i) => (search ? getRank(guildId, m) : page * LEVELS_PER_PAGE + i + 1));
+  res.json({ page, pages: Math.max(1, Math.ceil(total / LEVELS_PER_PAGE)), total, members });
 }));
+
+// Set someone's level and XP. Also adds people who don't have a level yet.
+router.put("/guilds/:guildId/levels/:userId", wrap(async (req, res) => {
+  const { guildId, userId } = req.params;
+  if (!SNOWFLAKE.test(userId)) throw new ApiError(400, "That isn't a user id.");
+  const level = validateField({ key: "level", type: "number", min: 0, max: MAX_LEVEL, required: true }, req.body?.level, {}, "Level");
+  const xp = validateField({ key: "xp", type: "number", min: 0, max: Math.max(0, xpForLevel(level) - 1), required: true }, req.body?.xp ?? 0, {}, "XP");
+  const user = await discord.getUser(userId);
+  if (!user) throw new ApiError(404, "No Discord user has that id.");
+  if (user.bot) throw new ApiError(400, "Bots can't have levels.");
+  const entry = await LevelMember.findOneAndUpdate(
+    { guildId, userId },
+    { $set: { level, xp } },
+    { upsert: true, new: true, lean: true },
+  );
+  const { getRank } = require("../tools/leveling");
+  const [member] = await levelRows([entry], (m) => getRank(guildId, m));
+  res.json({ member });
+}));
+
+router.delete("/guilds/:guildId/levels/:userId", wrap(async (req, res) => {
+  const { guildId, userId } = req.params;
+  if (!SNOWFLAKE.test(userId)) throw new ApiError(400, "That isn't a user id.");
+  const result = await LevelMember.deleteOne({ guildId, userId });
+  if (!result.deletedCount) throw new ApiError(404, "That person doesn't have a level.");
+  res.json({ ok: true });
+}));
+
+// Resetting everyone needs the server's name typed in, like GitHub's delete prompt.
+router.delete("/guilds/:guildId/levels", wrap(async (req, res) => {
+  if (String(req.body?.confirm ?? "").trim() !== req.guild.name) {
+    throw new ApiError(400, "Type the server's name to confirm resetting everyone's levels.");
+  }
+  const result = await LevelMember.deleteMany({ guildId: req.params.guildId });
+  res.json({ ok: true, deleted: result.deletedCount });
+}));
+
+// ---------------------------------------------------------------------------
+// Bot profile (nickname and server avatar)
+// ---------------------------------------------------------------------------
+
+const MAX_AVATAR = 8 * 1024 * 1024;
+const IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+
+async function updateBotMember(guildId, body) {
+  const member = await discord.rest
+    .patch(`/guilds/${guildId}/members/@me`, { body, reason: "Changed on the Phoenix dashboard" })
+    .catch((err) => {
+      if (err?.code === 50013) throw new ApiError(403, "Phoenix needs the Change Nickname permission to change its nickname here.");
+      if (err?.code === 50035) throw new ApiError(400, `Discord refused that: ${err.rawError?.errors ? JSON.stringify(err.rawError.errors).slice(0, 200) : err.message}`);
+      throw new ApiError(400, `Discord refused that: ${err.message}`);
+    });
+  return profileOf(guildId, member);
+}
+
+router.patch("/guilds/:guildId/profile", wrap(async (req, res) => {
+  const nick = validateField({ key: "nick", type: "text", max: 32 }, req.body?.nick, {}, "Nickname");
+  res.json({ profile: await updateBotMember(req.params.guildId, { nick: nick ?? null }) });
+}));
+
+router.put(
+  "/guilds/:guildId/profile/avatar",
+  express.raw({ type: IMAGE_TYPES, limit: MAX_AVATAR }),
+  wrap(async (req, res) => {
+    const buffer = req.body;
+    const type = req.get("Content-Type")?.split(";")[0];
+    if (!Buffer.isBuffer(buffer) || !buffer.length || !IMAGE_TYPES.includes(type)) {
+      throw new ApiError(400, "The avatar has to be a PNG, JPEG, GIF or WebP image.");
+    }
+    if (!looksLikeImage(buffer, type)) throw new ApiError(400, "That file isn't the kind of image it says it is.");
+    // Animated server avatars are a Nitro perk for people, but bots can always use them.
+    const avatar = `data:${type};base64,${buffer.toString("base64")}`;
+    res.json({ profile: await updateBotMember(req.params.guildId, { avatar }) });
+  }),
+);
+
+router.delete("/guilds/:guildId/profile/avatar", wrap(async (req, res) => {
+  res.json({ profile: await updateBotMember(req.params.guildId, { avatar: null }) });
+}));
+
+function looksLikeImage(buffer, type) {
+  const starts = (...bytes) => bytes.every((b, i) => buffer[i] === b);
+  switch (type) {
+    case "image/png": return buffer.subarray(0, 8).equals(PNG_SIGNATURE);
+    case "image/jpeg": return starts(0xff, 0xd8, 0xff);
+    case "image/gif": return buffer.subarray(0, 4).toString("latin1") === "GIF8";
+    case "image/webp": return buffer.subarray(0, 4).toString("latin1") === "RIFF" && buffer.subarray(8, 12).toString("latin1") === "WEBP";
+    default: return false;
+  }
+}
 
 const MAX_BACKGROUND = 8 * 1024 * 1024;
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -747,7 +892,7 @@ router.use((err, req, res, next) => {
     return res.status(err.status).json({ error: err.extra.error ?? "invalid", message: err.message, ...err.extra });
   }
   if (err?.type === "entity.too.large") {
-    return res.status(413).json({ error: "too_large", message: "That upload is too big. Backgrounds can be at most 8 MB." });
+    return res.status(413).json({ error: "too_large", message: "That image is too big. Images can be at most 8 MB." });
   }
   console.error("[dashboard] API error", err);
   res.status(500).json({ error: "server_error", message: "Something went wrong on our side. Try again in a moment." });

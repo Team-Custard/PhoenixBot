@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "../api.js";
 import { useToast } from "../components/Toasts.jsx";
 
@@ -61,38 +61,6 @@ export function RankCardBackground({ data, onChange }) {
         </label>
         {hasCard && <button type="button" className="button danger" disabled={busy} onClick={remove}>Remove background</button>}
       </div>
-    </section>
-  );
-}
-
-export function Leaderboard({ data }) {
-  const [members, setMembers] = useState(null);
-  useEffect(() => {
-    api.get(`/guilds/${data.guild.id}/leaderboard`).then((r) => setMembers(r.members)).catch(() => setMembers([]));
-  }, [data.guild.id]);
-
-  return (
-    <section className="panel">
-      <h3>Leaderboard</h3>
-      {members === null && <div className="spinner" aria-label="Loading" />}
-      {members?.length === 0 && <p>Nobody has earned XP yet.</p>}
-      {members?.length > 0 && (
-        <div className="table-wrap">
-          <table className="table">
-            <thead><tr><th>Rank</th><th>Member</th><th>Level</th><th>XP</th></tr></thead>
-            <tbody>
-              {members.map((m, i) => (
-                <tr key={m.userId}>
-                  <td className="num">{i + 1}</td>
-                  <td>{m.username ?? m.userId}</td>
-                  <td className="num">{m.level}</td>
-                  <td className="num">{m.xp} / {m.needed}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </section>
   );
 }

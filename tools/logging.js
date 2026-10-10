@@ -35,13 +35,26 @@ async function sendLog(guild, type, payload, settings) {
   // Fetch through the guild so a channel id from another server can't be used.
   const channel = await guild.channels.fetch(channelId).catch(() => null);
   if (!channel) return undefined;
-  const client = container.client;
   return webhookFetch.send(channel, {
-    username: client.user.username,
-    avatarURL: client.user.displayAvatarURL({ extension: "png", size: 512 }),
+    ...webhookIdentity(guild),
     allowedMentions: { parse: [] },
     ...payload,
   });
+}
+
+/**
+ * The name and avatar log webhooks post with: the bot's nickname and server avatar
+ * in that server (set on the dashboard), falling back to its normal profile.
+ * @param {import("discord.js").Guild} guild
+ */
+function webhookIdentity(guild) {
+  const client = container.client;
+  const me = guild?.members?.me;
+  let username = me?.nickname?.trim() || client.user.username;
+  // Discord rejects webhook names containing these words.
+  if (/discord|clyde/i.test(username) || username.length > 80) username = client.user.username;
+  const avatarURL = (me ?? client.user).displayAvatarURL({ extension: "png", size: 512 });
+  return { username, avatarURL };
 }
 
 /** A standard orange log embed with the user as the author. */
@@ -105,6 +118,7 @@ module.exports = {
   logChannelId,
   isIgnoredChannel,
   sendLog,
+  webhookIdentity,
   logEmbed,
   findExecutor,
   withExecutor,
