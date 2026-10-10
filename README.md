@@ -1,8 +1,8 @@
 # PhoenixBot
 
-A Discord bot by SylveonDev / Team Custard: moderation, logging, welcome messages,
-verification, leveling, role menus, tags, translation and UserDB profiles, with a
-web dashboard for server settings.
+A Discord bot by SylveonDev / Team Custard: moderation, automod, logging, welcome
+messages, verification, leveling, role menus, embeds, tags, translation and UserDB
+profiles, with a website and a web dashboard for server settings.
 
 Built on [Sapphire](https://www.sapphirejs.dev/) (discord.js 14), MongoDB with a
 Redis query cache, BullMQ for scheduled tasks and discord-hybrid-sharding.
@@ -22,11 +22,11 @@ Redis query cache, BullMQ for scheduled tasks and discord-hybrid-sharding.
 | `npm test` | Loads every command/listener and builds every slash command without logging in. Run before deploying. |
 | `npm run lint` | ESLint. `npm run lint:fix` fixes formatting. |
 | `npm run migrate` | Moves cases and levels into their own collections. `-- --dry-run` to preview. |
-| `npm run build:dashboard` | Rebuilds the React dashboard into `dashboard/dist`. |
-| `npm run dev:dashboard` | Rebuilds the dashboard on every change while you work on it. |
+| `npm run build:web` | Rebuilds the React website and dashboard into `frontend/dist`. |
+| `npm run dev:web` | Rebuilds the website on every change while you work on it. |
 
-The built dashboard (`dashboard/dist`) is committed, so a `git pull` on the server is
-enough to deploy; only rebuild it when you change `dashboard/src`.
+The built website (`frontend/dist`) is committed, so a `git pull` on the server is
+enough to deploy; only rebuild it when you change `frontend/src`.
 
 ## Layout
 
@@ -42,11 +42,16 @@ tools/             Shared code
   CommandContext.js    One reply/defer API over messages and interactions
   SlashGroup.js        Builds /mod etc. from the commands that join them
   moderation.js        Hierarchy checks, cases, mod-log, DM notices
+  punish.js            Punishments Phoenix gives by itself (automod, punishment system)
+  automod.js           Automod filters; automodRun.js acts on them
+  commandCatalog.js    The command list shown on the website
   logging.js           Server log helper used by listeners/logging
   models/              Case, LevelMember, Counter (Mongoose)
 web/               Dashboard backend: OAuth sessions, settings API, settings spec
-dashboard/         Dashboard frontend (React, built with esbuild)
-routers/, views/   Public website pages and public API (EJS)
+frontend/          Website and dashboard (React, built with esbuild)
+  src/site/          Public pages: home, commands, leaderboards, UserDB profiles...
+  src/pages/         Dashboard pages
+routers/           Public API (public.js for the website, api.js for UserDB) and short links
 scripts/           smoke-test.js, migrate-v2.js
 ```
 
@@ -90,9 +95,13 @@ module.exports = { HugCommand };
   (`prefixDeprecation` in config.json).
 - Developer-only commands stay as plain Sapphire commands with `messageRun`.
 
-## Dashboard
+## Website and dashboard
 
-`/dash` on the website. People log in with Discord and can change settings for
+The public site (home, `/commands`, `/leaderboard/<server id>`, `/u/<user id>`, `/api`)
+and the dashboard are one React app in `frontend/`. The website reads its data from
+`routers/public.js`.
+
+The dashboard is `/dash`. People log in with Discord and can change settings for
 servers where they have Manage Server and the bot is present. Settings pages are drawn
 from `web/spec.js`; to add a setting, add it to the schema in `tools/SettingsSchema.js`
 and describe it in `web/spec.js`. The API validates against the same description.

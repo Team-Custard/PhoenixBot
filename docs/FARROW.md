@@ -68,7 +68,7 @@ Smaller command changes:
 ## Dashboard
 
 The old dashboard was half-built and turned off. It has been replaced by a React app
-at `/dash` (source in `dashboard/src`, built output committed in `dashboard/dist`).
+at `/dash` (source in `frontend/src`, built output committed in `frontend/dist`).
 
 - Log in with Discord. Sessions are random tokens in an HttpOnly, SameSite cookie,
   stored hashed in MongoDB with a 7-day expiry. The old version matched logins by IP
@@ -76,8 +76,9 @@ at `/dash` (source in `dashboard/src`, built output committed in `dashboard/dist
 - Changes need the Manage Server permission in that server, checked on every request
   against the user's live server list. They also need a custom request header,
   which protects against CSRF.
-- Pages: General, Moderation, Cases, Logging, Automod, Welcome & goodbye, Verification,
-  Role menus, Starboard, Leveling and Tags.
+- Pages: General, Bot profile, Moderation, Cases, Logging, Join gate, Automod,
+  Discord AutoMod, Welcome & goodbye, Verification, Role menus, Embeds, Starboard,
+  Leveling, Levels and Tags.
 - Settings are described once in `web/spec.js`. The API validates every value against
   that description: channels and roles must exist in the server, and roles the bot
   can't hand out are refused. The frontend draws its forms from the same description.
@@ -165,6 +166,99 @@ so two moderators acting at once could get the same number.
   the disabled server-report handlers, `tools/tempPunishments.js`,
   `tools/InfractionSchema.js` and every `*.old` file.
 
+## Part two: dashboard fixes, automod and the new website
+
+### Bugs fixed
+
+- **Rank card background couldn't be uploaded.** The public API router parsed JSON
+  for every request on the site, with a 100 KB limit, so uploads were rejected before
+  the dashboard saw them. Images are now sent as raw bodies (up to 8 MB) and only the
+  route that needs JSON parses it.
+- **Prefix settings did nothing in test mode.** The prefix lookup returned the testing
+  prefix before reading the server's settings, so turning prefixes on or off, or
+  changing the prefix, had no effect. Each mode now has a default prefix (`=` prod,
+  `==` dev, `===` test) and the server's own setting always wins. Note that dev and
+  test share the staging collection, so a staging server that saved `==` answers to
+  `==` in test mode too.
+
+### Dashboard additions
+
+- **Embeds:** the `/embed` builder on the web, with a live Discord-style preview
+  (markdown, mentions, fields, images, footer, timestamp). Save, load, delete and send
+  to a channel. Saved embeds are the same ones `/embed` loads.
+- **Levels:** search everyone's level by name or user ID, edit level and XP, delete
+  someone's level, give a level to someone new, or reset the whole server (type the
+  server's name to confirm).
+- **Bot profile:** change Phoenix's nickname and server avatar (PNG, JPEG, GIF or WebP)
+  for one server. Server log webhooks now post with that name and avatar too
+  (`webhookIdentity` in `tools/logging.js`). Discord doesn't allow "discord" or
+  "clyde" in webhook names, so those fall back to the bot's normal name.
+- **Join gate:** minimum account age and autokick moved here from the Automod page.
+
+### Automod
+
+- **Message filters** (`tools/automod.js`, `tools/automodRun.js`): spam, repeated
+  messages, server invites (the server's own invites can be allowed), links (with an
+  allow list), mass mentions, capital letters, blocked words (catches look-alike
+  spellings like "h3ck", `*word*` matches inside words), emoji spam and walls of text.
+  Each filter deletes the message and can also warn, mute, kick or ban, with a
+  duration for mutes and bans. Edited messages are checked too.
+- Moderators (Manage Messages, Kick, Ban or Moderate Members) are skipped unless
+  turned off, people with Manage Server always are, and roles and channels or
+  categories can be ignored. The same applies to Discord AutoMod punishments. Phoenix can post a short note
+  saying why a message was removed, deleted after a few seconds.
+- A member is punished at most once every 10 seconds, so a spam burst becomes one
+  mute instead of six. Spam bursts are deleted as a whole.
+- **Discord AutoMod:** link any of the server's AutoMod rules to a warn, mute, kick or
+  ban (`listeners/automod/discordAutomod.js`). Discord blocks the message as usual and
+  Phoenix adds the punishment. One rule break sends several events, so they're
+  combined into one.
+- Punishments made by automod and the punishment system share `tools/punish.js`:
+  they open a case with Phoenix as the moderator, DM the member and post to the mod
+  log, like a moderator's command would. `warn` uses the same punishment system code.
+- Every automod action is logged to the Automod log channel.
+- **Timed mutes with the mute role now end.** Mutes longer than Discord's 28-day
+  timeout (or when Phoenix can't time someone out) use the mute role, which nothing
+  used to remove. A new `tempMute` scheduled task takes it off and closes the case.
+  This also fixes `/mod mute` with long durations; `/mod unmute` cancels the task.
+
+### Website
+
+The EJS website was replaced by a React site in the same app as the dashboard
+(`frontend/`, formerly `dashboard/`). The dashboard's code is split into its own file,
+so the public pages don't download it.
+
+- **Home:** a new landing page with an animated pretend Discord channel showing
+  leveling, automod, moderation, welcome messages and translation, plus live server,
+  member and command counts.
+- **Commands:** built from the loaded commands (`tools/commandCatalog.js`), so it's
+  never out of date. Search, filter by category and copy usage. In dashboard-only mode
+  the website reads `data/commands.json`, which the bot writes when it starts.
+- **Public leaderboards:** `/leaderboard/<server id>` shows the top 100 with a podium.
+  It's public for servers with leveling turned on, unless they turn it off
+  (Leveling → Public leaderboard). Unknown server ids are answered from the database
+  without asking Discord, and visitors are rate limited. `/leveling leaderboard`
+  now shows the top 5 and links to the page, or the old paged embeds when the
+  leaderboard is private.
+- **UserDB profiles** (`/u/<id>`) with a live clock in the person's time zone, the
+  time zone finder, the API docs (with a tester), terms, privacy policy, the invite
+  success page and a 404 page.
+- New public API routes in `routers/public.js`: `/api/public/stats`,
+  `/api/public/commands`, `/api/public/leaderboard/:id` and `/api/public/userdb/:id`.
+  The existing UserDB API routes are unchanged.
+- Removed: `views/`, `routers/userdb.js`, and the `ejs`, `bootstrap`,
+  `bootstrap-select` and `jquery` packages. The API page's clicker easter egg was not
+  carried over (it's in the git history).
+
+### Deploying part two
+
+1. `npm install` (four packages were removed).
+2. In the Discord developer portal nothing new needs turning on: the AutoMod
+   intent isn't privileged. Phoenix needs the **Manage Server** permission in a
+   server to see its AutoMod rules and receive AutoMod events.
+3. `npm run build:web` only if you change `frontend/src`. The built site is committed.
+4. `npm test`, then restart the bot.
+
 ## Things to check after deploying
 
 - **Logging:** log a message edit and delete, a ban and a role change, and check
@@ -174,5 +268,12 @@ so two moderators acting at once could get the same number.
 - **Dashboard:** log in, change a setting, and check that the bot uses it within a
   minute (Redis cache TTL).
 - **Role menus:** post a role menu from the dashboard and pick a role.
-- **Leveling:** chat with leveling on, then check `/leveling rank` and the dashboard
-  leaderboard.
+- **Leveling:** chat with leveling on, then check `/leveling rank`, `/leveling leaderboard`
+  and the leaderboard page it links to. Upload a rank card background.
+- **Automod:** turn on the invite filter, post an invite from an account without
+  Manage Messages, and check the message is deleted, the warning is logged and the
+  case appears. Link a Discord AutoMod rule and trigger it.
+- **Bot profile:** change Phoenix's nickname and avatar, then trigger a server log and
+  check the webhook uses them.
+- **Embeds:** save an embed on the dashboard and load it with `/embed`, then send one.
+- **Website:** open the home page, commands and a leaderboard on a phone and a computer.
