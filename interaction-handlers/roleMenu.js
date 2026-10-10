@@ -1,4 +1,3 @@
-const { StringSelectMenuInteraction } = require("discord.js");
 const serverSettings = require("../tools/SettingsSchema");
 
 const {
@@ -21,7 +20,7 @@ class MenuHandler extends InteractionHandler {
     }
 
     /**
-     * @param {StringSelectMenuInteraction} interaction
+     * @param {import("discord.js").StringSelectMenuInteraction} interaction
      */
     async run(interaction) {
         const mid = (interaction.customId.slice().trim().split('-'))[1];

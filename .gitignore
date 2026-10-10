@@ -4,3 +4,7 @@ config.json
 .env
 custombots.json
 *DS_Store
+# Website (React)
+frontend/node_modules
+# Written by the bot at startup (command list for the website)
+data/

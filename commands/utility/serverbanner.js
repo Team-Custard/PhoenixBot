@@ -1,40 +1,29 @@
-const { Command } = require("@sapphire/framework");
-const { BucketScope } = require("@sapphire/framework");
 const { PermissionFlagsBits } = require("discord.js");
+const { BucketScope } = require("@sapphire/framework");
+const { PhoenixCommand } = require("../../tools/PhoenixCommand");
+const { emoji } = require("../../tools/errorReporter");
 
-class PingCommand extends Command {
+class ServerBannerCommand extends PhoenixCommand {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "serverbanner",
-      aliases: ['sbanner', 'guildbanner'],
-      description: "Displays the server banner",
-      detailedDescription: {
-        usage: "serverbanner",
-        examples: ["serverbanner"],
-        args: [],
-      },
+      aliases: ["sbanner", "guildbanner"],
+      description: "Displays the server banner.",
+      slash: { group: "utilities" },
       cooldownDelay: 60_000,
       cooldownLimit: 10,
       cooldownScope: BucketScope.Guild,
-      requiredClientPermissions: [
-        PermissionFlagsBits.SendMessages,
-        PermissionFlagsBits.AttachFiles,
-      ],
-      preconditions: ["module"]
+      requiredClientPermissions: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles],
+      preconditions: ["module"],
     });
   }
 
-  async messageRun(message) {
-    if (!message.guild.banner) return message.reply({ content: `${this.container.emojis.error} This server currently does not have a banner set.` });
-
-    const banner = message.guild.bannerURL({ dynamic: true, size: 1024 });
-
-    await message.reply({
-      files: [banner],
-    });
+  async run(ctx) {
+    if (!ctx.guild) return ctx.error(`${emoji("error")} I need to be in this server to do that.`);
+    if (!ctx.guild.banner) return ctx.error(`${emoji("error")} This server currently does not have a banner set.`);
+    return ctx.reply({ files: [ctx.guild.bannerURL({ size: 1024 })] });
   }
 }
-module.exports = {
-  PingCommand,
-};
+
+module.exports = { ServerBannerCommand };

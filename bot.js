@@ -1,88 +1,40 @@
-const { PhoenixClient } = require("./tools/PhoenixClient");
+// Entry point for a single bot cluster. Spawned by index.js through the
+// discord-hybrid-sharding ClusterManager (or required directly in custom mode).
+require("dotenv").config();
+
 const fs = require("fs");
 const { fork } = require("child_process");
-const { ClusterClient } = require('discord-hybrid-sharding');
-const DSU = require("@dbd-soft-ui/shards")
+const { botmode, settings, token } = require("./tools/config");
 
 require("./tools/database").connect();
 
-switch (require("./config.json").process.botmode) {
-  case "prod": {
-    const client = new PhoenixClient();
-    client.cluster.on("ready", (cluster) => {
-      if (require("./config.json").process.dashboard == true && cluster.id === 0) {
-        global.bottype = require("./config.json").process.botmode;
+if (botmode === "custom") {
+  startCustomBots();
+}
+else {
+  const { PhoenixClient } = require("./tools/PhoenixClient");
+  const client = new PhoenixClient();
 
-        /*DSU.register(cluster, {
-            dashboard_url: "http://localhost:1200",
-            key: process.env['shardkey'],
-            interval: 15
-        });*/        
+  client.cluster.on("ready", (cluster) => {
+    // The website and dashboard live on cluster 0 so they can use the bot client directly.
+    if (settings.process.dashboard === true && cluster.id === 0) require("./server");
+    console.log(`Cluster ${cluster.id} is ready.`);
+  });
 
-        require("./server");
-      }
-      console.log(`Cluster ${cluster.id} is ready.`);
-    });
+  client.login(token());
+}
 
-    client.login(process.env.TOKEN);
-    break;
-  }
-  case "dev": {
-    const client = new PhoenixClient();
-    client.cluster.on("ready", (cluster) => {
-      if (require("./config.json").process.dashboard == true && cluster.id === 0) {
-        global.bottype = require("./config.json").process.botmode;
-
-        /*DSU.register(cluster, {
-            dashboard_url: "http://localhost:1200",
-            key: process.env['shardkey'],
-            interval: 15
-        });*/
-
-        require("./server");
-      }
-      console.log(`Cluster ${cluster.id} is ready.`);
-    });
-
-    client.login(process.env.STAGINGTOKEN);
-    break;
-  }
-  case "test": {
-    const client = new PhoenixClient();
-    client.cluster.on("ready", (cluster) => {
-      if (require("./config.json").process.dashboard == true && cluster.id === 0) {
-        global.bottype = require("./config.json").process.botmode;
-
-        /*DSU.register(cluster, {
-            dashboard_url: "http://localhost:1200",
-            key: process.env['shardkey'],
-            interval: 15
-        });*/
-
-        require("./server");
-      }
-      console.log(`Cluster ${cluster.id} is ready.`);
-    });
-
-    client.login(process.env.TESTTOKEN);
-    break;
-  }
-  case "custom": {
-    const bots = JSON.parse(
-      fs.readFileSync(__dirname + "/custombots.json", "utf8"),
-    );
-    console.log(bots);
-
-    console.log(`Phoenix custom bots enabled. Beginning custom bots.`);
-    console.log(
-      `Starting the following bots:\n${bots.map((b) => b.client)}\nThis operation will take ${Math.floor((bots.length * 1500) / 1000)} seconds to complete.`,
-    );
-    for (let i = 0; i < bots.length; i++) {
-      const index = i;
-      setTimeout(function () {
-        console.log(`Starting bot ${bots[index].client}`);
-        fork(`custombot.js`).send(bots[index].token);
-      }, 1500 * i);
-    }
-  }
+// Deprecated: custom bots are separate processes, each with its own token.
+function startCustomBots() {
+  const bots = JSON.parse(fs.readFileSync(__dirname + "/custombots.json", "utf8"));
+  console.log(`[warning] Custom bot mode is deprecated and will be removed in a future version.`);
+  console.log(
+    `Starting ${bots.length} custom bot(s). This will take about ${Math.floor((bots.length * 1500) / 1000)} seconds.`,
+  );
+  bots.forEach((bot, index) => {
+    setTimeout(() => {
+      console.log(`Starting bot ${bot.client}`);
+      fork(`${__dirname}/custombot.js`).send(bot.token);
+    }, 1500 * index);
+  });
 }

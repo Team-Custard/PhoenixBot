@@ -54,9 +54,11 @@ class MenuHandler extends InteractionHandler {
       const timezones = moment.tz.names();
       if (!timezones.includes(tzText)) {
         finishMessage += `${this.container.emojis.warning} timezone: Incorrect timezone specified. Not setting timezone. If you'd like, you can have Phoenix automatically detect your timezone at https://phoenix.sylveondev.xyz/userdb/tzhelp\n`;
-      } else if (tzText.length < 4) {
+      }
+ else if (tzText.length < 4) {
         finishMessage += `${this.container.emojis.warning} timezone: Sorry, we only support tz format timezones. Not setting timezone. If you'd like, you can have Phoenix automatically detect your timezone at https://phoenix.sylveondev.xyz/userdb/tzhelp\n`;
-      } else {
+      }
+ else {
         usersettings.timezone = tzText;
       }
     }
@@ -67,16 +69,18 @@ class MenuHandler extends InteractionHandler {
       usersettings.description = descText;
     }
     if (ytText) {
-      if (!twtText.startsWith("@")) {
+      if (!ytText.startsWith("@")) {
         finishMessage += `${this.container.emojis.warning} youtube: Your handle is incorrect. Not setting social.\n`;
-      } else {
+      }
+ else {
         usersettings.socials.youtube = ytText;
       }
     }
     if (twtText) {
       if (!twtText.startsWith("@")) {
         finishMessage += `${this.container.emojis.warning} twitter: Your handle is incorrect. Not setting social.\n`;
-      } else {
+      }
+ else {
         usersettings.socials.twitter = twtText;
       }
     }

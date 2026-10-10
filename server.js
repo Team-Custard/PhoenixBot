@@ -1,60 +1,83 @@
-const settings = require("./config.json");
-
-const bodyParser = require("body-parser");
+// The website: the React site and dashboard (frontend/), the dashboard API and the
+// public API. Runs inside cluster 0 of the bot (see bot.js), or on its own in
+// dashboard-only mode.
+const fs = require("fs");
+const path = require("path");
 const express = require("express");
+const { settings, dashboard } = require("./tools/config");
+const { loadSession } = require("./web/session");
+
 const app = express();
+const FRONTEND_DIST = path.join(__dirname, "frontend", "dist");
+const INDEX = path.join(FRONTEND_DIST, "index.html");
 
-require("dotenv").config();
+// Pages the React app knows. Anything else gets the app's "not found" page with a 404.
+const PAGES = [
+  /^\/$/,
+  /^\/commands\/?$/,
+  /^\/leaderboard\/\d{17,20}\/?$/,
+  /^\/u\/[^/]+\/?$/,
+  /^\/userdb\/tzhelp\/?$/,
+  /^\/api\/?$/,
+  /^\/terms\/?$/,
+  /^\/privacy\/?$/,
+  /^\/success\/?$/,
+  /^\/dash(\/.*)?$/,
+];
 
-app.set("view engine", "ejs");
+app.disable("x-powered-by");
+// Behind Cloudflare / nginx in production, so req.secure and req.ip are correct.
+if (!dashboard.devmode) app.set("trust proxy", dashboard.trustProxy ?? 1);
 
-// Basically bootstrap shit
-app.use('/jquery', express.static(__dirname + '/node_modules/jquery/dist/'));
-app.use('/bootstrap', express.static(__dirname + '/node_modules/bootstrap/dist/'));
-app.use('/bootstrap-select', express.static(__dirname + '/node_modules/bootstrap-select/dist/'));
-
-app.use(express.static(__dirname + "/static"));
-if (settings.dashboard.devmode == "on") {
-  app.enable("trust proxy");
-}
-
-app.use(require("./routers/mainpage"));
-app.use(require("./routers/api"));
-app.use(require("./routers/userdb"));
-//app.use(require("./routers/dashboard"));
-
-// app.use(require("./routers/interactions"));
-
-// Body parsing since express doesn't come with it lol.
-// Top parses application/x-www-form-urlencoded
-// Bottom parses application/json
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-
-app.use(function (req, res, next) {
-  if (settings.dashboard.devmode == "off" && !req.secure) {
-    return res.redirect("https://" + req.headers.host + res.url);
-  }
-
+// Redirect to HTTPS before anything else.
+app.use((req, res, next) => {
+  if (!dashboard.devmode && !req.secure) return res.redirect(301, `https://${req.headers.host}${req.originalUrl}`);
   next();
 });
 
-app.use(function (req, res) {
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  if (req.path.startsWith("/dash")) res.setHeader("X-Frame-Options", "DENY");
+  next();
+});
+
+app.use(express.static(path.join(__dirname, "static")));
+app.use("/assets", express.static(path.join(FRONTEND_DIST, "assets"), { maxAge: "7d", immutable: true }));
+
+// Dashboard: login routes and JSON API.
+app.use(["/dash", "/api/dashboard"], loadSession);
+app.use(require("./web/auth"));
+app.use("/api/dashboard", require("./web/api"));
+
+// Public API and short links.
+app.use(require("./routers/public"));
+app.use(require("./routers/api"));
+app.use(require("./routers/mainpage"));
+
+// Everything else that wants a web page gets the React app.
+app.get("*", (req, res, next) => {
+  if (!req.accepts("html") || req.path.startsWith("/api/")) return next();
+  if (!fs.existsSync(INDEX)) {
+    return res.status(503).type("txt").send("The website hasn't been built yet. Run `npm run build:web`.");
+  }
+  res.setHeader("Cache-Control", "no-cache");
+  res.status(PAGES.some((page) => page.test(req.path)) ? 200 : 404).sendFile(INDEX);
+});
+
+app.use((req, res) => {
   res.status(404);
-  if (req.accepts("html")) {
-    res.render("errors/404", { title: "Not found", url: req.url });
-    return;
-  }
-  if (req.accepts("json")) {
-    res.json({ error: "Not found" });
-    return;
-  }
+  if (req.accepts("json")) return res.json({ error: "Not found" });
   res.type("txt").send("Not found");
 });
 
-app.listen(settings.dashboard.serverport);
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error("[web] Unhandled error", err);
+  res.status(500).json({ error: "Server error" });
+});
 
-console.log(
-  "Dashboard is ready. Listening at localhost:%d",
-  settings.dashboard.serverport,
-);
+const port = dashboard.serverport ?? 8080;
+app.listen(port, () => console.log("Website is ready. Listening at localhost:%d", port));
+
+module.exports = { app, settings };

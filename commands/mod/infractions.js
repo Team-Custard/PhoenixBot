@@ -1,146 +1,87 @@
+const { PermissionFlagsBits, EmbedBuilder, Colors } = require("discord.js");
 const { PaginatedMessage } = require("@sapphire/discord.js-utilities");
+const { PhoenixCommand } = require("../../tools/PhoenixCommand");
+const { emoji } = require("../../tools/errorReporter");
+const { Case } = require("../../tools/moderation");
 
-const { Command, Args } = require("@sapphire/framework");
-const { PermissionFlagsBits, EmbedBuilder, Colors, Message } = require("discord.js");
-const serverSettings = require("../../tools/SettingsSchema");
-const settings = require("../../config.json");
+const PAGE_SIZE = 9;
 
-class PingCommand extends Command {
+class InfractionsCommand extends PhoenixCommand {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "infractions",
-      aliases: [`inf`, `cases`, `warns`],
+      aliases: ["inf", "cases", "warns"],
       description: "Displays a user's infractions.",
-      detailedDescription: {
-        usage: "infractions <user> [type]",
-        examples: ["infractions sylveondev warn"],
-        args: ["user : The member to search", "type: Only show a certain infraction type"],
-        falgs: ["long: Shows the infractions in a single column for better viewing"]
-      },
+      examples: ["infractions sylveondev", "infractions sylveondev warn --long"],
+      args: [
+        { name: "user", type: "user", required: true, description: "The user to check" },
+        { name: "punishment", type: "string", description: "Only show one type of punishment, e.g. warn or ban" },
+        { name: "long", type: "boolean", aliases: ["l"], description: "Show the list in one column" },
+      ],
+      slash: { group: "mod" },
       cooldownDelay: 3_000,
       suggestedUserPermissions: [PermissionFlagsBits.ModerateMembers],
       preconditions: ["module"],
-      flags: true,
-      options: true
     });
   }
 
+  async run(ctx, { user, punishment, long }) {
+    await ctx.defer();
 
-  async chatInputRun(interaction) {
-    const user = interaction.options.getUser('user');
-    const onlyType = interaction.options.getString('punishment');
-    const long = interaction.options.getString('long');
-    await interaction.deferReply();
+    const filter = { guildId: ctx.guild.id, member: user.id };
+    if (punishment) filter.punishment = { $regex: `^${escapeRegex(punishment)}`, $options: "i" };
 
-    const db = await serverSettings
-      .findById(interaction.guild.id, serverSettings.upsert)
-      .cacheQuery();
+    // Newest first.
+    const [cases, activeWarnings, total] = await Promise.all([
+      Case.find(filter).sort({ caseId: -1 }).lean(),
+      Case.countWarnings(ctx.guild.id, user.id),
+      Case.countDocuments({ guildId: ctx.guild.id, member: user.id }),
+    ]);
 
-    let infractions = [];
-    if (onlyType) infractions = db.infractions.filter((c) => (c.member == user.id && c.punishment.toLowerCase().startsWith(onlyType)));
-    else infractions = db.infractions.filter((c) => c.member == user.id);
-    if (infractions.length == 0) {
-      return interaction.followUp(
-        `${this.container.emojis.error} No infractions on **${user.tag}**. ${onlyType ? `They have never recieved an infraction for the type you're looking for.`: `They're squeaky clean.`}`,
-      );
-    }
-    infractions = infractions.reverse();
-    const paginated = new PaginatedMessage();
-    const embedFields = [];
-    infractions.forEach((inf, index) => {
-      embedFields.push({name: `\` ${inf.id} \` **${inf.punishment}**`, value: `* **Created:** ${inf.creationDate ? `<t:${inf.creationDate}:R>` : `Unknown`}\n* **Moderator:** <@!${inf.moderator}>\n* **Reason:** ${inf.reason ? inf.reason : `No reason specified`}${inf.expiretime != 0 ? `\n* **Expires:** <t:${inf.expiretime}:R>`: ``}`, inline: (long ? false : true)})
-    });
-
-    // Create a new embed every nine infractions, and add it to a paginated message.
-    for (let i = 0; i < infractions.length; i += 9) {
-      console.log(i)
-      await paginated.addPageBuilder(page => page
-        .setEmbeds([new EmbedBuilder()
-          .setAuthor({
-            name: user.tag,
-            iconURL: user.displayAvatarURL({ dynamic: true })
-          })
-          .setTitle(i == 0 ? (onlyType ? `${infractions.length} found infractions` : `${db.infractions.filter(i => (i.punishment == "Warn" && i.member == user.id)).length} active warnings - ${db.infractions.filter(i => i.member == user.id).length} total infractions`) : null)
-          .addFields(embedFields.slice(i, i+9))
-          .setColor(Colors.Orange)
-          .setTimestamp(new Date())
-        ])
-      )
-    }
-
-    // Send the final message
-    await paginated.run(interaction, interaction.user);
-  }
-
-  /**
-   * 
-   * @param {Message} message 
-   * @param {Args} args 
-   */
-  async messageRun(message, args) {
-    const user = await args.pick("user");
-    const onlyType = await args.pick("string").catch(() => undefined);
-    const long = args.getFlags('long', 'l');
-
-    const db = await serverSettings
-      .findById(message.guild.id, serverSettings.upsert)
-      .cacheQuery();
-
-    let infractions = [];
-    // If a specific infraction was specified, filter for that. Otherwise return all infractions.
-    if (onlyType) infractions = db.infractions.filter((c) => (c.member == user.id && c.punishment.toLowerCase().startsWith(onlyType)));
-    else infractions = db.infractions.filter((c) => c.member == user.id);
-    
-    // Nothing was found skill issue lmfao
-    if (infractions.length == 0) {
-      return message.reply(
-        `${this.container.emojis.error} No infractions on **${user.tag}**. ${onlyType ? `They have never recieved an infraction for the type you're looking for.`: `They're squeaky clean.`}`,
+    if (cases.length === 0) {
+      return ctx.reply(
+        `${emoji("error")} No infractions on **${user.tag}**. ${punishment ? "They have never received an infraction for the type you're looking for." : "They're squeaky clean."}`,
       );
     }
 
-    // Flips the infractions to have latest first, and define a paginated message.
-    infractions = infractions.reverse();
-    const paginated = new PaginatedMessage();
+    const fields = cases.map((inf) => ({
+      name: `\` ${inf.caseId} \` **${inf.punishment}**`,
+      value: [
+        `* **Created:** ${inf.creationDate ? `<t:${inf.creationDate}:R>` : "Unknown"}`,
+        `* **Moderator:** <@!${inf.moderator}>`,
+        `* **Reason:** ${inf.reason || "No reason specified"}`,
+        inf.expiretime ? `* **Expires:** <t:${inf.expiretime}:R>` : null,
+      ].filter(Boolean).join("\n").slice(0, 1024),
+      inline: !long,
+    }));
 
-    // If this doesn't work I'm jumping off a bridge. LMFAO
-    // Just like my depressing life, it's cached, so new infractions may not show up right away.
+    const title = punishment
+      ? `${cases.length} found infractions`
+      : `${activeWarnings} active warnings - ${total} total infractions`;
 
-    // Make fields to be used in embeds.
-    const embedFields = [];
-    infractions.forEach((inf, index) => {
-      embedFields.push({name: `\` ${inf.id} \` **${inf.punishment}**`, value: `* **Created:** ${inf.creationDate ? `<t:${inf.creationDate}:R>` : `Unknown`}\n* **Moderator:** <@!${inf.moderator}>\n* **Reason:** ${inf.reason ? inf.reason : `No reason specified`}${inf.expiretime != 0 ? `\n* **Expires:** <t:${inf.expiretime}:R>`: ``}`, inline: (long ? false : true)})
-    });
-
-    // Create a new embed every nine infractions, and add it to a paginated message.
-    for (let i = 0; i < infractions.length; i += 9) {
-      console.log(i)
-      await paginated.addPageBuilder(page => page
-        .setEmbeds([new EmbedBuilder()
-          .setAuthor({
-            name: user.tag,
-            iconURL: user.displayAvatarURL({ dynamic: true })
-          })
-          .setTitle(i == 0 ? (onlyType ? `${infractions.length} found infractions` : `${db.infractions.filter(i => (i.punishment == "Warn" && i.member == user.id)).length} active warnings - ${db.infractions.filter(i => i.member == user.id).length} total infractions`) : null)
-          .addFields(embedFields.slice(i, i+9))
+    const pages = [];
+    for (let i = 0; i < fields.length; i += PAGE_SIZE) {
+      pages.push(
+        new EmbedBuilder()
+          .setAuthor({ name: user.tag, iconURL: user.displayAvatarURL() })
+          .setTitle(i === 0 ? title : null)
+          .addFields(fields.slice(i, i + PAGE_SIZE))
           .setColor(Colors.Orange)
-          .setTimestamp(new Date())
-        ])
-      )
+          .setTimestamp(new Date()),
+      );
     }
 
-    // Send the final message
-    await paginated.run(message, message.author);
-    
-    //Below here is the old infraction code. Very shitty, wouldn't recommend using.
-    /* const list = infractions.map(
-      (m, i) =>
-        `${i + 1}: ${m.punishment} | ${m.id} | ${m.hidden ? `Hidden` : this.container.client.users.cache.get(m.moderator) ? this.container.client.users.cache.get(m.moderator).tag : m.moderator} | ${m.reason} | ${m.expiretime == 0 ? `Permanent` : m.expiretime} | ${m.expired ? `Expired` : `Active`}`,
-    );
+    if (pages.length === 1) return ctx.reply({ embeds: pages });
 
-    message.reply(`\`\`\`${list.join("\n")}\`\`\``); */
+    const paginated = new PaginatedMessage();
+    for (const embed of pages) paginated.addPageEmbed(embed);
+    return paginated.run(ctx.source, ctx.user);
   }
 }
-module.exports = {
-  PingCommand,
-};
+
+function escapeRegex(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+module.exports = { InfractionsCommand };

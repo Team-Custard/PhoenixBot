@@ -1,35 +1,24 @@
-const { isGuildBasedChannel } = require("@sapphire/discord.js-utilities");
 const { Listener, Events } = require("@sapphire/framework");
-const serverSettings = require("../../tools/SettingsSchema");
-const config = require("../../config.json");
+const { peekSettings } = require("../../tools/guildSettings");
 
-class ReadyListener extends Listener {
+// Runs a server's custom commands (stored in settings.cc) when an unknown prefix
+// command matches one of them.
+class CustomCommandHandler extends Listener {
   constructor(context, options) {
-    super(context, {
-      ...options,
-      once: false,
-      name: "customCommandHandler",
-      event: Events.UnknownMessageCommand,
-    });
+    super(context, { ...options, name: "customCommandHandler", event: Events.UnknownMessageCommand });
   }
-  async run(payload) {
-    if (payload.message.author.bot) return;
-    if (!isGuildBasedChannel(payload.message.channel)) return;
 
-    const db = await serverSettings
-      .findById(payload.message.guild.id, serverSettings.upsert)
-      .cacheQuery();
+  async run({ message, prefix, commandName }) {
+    if (message.author.bot || !message.inGuild()) return;
 
-    const cmd = db?.cc.find((t) => t.name == payload.commandName);
-    
-    const rawArgs = payload.message.content.substr((payload.prefix + payload.commandName).length + 1);
+    const settings = await peekSettings(message.guildId);
+    const command = settings?.cc?.find((c) => c.name === commandName);
+    if (!command) return;
 
-    if (cmd) {
-        const args = await this.container.stores.get('commands').get('cc')?.messagePreParse(payload.message, rawArgs, payload);
-        require('../../tools/tagsv2').exec(cmd.code, payload.message, args, "cc");
-    }
+    const prefixLength = typeof prefix === "string" ? prefix.length : 0;
+    const rawArgs = message.content.slice(prefixLength + commandName.length).trim();
+    await require("../../tools/tagsv2").exec(command.code, message, { rest: async () => rawArgs }, "cc");
   }
 }
-module.exports = {
-  ReadyListener,
-};
+
+module.exports = { CustomCommandHandler };

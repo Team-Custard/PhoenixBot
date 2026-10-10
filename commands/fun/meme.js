@@ -1,47 +1,36 @@
-const { Command } = require("@sapphire/framework");
-const { BucketScope } = require("@sapphire/framework");
-const bent = require("bent");
 const { PermissionFlagsBits } = require("discord.js");
+const { BucketScope } = require("@sapphire/framework");
+const { PhoenixCommand } = require("../../tools/PhoenixCommand");
+const { emoji } = require("../../tools/errorReporter");
+const { getJson } = require("../../tools/http");
 
-class PingCommand extends Command {
+class MemeCommand extends PhoenixCommand {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "meme",
-      aliases: [],
-      description: "Displays a random meme from reddit.",
-      detailedDescription: {
-        usage: "meme",
-        examples: ["meme"],
-      },
+      description: "Sends a random meme from Reddit.",
+      slash: { group: "utilities" },
+      guildOnly: false,
       cooldownDelay: 60_000,
       cooldownLimit: 10,
       cooldownScope: BucketScope.Guild,
-      requiredClientPermissions: [
-        PermissionFlagsBits.SendMessages,
-        PermissionFlagsBits.AttachFiles,
-      ],
-      preconditions: ["module"]
+      requiredClientPermissions: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles],
+      preconditions: ["module"],
     });
   }
 
-  async messageRun(message) {
-    const getStream = await bent("https://meme-api.com");
-    const stream = await getStream("/gimme");
-
-    if (stream.statusCode != 200) return message.reply(`${this.container.emojis.error} ${stream.status}`);
-
-    const obj = await stream.json();
-
-    if (obj.nsfw == true && !message.channel.nsfw) {
-      return message.reply(`${this.container.emojis.info} The fetched post was marked as nsfw, thus I will not send it here.`);
+  async run(ctx) {
+    await ctx.defer();
+    const meme = await getJson("https://meme-api.com/gimme");
+    if (meme.nsfw && !ctx.channel?.nsfw) {
+      return ctx.reply(`${emoji("warning")} The fetched post was marked as nsfw, thus I will not send it here.`);
     }
-    await message.reply({
-      content: `${obj.title} | ${obj.subreddit} | [Post link](<${obj.postLink}>)`,
-      files: [obj.url],
+    return ctx.reply({
+      content: `${meme.title} | ${meme.subreddit} | [Post link](<${meme.postLink}>)`,
+      files: [meme.url],
     });
   }
 }
-module.exports = {
-  PingCommand,
-};
+
+module.exports = { MemeCommand };

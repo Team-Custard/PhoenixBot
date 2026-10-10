@@ -1,11 +1,12 @@
 {
+	"ignorePatterns": ["frontend/", "data/", "static/", "node_modules/"],
 	"extends": "eslint:recommended",
 	"env": {
 		"node": true,
-		"es6": true
+		"es2022": true
 	},
 	"parserOptions": {
-		"ecmaVersion": 2021
+		"ecmaVersion": 2022
 	},
 	"rules": {
 		"arrow-spacing": ["warn", { "before": true, "after": true }],
@@ -29,6 +30,7 @@
 		"no-multiple-empty-lines": ["error", { "max": 2, "maxEOF": 1, "maxBOF": 0 }],
 		"no-shadow": ["error", { "allow": ["err", "resolve", "reject"] }],
 		"no-trailing-spaces": ["warn"],
+		"no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_", "ignoreRestSiblings": true }],
 		"no-var": "error",
 		"object-curly-spacing": ["error", "always"],
 		"prefer-const": "error",

@@ -1,50 +1,36 @@
-const { Command } = require("@sapphire/framework");
-const { BucketScope } = require("@sapphire/framework");
 const { PermissionFlagsBits } = require("discord.js");
+const { BucketScope } = require("@sapphire/framework");
+const { PhoenixCommand } = require("../../tools/PhoenixCommand");
+const { emoji } = require("../../tools/errorReporter");
 
-class PingCommand extends Command {
+class WolframCommand extends PhoenixCommand {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "wolfram",
-      aliases: [],
-      description: "Gets an answer from wolfram|alpha on something.",
-      detailedDescription: {
-        usage: "wolfram <question>",
-        examples: ["wolfram 10 USD to CAD", "wolfram 5*10"],
-        args: ["question: The question to ask."],
-      },
+      description: "Gets an answer from Wolfram|Alpha.",
+      examples: ["wolfram distance to the moon"],
+      args: [{ name: "query", type: "string", required: true, rest: true, maxLength: 500, description: "What to ask" }],
+      slash: { group: "utilities" },
+      guildOnly: false,
       cooldownDelay: 60_000,
       cooldownLimit: 10,
       cooldownScope: BucketScope.Guild,
-      requiredClientPermissions: [
-        PermissionFlagsBits.SendMessages,
-        PermissionFlagsBits.AttachFiles,
-      ],
-      preconditions: ["module"]
+      requiredClientPermissions: [PermissionFlagsBits.SendMessages],
+      preconditions: ["module"],
     });
   }
 
-  async messageRun(message, args) {
-    const unfilteredquery = await args.rest("string");
-    const query = encodeURIComponent(unfilteredquery);
-
-    await fetch(
-      `https://api.wolframalpha.com/v1/result?i=${query}&appid=${process.env["wolframkey"]}`,
-    )
-      .then(async (response) => {
-        if (response.status != 200) {
-          return message.reply(`${this.container.emojis.error} Not found or error occured.`);
-        }
-        const result = await response.text();
-        if (!result) return message.reply(`${this.container.emojis.error} Not found or error occured.`);
-        message.reply(`${this.container.emojis.info} ${result}`);
-      })
-      .catch((err) => {
-        message.reply(`${this.container.emojis.error} ${err}`);
-      });
+  async run(ctx, { query }) {
+    await ctx.defer();
+    const response = await fetch(
+      `https://api.wolframalpha.com/v1/result?i=${encodeURIComponent(query)}&appid=${process.env["wolframkey"]}`,
+      { signal: AbortSignal.timeout(15_000) },
+    ).catch(() => null);
+    const result = response?.ok ? await response.text() : null;
+    if (!result) return ctx.reply(`${emoji("error")} Not found or error occured.`);
+    return ctx.reply({ content: `${emoji("info")} ${result}`.slice(0, 2000), allowedMentions: { parse: [] } });
   }
 }
-module.exports = {
-  PingCommand,
-};
+
+module.exports = { WolframCommand };

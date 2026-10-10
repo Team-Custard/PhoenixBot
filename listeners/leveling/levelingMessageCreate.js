@@ -1,123 +1,92 @@
-const { Message } = require("discord.js");
-
-const { isGuildBasedChannel } = require("@sapphire/discord.js-utilities");
 const { Listener, Events } = require("@sapphire/framework");
-const ServerSettings = require("../../tools/SettingsSchema");
-const calculateLevel = require('../../tools/xpToLevel');
+const { peekSettings } = require("../../tools/guildSettings");
+const { render, contextFrom } = require("../../tools/placeholders");
+const { send } = require("../../tools/queue");
+const { LevelMember, xpForLevel, rewardRoleChanges } = require("../../tools/leveling");
+const { yieldsToStaging } = require("../../tools/staging");
 
-const config = require("../../config.json");
+const COOLDOWN = 60_000;
+const cooldowns = new Map();
 
-const cooldowns = new Set();
+const randomXp = (min, max) => Math.floor(Math.random() * (Math.floor(max) - Math.ceil(min) + 1)) + Math.ceil(min);
 
-const generateXP = (min, max) => {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-class ReadyListener extends Listener {
+class LevelingMessageCreate extends Listener {
   constructor(context, options) {
-    super(context, {
-      ...options,
-      once: false,
-      name: "levelingMessageCreate",
-      event: Events.MessageCreate,
-    });
+    super(context, { ...options, name: "levelingMessageCreate", event: Events.MessageCreate });
   }
 
-  /**
-   * @param {Message} message
-   */
+  /** @param {import("discord.js").Message} message */
   async run(message) {
-    if (message.author.bot) return;
-    if (!isGuildBasedChannel(message.channel)) return;
-    if (!message.member) return;
-    if (!message.member.id) return;
-    if (cooldowns.has(message.author.id)) return;
+    if (message.author.bot || !message.inGuild() || !message.member) return;
 
-    if (
-      this.container.client.id == "1171286616967479377" ||
-      this.container.client.id == "1239263616025493504"
-    ) {
-      const hasStaging = await message.guild.members
-        .fetch("1227318291475730443")
-        .catch(() => undefined);
-      if (hasStaging) return;
+    const key = `${message.guildId}:${message.author.id}`;
+    const last = cooldowns.get(key);
+    if (last && Date.now() - last < COOLDOWN) return;
+
+    const settings = await peekSettings(message.guildId);
+    if (!settings?.leveling?.enable) return;
+    if (settings.prefix && message.content.startsWith(settings.prefix)) return;
+    if (await yieldsToStaging(message.guild)) return;
+
+    const leveling = settings.leveling;
+    if (leveling.blacklistChannels?.includes(message.channelId)) return;
+    if (leveling.blacklistRole?.some((id) => message.member.roles.cache.has(id))) return;
+
+    cooldowns.set(key, Date.now());
+    if (cooldowns.size > 100_000) pruneCooldowns();
+
+    const xp = Math.round(randomXp(leveling.rates?.minimum ?? 5, leveling.rates?.maximum ?? 15) * xpMultiplier(leveling, message.member));
+    if (xp <= 0) return;
+    // One atomic update instead of loading and re-saving the whole settings document.
+    let entry = await LevelMember.findOneAndUpdate(
+      { guildId: message.guildId, userId: message.author.id },
+      { $inc: { xp } },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    ).lean();
+
+    let leveledUp = false;
+    if (entry.xp > xpForLevel(entry.level)) {
+      // Matching on the current level makes sure two clusters can't both level them up.
+      const updated = await LevelMember.findOneAndUpdate(
+        { _id: entry._id, level: entry.level },
+        { $set: { xp: 0 }, $inc: { level: 1 } },
+        { new: true },
+      ).lean();
+      if (updated) {
+        entry = updated;
+        leveledUp = true;
+      }
     }
-    
-    const db = await ServerSettings.findById(message.guild.id).cacheQuery();
-    if (!db.leveling.enable) return;
 
-    if (message.content.startsWith(db.prefix)) return;
+    const changes = rewardRoleChanges(leveling, message.member, entry.level);
+    if (changes.add.length) await message.member.roles.add(changes.add, "Level roles").catch(() => undefined);
+    if (changes.remove.length) await message.member.roles.remove(changes.remove, "Level roles").catch(() => undefined);
 
-    const xpToGive = generateXP(5, 15);
-    const level = db.leveling.users.find(u => u.id == message.author.id);
-
-    if (level) {
-        level.xp += xpToGive;
-        const rolestoadd = []
-        let roles = message.member.roles.cache.map(r => r.id);
-        for (let ind in roles) {
-          if (db.leveling.levelRoles.findIndex(r => r.roleId == roles[ind]) > -1) {
-            roles.splice(ind,1)
-          }
-        }
-
-        for (let i in db.leveling.levelRoles) {
-          if (db.leveling.stackRoles == true) {
-            if (level.level >= db.leveling.levelRoles[i].level) rolestoadd.push(db.leveling.levelRoles[i].roleId);
-          } else {
-            if (level.level >= db.leveling.levelRoles.sort((a, b) => a.level - b.level).reverse()[i].level && rolestoadd.length == 0) {
-              roles.push(db.leveling.levelRoles[i].roleId);
-              rolestoadd.push(db.leveling.levelRoles[i].roleId);
-            }
-          }
-          
-        }
-        if (rolestoadd.length > 0 && db.leveling.stackRoles) message.member.roles.add(rolestoadd, `Level roles`).catch(() => undefined);
-        if (rolestoadd.length > 0 && !db.leveling.stackRoles) message.member.roles.set(roles, `Level roles`).catch(() => undefined);
-
-        if (level.xp > calculateLevel(level.level)) {
-            level.xp = 0;
-            level.level += 1;
-
-            if (db.leveling.message && level.level > 1) {
-                if (db.leveling.announceChannel) {
-                    await message.guild.channels.fetch(db.leveling.announceChannel)
-                    .then(async (channel) => {
-                        channel.send(await require('../../tools/textParser').parse(db.leveling.message, message.member, {
-                            level: level.level
-                        })).catch(() => undefined);
-                    })
-                    .catch(() => undefined);
-                } 
-                else message.channel.send(await require('../../tools/textParser').parse(db.leveling.message, message.member, {
-                    level: level.level
-                }))
-                .catch(() => undefined);
-            }
-        }
-
-        await db.save();
-        cooldowns.add(message.author.id);
-        setTimeout(() => {
-            cooldowns.delete(message.author.id);
-        }, 60_000);
-    }
-    else {
-        db.leveling.users.push({
-            id: message.author.id,
-            level: 0,
-            xp: xpToGive
-        });
-        await db.save();
-        cooldowns.add(message.author.id);
-        setTimeout(() => {
-            cooldowns.delete(message.author.id);
-        }, 60_000);
+    if (leveledUp && leveling.message && entry.level > 1) {
+      const channel = leveling.announceChannel
+        ? await message.guild.channels.fetch(leveling.announceChannel).catch(() => null)
+        : message.channel;
+      const content = render(leveling.message, contextFrom({ member: message.member, channel, extra: { level: entry.level } })).slice(0, 2000);
+      await send(channel, { content, allowedMentions: { users: [message.author.id] } });
     }
   }
 }
-module.exports = {
-  ReadyListener,
-};
+
+/**
+ * Role XP multipliers set on the dashboard. If a member has several, the biggest
+ * one counts (they don't stack). Below 1 means less XP, and 0 means none.
+ */
+function xpMultiplier(leveling, member) {
+  let best = null;
+  for (const { roleId, multiplier } of leveling.multipliers ?? []) {
+    if (roleId && member.roles.cache.has(roleId) && Number.isFinite(multiplier)) best = Math.max(best ?? 0, multiplier);
+  }
+  return best ?? 1;
+}
+
+function pruneCooldowns() {
+  const cutoff = Date.now() - COOLDOWN;
+  for (const [key, time] of cooldowns) if (time < cutoff) cooldowns.delete(key);
+}
+
+module.exports = { LevelingMessageCreate };

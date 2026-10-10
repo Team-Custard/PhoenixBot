@@ -1,215 +1,117 @@
-const { Command, Args } = require("@sapphire/framework");
 const {
-  ApplicationCommandType,
+  PermissionFlagsBits,
   EmbedBuilder,
   Colors,
-  PermissionFlagsBits,
   GuildMemberFlags,
+  ApplicationCommandType,
   ApplicationIntegrationType,
   InteractionContextType,
-  Message
 } = require("discord.js");
-const serverSettings = require("../../tools/SettingsSchema");
+const { PhoenixCommand } = require("../../tools/PhoenixCommand");
+const { emoji } = require("../../tools/errorReporter");
+const { Case } = require("../../tools/moderation");
 
-class UserCommand extends Command {
+const ts = (ms) => `<t:${Math.floor(ms / 1000)}:R>`;
+
+class UserInfoCommand extends PhoenixCommand {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "userinfo",
       aliases: ["i", "info", "whois"],
-      description: "Displays info on a user.",
-      detailedDescription: {
-        usage: "userinfo [user]",
-        examples: ["userinfo sylveondev"],
-        args: [
-          "user: The user to get info on.",
-        ],
+      description: "Displays info about a user.",
+      examples: ["userinfo", "userinfo sylveondev"],
+      args: [{ name: "user", type: "user", description: "Who to look up (defaults to you)" }],
+      contextMenus: [{ name: "Display info", type: ApplicationCommandType.User, run: "displayInfoMenu", contexts: [InteractionContextType.Guild] }],
+      slash: {
+        name: "display_info",
+        integrationTypes: [ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall],
+        contexts: [InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel],
       },
+      guildOnly: false,
       cooldownDelay: 3_000,
-      preconditions: ["module"]
+      preconditions: ["module"],
     });
   }
 
-  registerApplicationCommands(registry) {
-    registry.idHints = ["1223311343768305794", "1223311342207762482"];
-    registry
-      .registerContextMenuCommand((builder) =>
-        builder
-          .setName("Display info")
-          .setType(ApplicationCommandType.User)
-          .setDMPermission(false),
-      )
-      .registerChatInputCommand((builder) =>
-        builder
-          .setName("display_info")
-          .setDescription("Displays information of a user.")
-          .addUserOption((option) =>
-            option
-              .setName("user")
-              .setDescription("The member to lookup")
-              .setRequired(true),
-          )
-          .setDMPermission(true)
-          .setIntegrationTypes([ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall])
-          .setContexts([InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel]),
-      );
+  async run(ctx, { user }) {
+    await ctx.defer();
+    const embed = await this.buildEmbed(user ?? ctx.user, ctx.guild, ctx.member);
+    return ctx.reply({ embeds: [embed] });
   }
 
-  async contextMenuRun(interaction) {
+  async displayInfoMenu(interaction) {
     await interaction.deferReply();
-    const member = interaction.targetMember;
-    if (member) {
-      let latestPunishment;
-      let punishments;
-      if (interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
-        const db = await serverSettings
-          .findById(interaction.guild.id, serverSettings.upsert)
-          .cacheQuery();
-        punishments = db.infractions.filter((f) => f.member == member.id);
-        latestPunishment = punishments[punishments.length - 1];
-      }
-
-      const embed = new EmbedBuilder()
-        .setAuthor({
-          name: member.user.displayName + (member.user.bot ? `[BOT]` : ``),
-          iconURL: member.user.displayAvatarURL({ dynamic: true }),
-        })
-        .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-        .setDescription(
-          `**Tag:** ${member.user.tag}\n${member.nickname ? `**Nickname:** ${member.nickname}\n` : ``}**Display Name:**: ${member.user.displayName}\n**ID:** ${member.user.id}\n**Joined server:** <t:${Math.floor(member.joinedTimestamp / 1000)}:R>\n**Account created:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>\n\n**Roles:** ${member.roles.cache.map((r) => r)}\n**Passed Onboarding:** ${member.flags.has(GuildMemberFlags.CompletedOnboarding) ? "Yes" : member.flags.has(GuildMemberFlags.StartedOnboarding) ? "Not yet, they started it" : "No"}\n**Boosting:** ${member.premiumSinceTimestamp ? `Yes, started boosting <t:${Math.floor(member.premiumSinceTimestamp / 1000)}:R>` : `No`}\n**Rejoined server:** ${member.flags.has(GuildMemberFlags.DidRejoin) ? "Yes" : "No"}\n**Quarentined:** ${member.flags.has(GuildMemberFlags.AutomodQuarantinedBio) ? "Yes, bad bio" : member.flags.has(GuildMemberFlags.AutomodQuarantinedUsernameOrGuildNickname) ? "Yes, bad nickname" : "No"}` +
-            `${interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers) && !member.user.bot ? `\n\n**Latest infraction:**\n${latestPunishment ? `\` ${latestPunishment.id} \` ${latestPunishment.punishment} by <@${latestPunishment.moderator}>\nReason: ${latestPunishment.reason}\n**${punishments.length}** total infractions.` : `No infractions found for this user.`}` : ``}`,
-        )
-        .setColor(member.roles.highest.color)
-        .setFooter({ text: "Triggered" })
-        .setTimestamp(new Date());
-      await interaction.followUp({ embeds: [embed] });
-    } else interaction.followUp(`${this.container.emojis.error} Unknown member.`)
-  }
-
-  async chatInputRun(interaction) {
-    await interaction.deferReply();
-    if (interaction.guild){
-      const member = await interaction.options.getMember("user");
-      if (member) {
-        let latestPunishment;
-        let punishments;
-        if (interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
-          const db = await serverSettings
-            .findById(interaction.guild.id, serverSettings.upsert)
-            .cacheQuery();
-          punishments = db.infractions.filter((f) => f.member == member.id);
-          latestPunishment = punishments[punishments.length - 1];
-        }
-
-        const embed = new EmbedBuilder()
-          .setAuthor({
-            name: member.user.displayName + (member.user.bot ? `[BOT]` : ``),
-            iconURL: member.user.displayAvatarURL({ dynamic: true }),
-          })
-          .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-          .setDescription(
-            `**Tag:** ${member.user.tag}\n${member.nickname ? `**Nickname:** ${member.nickname}\n` : ``}**Display Name:**: ${member.user.displayName}\n**ID:** ${member.user.id}\n**Joined server:** <t:${Math.floor(member.joinedTimestamp / 1000)}:R>\n**Account created:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>\n\n**Roles:** ${member.roles.cache.map((r) => r)}\n**Passed Onboarding:** ${member.flags.has(GuildMemberFlags.CompletedOnboarding) ? "Yes" : member.flags.has(GuildMemberFlags.StartedOnboarding) ? "Not yet, they started it" : "No"}\n**Boosting:** ${member.premiumSinceTimestamp ? `Yes, started boosting <t:${Math.floor(member.premiumSinceTimestamp / 1000)}:R>` : `No`}\n**Rejoined server:** ${member.flags.has(GuildMemberFlags.DidRejoin) ? "Yes" : "No"}\n**Quarentined:** ${member.flags.has(GuildMemberFlags.AutomodQuarantinedBio) ? "Yes, bad bio" : member.flags.has(GuildMemberFlags.AutomodQuarantinedUsernameOrGuildNickname) ? "Yes, bad nickname" : "No"}` +
-              `${interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers) && !member.user.bot ? `\n\n**Latest infraction:**\n${latestPunishment ? `\` ${latestPunishment.id} \` ${latestPunishment.punishment} by <@${latestPunishment.moderator}>\nReason: ${latestPunishment.reason}\n**${punishments.length}** total infractions.` : `No infractions found for this user.`}` : ``}`,
-          )
-          .setColor(member.roles.highest.color)
-          .setFooter({ text: "Triggered" })
-          .setTimestamp(new Date());
-        await interaction.followUp({ embeds: [embed] });
-      } else {
-        // Fetch the user instead, they don't exist.
-        const user = await interaction.options.getUser("user");
-        let isBanned = undefined;
-        if (interaction.member.permissions.has(PermissionFlagsBits.BanMembers)) {
-          isBanned = await interaction.guild.bans.fetch(user.id).catch(() => undefined);
-        }
-        const embed = new EmbedBuilder()
-          .setAuthor({
-            name: user.displayName + (user.bot ? `[BOT]` : ``),
-            iconURL: user.displayAvatarURL({ dynamic: true }),
-          })
-          .setThumbnail(user.displayAvatarURL({ dynamic: true }))
-          .setDescription(
-            `**Tag:** ${user.tag}\n**ID:** ${user.id}\n**Account created:** <t:${Math.floor(user.createdTimestamp / 1000)}:R>\n${isBanned ? `**Banned:** *Yes*\n**Ban reason:** ${isBanned.reason || 'No reason specified'}` : `**Banned:** No`}\nNot in this server.`,
-          )
-          .setColor(Colors.Orange)
-          .setFooter({ text: "Triggered" })
-          .setTimestamp(new Date());
-        await interaction.followUp({ embeds: [embed] });
-      }
-    } else {
-      const user = await interaction.options.getUser("user");
-        const embed = new EmbedBuilder()
-          .setAuthor({
-            name: user.displayName + (user.bot ? `[BOT]` : ``),
-            iconURL: user.displayAvatarURL({ dynamic: true }),
-          })
-          .setThumbnail(user.displayAvatarURL({ dynamic: true }))
-          .setDescription(
-            `**Tag:** ${user.tag}\n**ID:** ${user.id}\n**Account created:** <t:${Math.floor(user.createdTimestamp / 1000)}:R>\n-# *Userapps cannot view guild data, so I cannot show you any other info on this user. Invite Phoenix to the server to view more info on this user.*`,
-          )
-          .setColor(Colors.Orange)
-          .setFooter({ text: "Triggered" })
-          .setTimestamp(new Date());
-        await interaction.followUp({ embeds: [embed] });
-    }
+    if (!interaction.guild) return interaction.editReply(`${emoji("error")} Unknown member.`);
+    const embed = await this.buildEmbed(interaction.targetUser, interaction.guild, interaction.member);
+    return interaction.editReply({ embeds: [embed] });
   }
 
   /**
-   * 
-   * @param {Message} message 
-   * @param {Args} args 
+   * @param {import("discord.js").User} user
+   * @param {import("discord.js").Guild|null} guild The server it's used in (null for DMs / user installs).
+   * @param {import("discord.js").GuildMember|null} viewer Who's asking, for permission-gated details.
    */
-  async messageRun(message, args) {
-    const user = await args.pick("user").catch(() => message.author);
-    const member = await message.guild.members
-      .fetch(user.id)
-      .catch(() => undefined);
-    if (member) {
-      let latestPunishment;
-      let punishments;
-      if (message.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
-        const db = await serverSettings
-          .findById(message.guild.id, serverSettings.upsert)
-          .cacheQuery();
-        punishments = db.infractions.filter((f) => f.member == member.id);
-        latestPunishment = punishments[punishments.length - 1];
-      }
+  async buildEmbed(user, guild, viewer) {
+    const embed = new EmbedBuilder()
+      .setAuthor({ name: user.displayName + (user.bot ? " [BOT]" : ""), iconURL: user.displayAvatarURL() })
+      .setThumbnail(user.displayAvatarURL())
+      .setColor(Colors.Orange)
+      .setFooter({ text: "Triggered" })
+      .setTimestamp(new Date());
 
-      const embed = new EmbedBuilder()
-        .setAuthor({
-          name: member.user.displayName + (member.user.bot ? `[BOT]` : ``),
-          iconURL: member.user.displayAvatarURL({ dynamic: true }),
-        })
-        .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-        .setDescription(
-          `**Tag:** ${member.user.tag}\n${member.nickname ? `**Nickname:** ${member.nickname}\n` : ``}**Display Name:**: ${member.user.displayName}\n**ID:** ${member.user.id}\n**Joined server:** <t:${Math.floor(member.joinedTimestamp / 1000)}:R>\n**Account created:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>\n\n**Roles:** ${member.roles.cache.map((r) => r)}\n**Passed Onboarding:** ${member.flags.has(GuildMemberFlags.CompletedOnboarding) ? "Yes" : member.flags.has(GuildMemberFlags.StartedOnboarding) ? "Not yet, they started it" : "No"}\n**Boosting:** ${member.premiumSinceTimestamp ? `Yes, started boosting <t:${Math.floor(member.premiumSinceTimestamp / 1000)}:R>` : `No`}\n**Rejoined server:** ${member.flags.has(GuildMemberFlags.DidRejoin) ? "Yes" : "No"}\n**Quarentined:** ${member.flags.has(GuildMemberFlags.AutomodQuarantinedBio) ? "Yes, bad bio" : member.flags.has(GuildMemberFlags.AutomodQuarantinedUsernameOrGuildNickname) ? "Yes, bad nickname" : "No"}` +
-            `${message.member.permissions.has(PermissionFlagsBits.ModerateMembers) && !member.user.bot ? `\n\n**Latest infraction:**\n${latestPunishment ? `\` ${latestPunishment.id} \` ${latestPunishment.punishment} by <@${latestPunishment.moderator}>\nReason: ${latestPunishment.reason}\n**${punishments.length}** total infractions.` : `No infractions found for this user.`}` : ``}`,
-        )
-        .setColor(member.roles.highest.color)
-        .setFooter({ text: "Triggered" })
-        .setTimestamp(new Date());
-      await message.reply({ embeds: [embed] });
-    } else {
-      //let isBanned = undefined;
-      let isBanned = await message.guild.bans.fetch(user.id).catch(() => undefined);
-        if (message.member.permissions.has(PermissionFlagsBits.BanMembers)) {
-        }
-        const embed = new EmbedBuilder()
-          .setAuthor({
-            name: user.displayName + (user.bot ? `[BOT]` : ``),
-            iconURL: user.displayAvatarURL({ dynamic: true }),
-          })
-          .setThumbnail(user.displayAvatarURL({ dynamic: true }))
-          .setDescription(
-            `**Tag:** ${user.tag}\n**ID:** ${user.id}\n**Account created:** <t:${Math.floor(user.createdTimestamp / 1000)}:R>\n${isBanned ? `**Banned:** *Yes*\n**Ban reason:** ${isBanned.reason || 'No reason specified'}` : `**Banned:** No`}\nNot in this server.`,
-          )
-          .setColor(Colors.Orange)
-          .setFooter({ text: "Triggered" })
-          .setTimestamp(new Date());
-      await message.reply({ embeds: [embed] });
+    if (!guild) {
+      return embed.setDescription(
+        `**Tag:** ${user.tag}\n**ID:** ${user.id}\n**Account created:** ${ts(user.createdTimestamp)}\n-# *Userapps cannot view server data, so I can't show more info on this user. Invite Phoenix to the server to see more.*`,
+      );
     }
+
+    const canModerate = viewer?.permissions?.has?.(PermissionFlagsBits.ModerateMembers);
+    const member = await guild.members.fetch(user.id).catch(() => null);
+
+    if (!member) {
+      const ban = viewer?.permissions?.has?.(PermissionFlagsBits.BanMembers)
+        ? await guild.bans.fetch(user.id).catch(() => null)
+        : null;
+      return embed.setDescription(
+        `**Tag:** ${user.tag}\n**ID:** ${user.id}\n**Account created:** ${ts(user.createdTimestamp)}\n` +
+        `${ban ? `**Banned:** *Yes*\n**Ban reason:** ${ban.reason || "No reason specified"}\n` : ""}Not in this server.`,
+      );
+    }
+
+    const flags = member.flags;
+    const lines = [
+      `**Tag:** ${user.tag}`,
+      member.nickname ? `**Nickname:** ${member.nickname}` : null,
+      `**Display Name:** ${user.displayName}`,
+      `**ID:** ${user.id}`,
+      `**Joined server:** ${ts(member.joinedTimestamp)}`,
+      `**Account created:** ${ts(user.createdTimestamp)}`,
+      "",
+      `**Roles:** ${member.roles.cache.filter((r) => r.id !== guild.id).map((r) => `${r}`).join(" ").slice(0, 1000) || "None"}`,
+      `**Passed Onboarding:** ${flags.has(GuildMemberFlags.CompletedOnboarding) ? "Yes" : flags.has(GuildMemberFlags.StartedOnboarding) ? "Not yet, they started it" : "No"}`,
+      `**Boosting:** ${member.premiumSinceTimestamp ? `Yes, started boosting ${ts(member.premiumSinceTimestamp)}` : "No"}`,
+      `**Rejoined server:** ${flags.has(GuildMemberFlags.DidRejoin) ? "Yes" : "No"}`,
+      `**Quarantined:** ${flags.has(GuildMemberFlags.AutomodQuarantinedBio) ? "Yes, bad bio" : flags.has(GuildMemberFlags.AutomodQuarantinedUsernameOrGuildNickname) ? "Yes, bad nickname" : "No"}`,
+    ];
+
+    if (canModerate && !user.bot) {
+      const [latest, total] = await Promise.all([
+        Case.findOne({ guildId: guild.id, member: user.id }).sort({ caseId: -1 }).lean(),
+        Case.countDocuments({ guildId: guild.id, member: user.id }),
+      ]);
+      lines.push("", "**Latest infraction:**");
+      lines.push(
+        latest
+          ? `\` ${latest.caseId} \` ${latest.punishment} by <@${latest.moderator}>\nReason: ${latest.reason}\n**${total}** total infractions.`
+          : "No infractions found for this user.",
+      );
+    }
+
+    return embed
+      .setDescription(lines.filter((l) => l !== null).join("\n"))
+      .setColor(member.roles.highest.color || Colors.Orange);
   }
 }
-module.exports = {
-  UserCommand,
-};
+
+module.exports = { UserInfoCommand };

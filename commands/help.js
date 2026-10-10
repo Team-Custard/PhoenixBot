@@ -1,132 +1,121 @@
-const { Command } = require("@sapphire/framework");
 const { EmbedBuilder, Colors, PermissionFlagsBits, PermissionsBitField } = require("discord.js");
+const { PhoenixCommand } = require("../tools/PhoenixCommand");
+const { emoji } = require("../tools/errorReporter");
+const { commandMention } = require("../tools/CommandContext");
+const { dashboard } = require("../tools/config");
 
-class PingCommand extends Command {
+const CATEGORIES = [
+  ["utility", "Utility"],
+  ["fun", "Fun"],
+  ["mod", "Moderation"],
+  ["config", "Settings"],
+];
+
+class HelpCommand extends PhoenixCommand {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "help",
       aliases: ["h", "helpme"],
-      description:
-        "Displays help info. Displays the list of commands if no command ",
-      detailedDescription: {
-        usage: "help [flag] [command]",
-        examples: ["help", "help prefix", "help ping"],
-        args: ["[command] : The command to show help for."],
-        flags: [
-          "dev : Show dev commands (Can't run these commands, no point in using this)",
-        ],
-      },
-      cooldownDelay: 3_000,
-      requiredClientPermissions: [
-        PermissionFlagsBits.SendMessages,
-        PermissionFlagsBits.EmbedLinks,
+      description: "Lists the bot's commands, or shows details for one command.",
+      examples: ["help", "help ban"],
+      args: [
+        { name: "command", type: "string", autocomplete: true, maxLength: 40, description: "The command to show help for" },
+        { name: "dev", type: "boolean", aliases: ["d"], slash: false, description: "Include developer commands" },
       ],
-      flags: true,
+      guildOnly: false,
+      cooldownDelay: 3_000,
+      requiredClientPermissions: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks],
     });
   }
 
-  async messageRun(message, args) {
-    const showDev = args.getFlags("dev", "d");
-    const option = await args.pick("string").catch(() => "");
-    if (option == "") {
-      const general = [];
-      const config = [];
-      const fun = [];
-      const mod = [];
-      const social = [];
-      const automod = [];
-      const dev = [];
-      this.container.client.stores.get("commands").forEach((item) => {
-        if (item.category == "utility") general.push(`\`${item.name}\``);
-        if (item.category == "config") config.push(`\`${item.name}\``);
-        if (item.category == "fun") fun.push(`\`${item.name}\``);
-        if (item.category == "mod") mod.push(`\`${item.name}\``);
-        if (item.category == "automod") automod.push(`\`${item.name}\``);
-        if (item.category == "social") social.push(`\`${item.name}\``);
-        if (item.category == "dev") dev.push(`\`${item.name}\``);
-      });
+  /** Commands worth listing (not slash groups, not dev-only unless asked). */
+  listable(includeDev = false) {
+    return [...this.container.stores.get("commands").values()].filter(
+      (c) => (!c.isSlashGroup || c.subcommandDefs) && (includeDev || c.category !== "dev"),
+    );
+  }
 
-      const embed = new EmbedBuilder()
-        .setTitle("All commands")
-        .setDescription(
-          `The following commands are available.\nNot all commands support prefix commands. Try out slash commands to use whatever isn't supported.\nUse \`help [command name]\` to view specific details.`,
-        )
-        .setColor(Colors.Orange)
-        .setThumbnail(
-          this.container.client.user.displayAvatarURL({
-            format: "png",
-            size: 2048,
-          }),
-        )
-        .setTimestamp(new Date())
-        .addFields([
-          {
-            name: `Utility`,
-            value:
-              general.length > 0 ? general.join(", ") : "No commands found",
-          },
-          {
-            name: `Fun`,
-            value: fun.length > 0 ? fun.join(", ") : "No commands found",
-          },
-          {
-            name: `Moderation`,
-            value: mod.length > 0 ? mod.join(", ") : "No commands found",
-          },
-          {
-            name: `Automod`,
-            value:
-              automod.length > 0 ? automod.join(", ") : "No commands found",
-          },
-          /*{
-            name: `Social`,
-            value: social.length > 0 ? social.join(", ") : "No commands found",
-          },*/
-          {
-            name: `Config`,
-            value: config.length > 0 ? config.join(", ") : "No commands found",
-          },
-        ]);
-      if (dev.length > 0 && showDev) {
-        embed.addFields([{ name: "Dev", value: dev.join(", ") }]);
-      }
-      return message.reply({ embeds: [embed] });
-    } else {
-      const cmd = this.container.client.stores
-        .get("commands")
-        .find((i) => (i.name === option || i.aliases.includes(option)));
-      if (cmd == null) {
-        return message.reply({ content: `${this.container.emojis.error} No such command was found.` });
-      }
-      const embed = new EmbedBuilder()
-        .setTitle(
-          `${cmd.name} ${cmd.aliases.length > 0 ? ` - ` + cmd.aliases.join(", ") : ""}`,
-        )
-        .setDescription(
-          `Category: ${cmd.fullCategory}\nUsage: ${cmd.detailedDescription.usage}\n${cmd.description}`,
-        )
-        .setColor(Colors.Orange);
-      if (cmd.detailedDescription.args) {
-        embed.addFields([
-          { name: "Args", value: cmd.detailedDescription.args.join("\n") },
-        ]);
-      }
-      if (cmd.detailedDescription.flags) {
-        embed.addFields([
-          { name: "Flags", value: cmd.detailedDescription.flags.join("\n") },
-        ]);
-      }
-      embed.addFields([
-        {
-          name: "Needed permissions:",
-          value: `User: ${new PermissionsBitField(cmd.options.suggestedUserPermissions).toArray().join(", ") ?? "No permissions needed"}\nClient: ${new PermissionsBitField(cmd.options.requiredClientPermissions).toArray().join(", ") ?? "No permissions needed"}\n`,
-        },
-      ]);
-      return message.reply({ embeds: [embed] });
+  find(name) {
+    const lower = name.toLowerCase().replace(/^\//, "");
+    return this.listable(true).find(
+      (c) => c.name === lower || c.aliases.includes(lower) || c.slashPath?.()?.join(" ") === lower || c.slashName === lower,
+    );
+  }
+
+  async run(ctx, { command, dev }) {
+    if (command) return this.showCommand(ctx, command);
+
+    const byCategory = new Map(CATEGORIES.map(([key]) => [key, []]));
+    for (const c of this.listable(dev)) {
+      const key = byCategory.has(c.category) ? c.category : c.category === "dev" ? "dev" : "utility";
+      if (!byCategory.has(key)) byCategory.set(key, []);
+      byCategory.get(key).push(`\`${c.name}\``);
     }
+
+    const embed = new EmbedBuilder()
+      .setTitle("All commands")
+      .setDescription(
+        `Every command works as a slash command. Prefix commands still work for now but are being phased out.\n` +
+        `Use ${commandMention("help")} with a command name for details.` +
+        (dashboard.baseUrl ? `\nServer settings now live on the [dashboard](${dashboard.baseUrl}/dash).` : ""),
+      )
+      .setColor(Colors.Orange)
+      .setThumbnail(this.container.client.user.displayAvatarURL({ size: 512 }))
+      .setTimestamp(new Date());
+
+    for (const [key, label] of [...CATEGORIES, ["dev", "Developer"]]) {
+      const names = byCategory.get(key);
+      if (names?.length) embed.addFields({ name: label, value: names.sort().join(", ").slice(0, 1024) });
+    }
+    return ctx.reply({ embeds: [embed] });
+  }
+
+  showCommand(ctx, name) {
+    const cmd = this.find(name);
+    if (!cmd) return ctx.error(`${emoji("error")} No such command was found.`);
+
+    const lines = [cmd.description || "No description."];
+    if (typeof cmd.usage === "function") {
+      lines.push("", `**Prefix:** \`${cmd.usage()}\``);
+      const path = cmd.slashPath?.();
+      if (path) lines.push(`**Slash:** ${commandMention(path.join(" "))}`);
+      else if (cmd.slash === null) lines.push("**Slash:** prefix only");
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle(`${cmd.name}${cmd.aliases.length ? ` - ${cmd.aliases.join(", ")}` : ""}`)
+      .setDescription(lines.join("\n"))
+      .setColor(Colors.Orange);
+
+    if (cmd.subcommandDefs) {
+      embed.addFields({
+        name: "Subcommands",
+        value: cmd.subcommandDefs
+          .map((s) => `\`${cmd.usage(s.name)}\` - ${s.description}`)
+          .join("\n")
+          .slice(0, 1024),
+      });
+    }
+    else if (cmd.args?.length) {
+      embed.addFields({
+        name: "Options",
+        value: cmd.args
+          .map((a) => `\`${a.type === "boolean" ? `--${a.name}` : a.name}\`${a.required ? " (required)" : ""} - ${a.description ?? ""}`)
+          .join("\n")
+          .slice(0, 1024),
+      });
+    }
+    if (cmd.examples?.length) embed.addFields({ name: "Examples", value: cmd.examples.map((e) => `\`${e}\``).join("\n") });
+
+    const userPerms = new PermissionsBitField(cmd.options.suggestedUserPermissions ?? []).toArray();
+    const botPerms = new PermissionsBitField(cmd.options.requiredClientPermissions ?? []).toArray();
+    embed.addFields({
+      name: "Needed permissions",
+      value: `User: ${userPerms.join(", ") || "None"}\nBot: ${botPerms.join(", ") || "None"}`,
+    });
+    return ctx.reply({ embeds: [embed] });
   }
 }
-module.exports = {
-  PingCommand,
-};
+
+module.exports = { HelpCommand };

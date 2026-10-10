@@ -1,115 +1,23 @@
 const { Listener } = require("@sapphire/framework");
-const ServerSettings = require("../../../tools/SettingsSchema");
-const { EmbedBuilder, Colors } = require("discord.js");
-const webhookFetch = require("../../../tools/webhookFetch");
+const { sendLog, logEmbed, timeDifference, truncate } = require("../../../tools/logging");
 
-// Code: https://stackoverflow.com/questions/6108819/javascript-timestamp-to-relative-time
-function timeDifference(current, previous) {
-
-  var msPerMinute = 60 * 1000;
-  var msPerHour = msPerMinute * 60;
-  var msPerDay = msPerHour * 24;
-  var msPerMonth = msPerDay * 30;
-  var msPerYear = msPerDay * 365;
-
-  var elapsed = current - previous;
-
-  if (elapsed < msPerMinute) {
-       return Math.round(elapsed/1000) + ' seconds';   
-  }
-
-  else if (elapsed < msPerHour) {
-       return Math.round(elapsed/msPerMinute) + ' minutes';   
-  }
-
-  else if (elapsed < msPerDay ) {
-       return Math.round(elapsed/msPerHour ) + ' hours';   
-  }
-
-  else if (elapsed < msPerMonth) {
-      return 'About ' + Math.round(elapsed/msPerDay) + ' days';   
-  }
-
-  else if (elapsed < msPerYear) {
-      return 'About ' + Math.round(elapsed/msPerMonth) + ' months';   
-  }
-
-  else {
-      return 'About ' + Math.round(elapsed/msPerYear ) + ' years';   
-  }
-}
-
-class GuildMemberAdd extends Listener {
+class LoggerMemberRemove extends Listener {
   constructor(context, options) {
-    super(context, {
-      ...options,
-      once: false,
-      event: "guildMemberRemove",
-      name: "loggerMemberRemove",
-    });
+    super(context, { ...options, event: "guildMemberRemove", name: "loggerMemberRemove" });
   }
-  async run(member) {
-    if (member.partial) member = await member.fetch();
-    if (this.container.client.id == "1239263616025493504") {
-      const hasStaging = await member.guild.members
-        .fetch("1227318291475730443")
-        .catch(() => undefined);
-      if (hasStaging) return;
-    }
 
-    const db = await ServerSettings.findById(member.guild.id).cacheQuery();
+  run(member) {
+    // Members that weren't cached arrive as partials without join date or roles.
+    const lines = [`${member} left`];
+    if (member.joinedTimestamp) lines.push(`Member for: **${timeDifference(Date.now(), member.joinedTimestamp)}**`);
+    lines.push(`Created <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`);
+    const roles = member.roles?.cache?.filter((r) => r.id !== member.guild.id).map((r) => `${r}`).join(", ");
 
-    const timer = (await this.container.tasks.list({types: ["delayed", "waiting", "prioritized"]})).find(t => t.name == 'autoKick' && t.data.guildid == member.guild.id && t.data.memberid == member.id);
-    if (timer) {
-      timer.remove();
-      console.log('Removed autokick task as the user has left the server');
-    }
-
-    if (db.logging.members) {
-      const channel = await member.guild.channels
-        .fetch(db.logging.members)
-        .catch(() => undefined);
-      if (channel) {
-        const webhook = await webhookFetch.find(channel);
-
-        if (!webhook) {
-          console.log("Welp didn't find a webhook, sry.");
-          return;
-        }
-        const embed = new EmbedBuilder()
-          .setAuthor({
-            name: member.user.username,
-            iconURL: member.user.displayAvatarURL({ dynamic: true, size: 256 }),
-          })
-          .setDescription(
-            `${member} left\nMember for: **${await timeDifference(new Date(), member.joinedAt)}**\nCreated <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`,
-          )
-          .addFields([
-            { name: 'Roles:', value: `${member.roles.cache.map(r => r).join(', ')}` || `No roles found` }
-          ])
-          .setThumbnail(
-            member.user.displayAvatarURL({ dynamic: true, size: 1024 }),
-          )
-          .setColor(Colors.Orange)
-          .setTimestamp(new Date());
-
-        await webhook
-          .send({
-            // content: '',
-            username: this.container.client.user.username,
-            avatarURL: this.container.client.user.displayAvatarURL({
-              extension: "png",
-              size: 512,
-            }),
-            embeds: [embed],
-          })
-          .catch((err) =>
-            console.error(`[error] Error on sending webhook`, err),
-          );
-      }
-    }
+    const embed = logEmbed(member.user, lines.join("\n"))
+      .addFields({ name: "Roles:", value: truncate(roles, 1024) || "No roles found" })
+      .setThumbnail(member.user.displayAvatarURL({ size: 1024 }));
+    return sendLog(member.guild, "members", { embeds: [embed] });
   }
 }
-module.exports = {
-  GuildMemberAdd,
-};
+
+module.exports = { LoggerMemberRemove };

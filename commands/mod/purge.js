@@ -1,189 +1,67 @@
-const { Subcommand } = require("@sapphire/plugin-subcommands");
-const { ApplicationCommandRegistry, BucketScope } = require("@sapphire/framework");
-const { PermissionFlagsBits, ChatInputCommandInteraction, PermissionsBitField } = require("discord.js");
-const serverSettings = require("../../tools/SettingsSchema");
-const { setTimeout } = require("timers/promises");
+const { PermissionFlagsBits } = require("discord.js");
+const { BucketScope } = require("@sapphire/framework");
+const { PhoenixCommand } = require("../../tools/PhoenixCommand");
+const { emoji } = require("../../tools/errorReporter");
 
-class PingCommand extends Subcommand {
+const limitArg = {
+  name: "limit",
+  type: "integer",
+  required: true,
+  minValue: 1,
+  maxValue: 100,
+  description: "How many messages to look through (1-100)",
+};
+
+class PurgeCommand extends PhoenixCommand {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "clean",
-      aliases: [`purge`, `p`, `clear`],
+      aliases: ["purge", "p", "clear"],
       description: "Bulk deletes messages in the channel.",
-      detailedDescription: {
-        usage: "purge [type] [limit]",
-        args: ["type: The type of purge to do"]
-      },
+      examples: ["purge 50", "purge user 20 sylveondev", "purge bots 30"],
+      subcommands: [
+        { name: "all", description: "Deletes any message", args: [limitArg], run: "purgeAll", default: true },
+        {
+          name: "user",
+          description: "Deletes messages from one user",
+          args: [limitArg, { name: "user", type: "user", required: true, description: "Whose messages to delete" }],
+          run: "purgeUser",
+        },
+        { name: "bots", description: "Deletes messages sent by bots", args: [limitArg], run: "purgeBots" },
+      ],
+      slash: { name: "purge" },
       cooldownDelay: 30_000,
       cooldownScope: BucketScope.Guild,
       suggestedUserPermissions: [PermissionFlagsBits.ManageMessages],
       requiredClientPermissions: [PermissionFlagsBits.ManageMessages],
-      subcommands: [{
-        name: "all",
-        chatInputRun: "chatInputPurgeAll",
-        messageRun: "messagePurgeAll",
-        default: true,
-      }, {
-        name: "user",
-        chatInputRun: "chatInputPurgeUser",
-        messageRun: "messagePurgeUser",
-      }, {
-        name: "bots",
-        chatInputRun: "chatInputPurgeBots",
-        messageRun: "messagePurgeBots",
-      }],
-      preconditions: ["module"]
+      preconditions: ["module"],
     });
   }
 
-  /**
-   * @param {ApplicationCommandRegistry} registry 
-   */
-  registerApplicationCommands(registry) {
-    registry.registerChatInputCommand(command => 
-      command.setName("purge")
-      .setDescription("Purges messages in a channel")
-      .addSubcommand(subcommand => 
-        subcommand.setName("all")
-        .setDescription("Purges any message in the channel")
-        .addIntegerOption(input =>
-          input.setName("limit")
-          .setDescription("The amount of messages to purge")
-          .setMinValue(1)
-          .setMaxValue(100)
-          .setRequired(true)
-        )
-      )
-      .addSubcommand(subcommand => 
-        subcommand.setName("user")
-        .setDescription("Purges all messages in the channel from a specific user")
-        .addUserOption(input =>
-            input.setName("user")
-            .setDescription("The user's messages to purge")
-            .setRequired(true)
-        )
-        .addIntegerOption(input =>
-          input.setName("limit")
-          .setDescription("The amount of messages to purge")
-          .setMinValue(1)
-          .setMaxValue(100)
-          .setRequired(true)
-        )
-      )
-      .addSubcommand(subcommand => 
-        subcommand.setName("bots")
-        .setDescription("Purges all messages sent by bots in the channel")
-        .addIntegerOption(input =>
-          input.setName("limit")
-          .setDescription("The amount of messages to purge")
-          .setMinValue(1)
-          .setMaxValue(100)
-          .setRequired(true)
-        )
-      )
-      .setDMPermission(false)
-      .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
-    )
+  purgeAll(ctx, { limit }) {
+    return this.purge(ctx, limit, () => true);
   }
 
-  /**
-   * @param {ChatInputCommandInteraction} interaction 
-   */
-  async chatInputPurgeAll(interaction) {
-    const reply = await interaction.deferReply({ fetchReply: true });
-    const limit = interaction.options.getInteger("limit");
-    const messages = await interaction.channel.messages.fetch({
-        bulkDeletable: true,
-        before: reply.id,
-        limit: limit,
-        force: true
+  purgeUser(ctx, { limit, user }) {
+    return this.purge(ctx, limit, (msg) => msg.author.id === user.id);
+  }
+
+  purgeBots(ctx, { limit }) {
+    return this.purge(ctx, limit, (msg) => msg.author.bot);
+  }
+
+  async purge(ctx, limit, filter) {
+    // Ephemeral so the bot's own "thinking" reply isn't part of what gets deleted.
+    await ctx.defer({ ephemeral: true });
+    const messages = await ctx.channel.messages.fetch({
+      limit,
+      before: ctx.isSlash ? undefined : ctx.message.id,
+      cache: false,
     });
-    const purged = await interaction.channel.bulkDelete(messages, true);
-    await interaction.followUp(`${this.container.emojis.success} Deleted **${purged.size}** messages.`)
+    const purged = await ctx.channel.bulkDelete(messages.filter(filter), true);
+    return ctx.reply(`${emoji("success")} Deleted **${purged.size}** messages.`);
   }
-
-  async messagePurgeAll(message, args) {
-    const limit = await args.pick("integer");
-    const messages = await message.channel.messages.fetch({
-        bulkDeletable: true,
-        before: message.id,
-        limit: limit,
-        force: true
-    });
-    const purged = await message.channel.bulkDelete(messages, true);
-    await message.reply(`${this.container.emojis.success} Deleted **${purged.size}** messages.`)
-  }
-
-  /**
-   * @param {ChatInputCommandInteraction} interaction 
-   */
-  async chatInputPurgeUser(interaction) {
-    const reply = await interaction.deferReply({ fetchReply: true });
-    const member = interaction.options.getUser("user");
-    const limit = interaction.options.getInteger("limit");
-    const messages = await interaction.channel.messages.fetch({
-        bulkDeletable: true,
-        before: reply.id,
-        limit: limit,
-        force: true
-    }).then(messages => {return messages.filter((msg => msg.author.id == member.id))})
-    const purged = await interaction.channel.bulkDelete(messages, true);
-    await interaction.followUp(`${this.container.emojis.success} Deleted **${purged.size}** messages.`)
-  }
-
-  async messagePurgeUser(message, args) {
-    const limit = await args.pick("integer");
-    if (limit < 0 || limit > 100) return message.reply(`${this.container.emojis.error} You can only clean between 1-100 messages at a time.`)
-    const member = await args.pick("user");
-    const messages = await message.channel.messages.fetch({
-        bulkDeletable: true,
-        before: message.id,
-        limit: limit,
-        force: true
-    }).then(async messages => {
-        const filter = messages.filter((msg => msg.author.id == member.id))
-        const purged = await message.channel.bulkDelete(filter, true);
-        await message.reply(`${this.container.emojis.success} Deleted **${purged.size}** messages.`)
-    })
-  }
-
-  /**
-   * @param {ChatInputCommandInteraction} interaction 
-   */
-  async chatInputPurgeBots(interaction) {
-    const reply = await interaction.deferReply({ fetchReply: true });
-    const member = interaction.options.getUser("user");
-    const limit = interaction.options.getInteger("limit");
-    const messages = await interaction.channel.messages.fetch({
-        bulkDeletable: true,
-        before: reply.id,
-        limit: limit,
-        force: true
-    }).then(messages => {return messages.filter((msg => msg.author.bot))})
-    const purged = await interaction.channel.bulkDelete(messages, true);
-    await interaction.followUp(`${this.container.emojis.success} Deleted **${purged.size}** messages.`)
-  }
-
-  async messagePurgeBots(message, args) {
-    const limit = await args.pick("integer");
-    if (limit < 0 || limit > 100) return message.reply(`${this.container.emojis.error} You can only clean between 1-100 messages at a time.`)
-    const member = await args.pick("user");
-    const messages = await message.channel.messages.fetch({
-        bulkDeletable: true,
-        before: message.id,
-        limit: limit,
-        force: true
-    }).then(async messages => {
-        const filter = messages.filter((msg => msg.author.bot))
-        const purged = await message.channel.bulkDelete(filter, true);
-        await message.reply(`${this.container.emojis.success} Deleted **${purged.size}** messages.`)
-    })
-  }
-
-
-  
 }
-module.exports = {
-  PingCommand,
-};
+
+module.exports = { PurgeCommand };

@@ -1,18 +1,12 @@
 const { Listener } = require("@sapphire/framework");
-const { EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
-class scheduledTaskFinished extends Listener {
+class ScheduledTaskSuccess extends Listener {
   constructor(context, options) {
-    super(context, {
-      ...options,
-      once: false,
-      event: "scheduledTaskFinished",
-    });
+    super(context, { ...options, event: "scheduledTaskSuccess" });
   }
-  async run(task) {
-    console.log(`Successfully finished task ${task.name}`);
+
+  run(task, _payload, _result, duration) {
+    console.log(`Task ${task.name} succeeded in ${Math.round(duration)}ms`);
   }
 }
-module.exports = {
-    scheduledTaskFinished,
-};
+module.exports = { ScheduledTaskSuccess };

@@ -1,53 +1,33 @@
 const { Listener } = require("@sapphire/framework");
-const ServerSettings = require("../../tools/SettingsSchema");
-const { EmbedBuilder, Colors, GuildMember, AuditLogEvent } = require("discord.js");
-const webhookFetch = require("../../tools/webhookFetch");
+const { peekSettings } = require("../../tools/guildSettings");
+const { cancelMemberTask } = require("../../tools/tasks");
 
-class GuildMemberAdd extends Listener {
+// Jobs created before this process started may use the old random job ids.
+const BOOT_TIME = Date.now();
+
+// Cancels a pending autokick once the member gets the role they need.
+class AutokickDisabler extends Listener {
   constructor(context, options) {
-    super(context, {
-      ...options,
-      once: false,
-      event: "guildMemberUpdate",
-      name: "automodAutokickDisabler",
+    super(context, { ...options, event: "guildMemberUpdate", name: "automodAutokickDisabler" });
+  }
+
+  async run(oldMember, member) {
+    // Only gaining roles can satisfy autokick. (If the old member wasn't cached we
+    // can't tell what changed, so just check the current roles.)
+    if (!oldMember.partial && member.roles.cache.size <= oldMember.roles.cache.size) return;
+
+    const settings = await peekSettings(member.guild.id);
+    const autokick = settings?.automod?.autokick;
+    if (!autokick?.duration) return;
+
+    const satisfied = autokick.neededRole ? member.roles.cache.has(autokick.neededRole) : member.roles.cache.size > 1;
+    if (!satisfied) return;
+    const joined = member.joinedTimestamp ?? 0;
+    await cancelMemberTask("autoKick", member.guild.id, member.id, {
+      // Only an old-style job could still be pending for this member.
+      scanLegacy: joined < BOOT_TIME && Date.now() - joined < autokick.duration,
     });
   }
-
-  /**
-   * @param {GuildMember} oldMember 
-   * @param {GuildMember} member 
-   * @returns 
-   */
-  async run(oldMember, member) {
-    if (member.partial) member = await member.fetch();
-    if (this.container.client.id == "1239263616025493504") {
-      const hasStaging = await member.guild.members
-        .fetch("1227318291475730443")
-        .catch(() => undefined);
-      if (hasStaging) return;
-    }
-
-    const db = await ServerSettings.findById(member.guild.id).cacheQuery();
-    if (oldMember.roles.cache.size != member.roles.cache.size) {
-        if (db.automod.autokick.neededRole) {
-            if (member.roles.cache.has(db.automod.autokick.neededRole)) {
-                const timer = (await this.container.tasks.list({types: ["delayed", "waiting", "prioritized"]})).find(t => t.name == 'autoKick' && t.data.guildid == member.guild.id && t.data.memberid == member.id);
-                if (timer) {
-                  timer.remove();
-                  console.log('Removed autokick task');
-                }
-            }
-        }
-        else if (member.roles.cache.size > 1) {
-            const timer = (await this.container.tasks.list({types: ["delayed", "waiting", "prioritized"]})).find(t => t.name == 'autoKick' && t.data.guildid == member.guild.id && t.data.memberid == member.id);
-            if (timer) {
-              timer.remove();
-              console.log('Removed autokick task');
-            }
-        }
-    }
-  }
 }
-module.exports = {
-  GuildMemberAdd,
-};
+
+module.exports = { AutokickDisabler };

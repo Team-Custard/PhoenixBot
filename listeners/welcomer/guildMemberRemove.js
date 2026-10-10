@@ -1,37 +1,22 @@
 const { Listener } = require("@sapphire/framework");
-const ServerSettings = require("../../tools/SettingsSchema");
+const { peekSettings } = require("../../tools/guildSettings");
+const { render, contextFrom } = require("../../tools/placeholders");
+const { send } = require("../../tools/queue");
 
-class GuildMemberRemove extends Listener {
+class WelcomerRemove extends Listener {
   constructor(context, options) {
-    super(context, {
-      ...options,
-      once: false,
-      event: "guildMemberRemove",
-      name: "welcomerRemove",
-    });
+    super(context, { ...options, event: "guildMemberRemove", name: "welcomerRemove" });
   }
+
   async run(member) {
-    if (member.partial) member = await member.fetch();
+    // Members who left can't be fetched anymore, so a partial is all we get.
     if (member.user.bot) return;
-    const db = await ServerSettings.findById(member.guild.id).cacheQuery();
-    if (!db) return;
-    if (db.goodbyes.channel) {
-      const channel = await member.guild.channels
-        .fetch(db.goodbyes.channel)
-        .catch(() => undefined);
-      if (channel) {
-        channel
-          .send(
-            await require("../../tools/textParser").parse(
-              db.goodbyes.message,
-              member,
-            ),
-          )
-          .catch(() => undefined);
-      }
-    }
+    const settings = await peekSettings(member.guild.id);
+    const goodbyes = settings?.goodbyes;
+    if (!goodbyes?.channel || !goodbyes.message) return;
+    const channel = await member.guild.channels.fetch(goodbyes.channel).catch(() => null);
+    await send(channel, { content: render(goodbyes.message, contextFrom({ member, channel })).slice(0, 2000), allowedMentions: { parse: [] } });
   }
 }
-module.exports = {
-  GuildMemberRemove,
-};
+
+module.exports = { WelcomerRemove };

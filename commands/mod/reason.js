@@ -1,123 +1,40 @@
-const { Command } = require("@sapphire/framework");
-const { PermissionFlagsBits, EmbedBuilder, Colors } = require("discord.js");
-const serverSettings = require("../../tools/SettingsSchema");
-const settings = require("../../config.json");
+const { PermissionFlagsBits } = require("discord.js");
+const { PhoenixCommand } = require("../../tools/PhoenixCommand");
+const { getSettings } = require("../../tools/guildSettings");
+const { emoji } = require("../../tools/errorReporter");
+const mod = require("../../tools/moderation");
 
-class PingCommand extends Command {
+class ReasonCommand extends PhoenixCommand {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "reason",
-      aliases: [`re`, `setreason`],
-      description:
-        "Changes the reason of an infraction. Note changing infractions makes you the responsible moderator.",
-      detailedDescription: {
-        usage: "reason <caseid> <newreason>",
-        examples: ["reason 22 Being mean", "reason 4 Insults"],
-        args: [
-          "caseid : The case to modify",
-          "newreason : The new reason for the infraction",
-        ],
-      },
+      aliases: ["re", "setreason"],
+      description: "Changes the reason of a case.",
+      examples: ["reason 12 Spamming in general"],
+      args: [
+        { name: "case_id", type: "integer", required: true, minValue: 1, description: "The case number to change" },
+        { name: "reason", type: "string", required: true, rest: true, maxLength: 1000, description: "The new reason" },
+      ],
+      slash: { group: "mod" },
       cooldownDelay: 3_000,
       suggestedUserPermissions: [PermissionFlagsBits.ModerateMembers],
-      preconditions: ["module"]
+      preconditions: ["module"],
     });
   }
 
-  async chatInputRun(interaction) {
-    await interaction.deferReply();
-    const caseid = await interaction.options.getInteger("case_id");
-    const reason = await interaction.options.getString("reason");
+  async run(ctx, { case_id, reason }) {
+    const caseDoc = await mod.Case.findCase(ctx.guild.id, case_id);
+    if (!caseDoc) return ctx.reply(`${emoji("error")} No such case found.`);
 
-    const db = await serverSettings
-      .findById(interaction.guild.id, serverSettings.upsert)
-      .cacheQuery();
+    caseDoc.moderator = ctx.user.id;
+    caseDoc.reason = reason;
+    await caseDoc.save();
+    await ctx.reply(`${emoji("success")} Modified reason for case **\` ${case_id} \`**.`);
 
-    const thecase = db.infractions.find((c) => c.id == caseid);
-    if (!thecase) return interaction.followUp(`${this.container.emojis.error} No such case found.`);
-    console.log(thecase);
-
-    thecase.moderator = interaction.member.id;
-    thecase.reason = reason;
-    await db.save();
-    interaction.followUp(
-      `${this.container.emojis.success} Modified reason for case  **\` ${caseid} \`**.`,
-    );
-
-    if (db.logging.infractions) {
-      const channel = await interaction.guild.channels
-        .fetch(db.logging.infractions)
-        .catch(() => undefined);
-      if (channel) {
-        const embed = new EmbedBuilder()
-          .setTitle(`${thecase.punishment} - Case ${thecase.id}`)
-          .setDescription(
-            `**Offender:** <@${thecase.member}>\n**Moderator:** ${interaction.user}\n**Reason:** ${reason}`,
-          )
-          .setColor(Colors.Orange)
-          .setFooter({ text: `ID ${thecase.member}` })
-          .setTimestamp(new Date());
-
-        await channel.messages
-          .fetch(thecase.modlogID)
-          .then(function (msg) {
-            console.log(thecase.modlogID);
-            msg.edit({ embeds: [embed] });
-          })
-          .catch(function (err) {
-            console.error(`[error] Error on sending to channel`, err);
-          });
-      }
-    }
-  }
-  
-  async messageRun(message, args) {
-    const caseid = await args.pick("integer");
-    const reason = await args.rest("string");
-
-    const db = await serverSettings
-      .findById(message.guild.id, serverSettings.upsert)
-      .cacheQuery();
-
-    const thecase = db.infractions.find((c) => c.id == caseid);
-    if (!thecase) return message.reply(`${this.container.emojis.error} No such case found.`);
-    console.log(thecase);
-
-    thecase.moderator = message.member.id;
-    thecase.reason = reason;
-    await db.save();
-    message.reply(
-      `${this.container.emojis.success} Modified reason for case  **\` ${caseid} \`**.`,
-    );
-
-    if (db.logging.infractions) {
-      const channel = await message.guild.channels
-        .fetch(db.logging.infractions)
-        .catch(() => undefined);
-      if (channel) {
-        const embed = new EmbedBuilder()
-          .setTitle(`${thecase.punishment} - Case ${thecase.id}`)
-          .setDescription(
-            `**Offender:** <@${thecase.member}>\n**Moderator:** ${message.author}\n**Reason:** ${reason}`,
-          )
-          .setColor(Colors.Orange)
-          .setFooter({ text: `ID ${thecase.member}` })
-          .setTimestamp(new Date());
-
-        await channel.messages
-          .fetch(thecase.modlogID)
-          .then(function (msg) {
-            console.log(thecase.modlogID);
-            msg.edit({ embeds: [embed] });
-          })
-          .catch(function (err) {
-            console.error(`[error] Error on sending to channel`, err);
-          });
-      }
-    }
+    const settings = await getSettings(ctx.guild.id);
+    await mod.updateModlog(ctx.guild, settings, caseDoc, { moderator: `${ctx.user}` });
   }
 }
-module.exports = {
-  PingCommand,
-};
+
+module.exports = { ReasonCommand };

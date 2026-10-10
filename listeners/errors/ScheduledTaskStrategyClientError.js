@@ -1,18 +1,12 @@
 const { Listener } = require("@sapphire/framework");
-const { EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
-class scheduledTaskStrategyClientError extends Listener {
+class ScheduledTaskStrategyClientError extends Listener {
   constructor(context, options) {
-    super(context, {
-      ...options,
-      once: false,
-      event: "scheduledTaskStrategyClientError",
-    });
+    super(context, { ...options, event: "scheduledTaskStrategyClientError" });
   }
-  async run(error) {
-    console.log(error);
+
+  run(error) {
+    console.error(`[error] Scheduled task client error`, error);
   }
 }
-module.exports = {
-    scheduledTaskStrategyClientError,
-};
+module.exports = { ScheduledTaskStrategyClientError };

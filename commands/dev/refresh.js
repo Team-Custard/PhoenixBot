@@ -1,11 +1,6 @@
 const {
   Command,
-  CommandStore,
-  ListenerStore,
-  PreconditionStore,
-  InteractionHandlerStore,
 } = require("@sapphire/framework");
-const { Colors } = require("discord.js");
 const { PermissionFlagsBits } = require("discord.js");
 
 class PingCommand extends Command {
@@ -46,8 +41,9 @@ class PingCommand extends Command {
           message.reply(`${this.container.emojis.error} Command refresh failed, ${err}`);
           console.error(err);
         });
-    } else {
-      /*const accepted = await require(`../../tools/warningEmbed`).warnMessage(
+    }
+ else {
+      /* const accepted = await require(`../../tools/warningEmbed`).warnMessage(
         message,
         `You're about to refresh the entire stores. Continue?`,
       );
