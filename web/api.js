@@ -226,12 +226,13 @@ function tagsOf(doc) {
 
 router.get("/guilds/:guildId", wrap(async (req, res) => {
   const guildId = req.params.guildId;
-  const [doc, context, premium, caseCount, levelCount] = await Promise.all([
+  const [doc, context, premium, caseCount, levelCount, automodRules] = await Promise.all([
     getSettingsDoc(guildId),
     getGuildContext(guildId),
     discord.hasPremium(guildId),
     Case.countDocuments({ guildId }),
     LevelMember.countDocuments({ guildId }),
+    discord.getAutomodRules(guildId),
   ]);
   const hasRankCard = fs.existsSync(path.join(RANKCARD_DIR, `${guildId}-rankcard.png`));
 
@@ -251,6 +252,8 @@ router.get("/guilds/:guildId", wrap(async (req, res) => {
       profile: profileOf(guildId, context.botMember),
     },
     commands: commandList(),
+    // null when Phoenix can't see the server's AutoMod rules (no Manage Server).
+    automodRules,
     sections,
     settings: settingsValues(doc),
     roleMenus: roleMenusOf(doc),
@@ -379,6 +382,34 @@ function validateField(field, value, ctx, label = field.label) {
       if (!field.options.some((o) => o.value === value)) fail("isn't one of the choices.");
       return value;
     }
+    case "strings": {
+      if (empty) return [];
+      if (!Array.isArray(value)) fail("must be a list.");
+      const seen = new Set();
+      const out = [];
+      for (const item of value) {
+        if (typeof item !== "string") fail("must be a list of text.");
+        let text = item.trim();
+        if (field.lowercase) text = text.toLowerCase();
+        if (!text) continue;
+        if (field.itemMax && text.length > field.itemMax) fail(`“${text.slice(0, 20)}…” is longer than ${field.itemMax} characters.`);
+        if (seen.has(text.toLowerCase())) continue;
+        seen.add(text.toLowerCase());
+        out.push(text);
+      }
+      if (field.max && out.length > field.max) fail(`can have at most ${field.max} entries.`);
+      return out;
+    }
+    case "automodRule": {
+      if (empty) {
+        if (field.required) fail("pick a rule.");
+        return null;
+      }
+      if (!ctx.automodRules) fail("Phoenix can't see this server's AutoMod rules. Give it the Manage Server permission.");
+      const rule = ctx.automodRules.find((r) => r.id === String(value));
+      if (!rule) fail("that AutoMod rule doesn't exist anymore.");
+      return rule.id;
+    }
     case "list": {
       if (empty) return [];
       if (!Array.isArray(value)) fail("must be a list.");
@@ -414,6 +445,23 @@ function checkSection(sectionId, values, doc) {
       }
     }
   }
+  if (sectionId === "automod") {
+    const { FILTERS } = require("../tools/automod");
+    for (const name of FILTERS) {
+      const key = `automod.filters.${name}`;
+      if (get(`${key}.enabled`) && get(`${key}.action`) === "mute" && !get(`${key}.duration`) && !get("moderation.muteRole")) {
+        const label = sections.find((s) => s.id === "automod").groups[name].label;
+        throw new ApiError(400, `${label}: a permanent mute needs a mute role (Moderation page). Pick a duration instead.`, { field: `${key}.duration` });
+      }
+    }
+  }
+  if (sectionId === "discord-automod") {
+    for (const rule of get("automod.discordRules") ?? []) {
+      if (rule.action === "mute" && !rule.duration && !get("moderation.muteRole")) {
+        throw new ApiError(400, "Linked rules: a permanent mute needs a mute role (Moderation page). Pick a duration instead.");
+      }
+    }
+  }
   if (sectionId === "leveling") {
     const min = get("leveling.rates.minimum") ?? 5;
     const max = get("leveling.rates.maximum") ?? 15;
@@ -428,8 +476,13 @@ router.patch("/guilds/:guildId/settings/:section", wrap(async (req, res) => {
   if (!input || typeof input !== "object") throw new ApiError(400, "Nothing to save.");
 
   const guildId = req.params.guildId;
-  const [doc, context] = await Promise.all([getSettingsDoc(guildId), getGuildContext(guildId)]);
-  const ctx = { ...context, guildId, commands: commandList() };
+  const needsRules = section.fields.some((f) => f.type === "automodRule" || f.fields?.some((sub) => sub.type === "automodRule"));
+  const [doc, context, automodRules] = await Promise.all([
+    getSettingsDoc(guildId),
+    getGuildContext(guildId),
+    needsRules ? discord.getAutomodRules(guildId) : null,
+  ]);
+  const ctx = { ...context, guildId, commands: commandList(), automodRules };
 
   const clean = {};
   for (const [key, value] of Object.entries(input)) {

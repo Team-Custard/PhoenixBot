@@ -14,6 +14,7 @@ const roleCache = new TtlCache(30_000);
 const presenceCache = new TtlCache(5 * 60_000, 50_000);
 const premiumCache = new TtlCache(5 * 60_000);
 const userCache = new TtlCache(60 * 60_000, 20_000);
+const automodCache = new TtlCache(30_000);
 let applicationId = null;
 
 const redirectUri = () => `${dashboard.baseUrl}/dash/login`;
@@ -106,6 +107,16 @@ function getRoles(guildId) {
   return roleCache.wrap(guildId, () => rest.get(Routes.guildRoles(guildId)));
 }
 
+/**
+ * The server's Discord AutoMod rules, or null if Phoenix can't see them (it needs
+ * Manage Server for that).
+ */
+function getAutomodRules(guildId) {
+  return automodCache.wrap(guildId, () => rest.get(Routes.guildAutoModerationRules(guildId))
+    .then((rules) => rules.map((r) => ({ id: r.id, name: r.name, enabled: r.enabled, triggerType: r.trigger_type })))
+    .catch(() => null));
+}
+
 /** A user's public profile (cached for an hour). */
 function getUser(userId) {
   return userCache.wrap(userId, () => rest.get(Routes.user(userId)).catch(() => null));
@@ -187,6 +198,7 @@ function invalidateGuild(guildId) {
   guildCache.delete(guildId);
   channelCache.delete(guildId);
   roleCache.delete(guildId);
+  automodCache.delete(guildId);
   presenceCache.delete(guildId);
 }
 
@@ -229,6 +241,7 @@ module.exports = {
   getRoles,
   getBotMember,
   getUser,
+  getAutomodRules,
   getApplicationId,
   botGuildIds,
   hasPremium,

@@ -1544,3 +1544,48 @@ h5.md-heading { font-size: 1em; }
   font-size: 15px;
   color: var(--cinder);
 }
+
+/* ------------------------------------------------- grouped fields (automod) */
+
+.field-group {
+  margin-top: 16px;
+  padding: 4px 20px;
+  border-radius: var(--radius);
+  background: var(--soot);
+  border: 1px solid var(--smoke-soft);
+  transition: border-color 0.2s;
+}
+
+.field-group:has(> header .switch input:checked) {
+  border-color: rgba(255, 138, 61, 0.35);
+}
+
+.field-group > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+}
+
+.field-group > header h3 {
+  font-size: 18px;
+}
+
+.field-group > header p {
+  margin: 2px 0 0;
+  color: var(--haze);
+  font-size: 14px;
+}
+
+.field-group > header .switch {
+  flex: none;
+}
+
+.field-group .field:last-child {
+  border-bottom: 0;
+}
+
+.field-group.off > header h3 {
+  color: var(--haze);
+}

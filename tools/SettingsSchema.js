@@ -1,6 +1,16 @@
 const { Schema, model } = require("mongoose");
 const { SpeedGooseCacheAutoCleaner } = require("speedgoose");
 
+/** One automod filter: on/off, what to do and its own options. */
+function filter(options = {}, action = "delete") {
+  return {
+    enabled: { type: Boolean, default: false },
+    action: { type: String, default: action },
+    duration: { type: Number, default: 10 * 60 * 1000 },
+    ...options,
+  };
+}
+
 const settingsSchema = new Schema({
   _id: { type: String, required: true },
   prefix: {
@@ -103,16 +113,28 @@ const settingsSchema = new Schema({
       neededRole: String
     },
     minimumAge: Number,
-    bindings: [
-      {
-        id: String,
-        actions: [String],
-      }
-    ],
-    muteduration: String,
-    pingreport: String,
-    nsfwimage: [],
-    nsfwweight: { type: Number, default: 50 },
+    // Message filters (listeners/automod/automodMessage.js, tools/automod.js).
+    ignoreModerators: { type: Boolean, default: true },
+    exemptRoles: [String],
+    exemptChannels: [String],
+    notifyChannel: { type: Boolean, default: true },
+    filters: {
+      spam: filter({ maxMessages: { type: Number, default: 6 }, seconds: { type: Number, default: 5 } }, "mute"),
+      duplicates: filter({ count: { type: Number, default: 4 } }),
+      invites: filter({ allowOwnServer: { type: Boolean, default: true } }),
+      links: filter({ allowedDomains: [String] }),
+      mentions: filter({ max: { type: Number, default: 6 } }, "warn"),
+      caps: filter({ percent: { type: Number, default: 70 }, minLength: { type: Number, default: 12 } }),
+      words: filter({ words: [String] }),
+      emojis: filter({ max: { type: Number, default: 10 } }),
+      lines: filter({ max: { type: Number, default: 15 } }),
+    },
+    // Punishments for Discord's own AutoMod rules (listeners/automod/discordAutomod.js).
+    discordRules: [{
+      ruleId: String,
+      action: String,
+      duration: Number,
+    }],
   },
   starboard: {
     emoji: String,
@@ -122,6 +144,8 @@ const settingsSchema = new Schema({
   },
   leveling: {
     enable: { type: Boolean, default: false },
+    // Show the top of the leaderboard on the website (/leaderboard/<server id>).
+    publicLeaderboard: { type: Boolean, default: true },
     blacklistRole: [String],
     blacklistChannels: [String],
     stackRoles: { type: Boolean, default: true },

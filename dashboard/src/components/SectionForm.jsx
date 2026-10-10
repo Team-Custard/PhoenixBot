@@ -1,7 +1,7 @@
 // Draws one settings page from its spec and saves only that page's values.
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api.js";
-import { Control, Field } from "./fields.jsx";
+import { Control, Field, isShown } from "./fields.jsx";
 import { MessagePreview } from "./Preview.jsx";
 import { SaveBar } from "./SaveBar.jsx";
 import { useToast } from "./Toasts.jsx";
@@ -22,6 +22,17 @@ export function useUnsavedWarning(dirty) {
       window.__phoenixDirty = false;
     };
   }, [dirty]);
+}
+
+/** Splits a section's fields into runs of ungrouped fields and named groups, in order. */
+function groupFields(section) {
+  const blocks = [];
+  for (const field of section.fields) {
+    const last = blocks[blocks.length - 1];
+    if (last && last.group === (field.group ?? null)) last.fields.push(field);
+    else blocks.push({ key: `${field.group ?? "fields"}-${blocks.length}`, group: field.group ?? null, fields: [field] });
+  }
+  return blocks;
 }
 
 export function SectionForm({ section, data, me, onSaved, children }) {
@@ -61,26 +72,56 @@ export function SectionForm({ section, data, me, onSaved, children }) {
     }
   }
 
+  function renderField(field) {
+    return (
+      <Field key={field.key} field={field} error={errors[field.key]}>
+        {(id) => (
+          <Control
+            id={id}
+            field={field}
+            value={draft[field.key]}
+            onChange={(value) => setDraft((d) => ({ ...d, [field.key]: value }))}
+            data={data}
+            preview={field.preview ? (
+              <MessagePreview text={draft[field.key]} user={me.user} guild={data.guild} extra={{ level: "5" }} />
+            ) : null}
+          />
+        )}
+      </Field>
+    );
+  }
+
   return (
     <>
-      <div className="fields">
-        {section.fields.map((field) => (
-          <Field key={field.key} field={field} error={errors[field.key]}>
-            {(id) => (
-              <Control
-                id={id}
-                field={field}
-                value={draft[field.key]}
-                onChange={(value) => setDraft((d) => ({ ...d, [field.key]: value }))}
-                data={data}
-                preview={field.preview ? (
-                  <MessagePreview text={draft[field.key]} user={me.user} guild={data.guild} extra={{ level: "5" }} />
-                ) : null}
-              />
-            )}
-          </Field>
-        ))}
-      </div>
+      {groupFields(section).map((block) => {
+        const shown = block.fields.filter((f) => isShown(f, (key) => draft[key]));
+        if (!block.group) return <div key={block.key} className="fields">{shown.map(renderField)}</div>;
+        const meta = section.groups?.[block.group] ?? { label: block.group };
+        // A filter's on/off switch sits in the group's header.
+        const toggle = block.fields.find((f) => f.groupToggle);
+        const rest = shown.filter((f) => f !== toggle);
+        return (
+          <section key={block.key} className={`field-group${toggle && !draft[toggle.key] ? " off" : ""}`}>
+            <header>
+              <div>
+                <h3>{meta.label}</h3>
+                {meta.help && <p>{meta.help}</p>}
+              </div>
+              {toggle && (
+                <Control
+                  id={`group-${block.group}`}
+                  field={toggle}
+                  value={draft[toggle.key]}
+                  onChange={(value) => setDraft((d) => ({ ...d, [toggle.key]: value }))}
+                  data={data}
+                  label={meta.label}
+                />
+              )}
+            </header>
+            {rest.length > 0 && <div className="fields">{rest.map(renderField)}</div>}
+          </section>
+        );
+      })}
       {children}
       {dirty && <SaveBar saving={saving} onSave={save} onReset={() => setDraft(saved)} />}
     </>

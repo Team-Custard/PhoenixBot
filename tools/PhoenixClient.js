@@ -35,6 +35,8 @@ class PhoenixClient extends SapphireClient {
         GatewayIntentBits.GuildPresences,
         // Lets the logging webhook cache know when a channel's webhooks change.
         GatewayIntentBits.GuildWebhooks,
+        // Discord AutoMod rule breaks, for the punishments linked on the dashboard.
+        GatewayIntentBits.AutoModerationExecution,
       ],
       loadDefaultErrorListeners: true,
       loadMessageCommandListeners: true,

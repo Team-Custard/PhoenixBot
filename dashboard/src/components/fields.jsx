@@ -80,10 +80,10 @@ export function NumberInput({ id, field, value, onChange }) {
   );
 }
 
-export function Toggle({ id, value, onChange }) {
+export function Toggle({ id, value, onChange, label }) {
   return (
     <label className="switch" htmlFor={id}>
-      <input id={id} type="checkbox" role="switch" checked={Boolean(value)} onChange={(e) => onChange(e.target.checked)} />
+      <input id={id} type="checkbox" role="switch" aria-label={label} checked={Boolean(value)} onChange={(e) => onChange(e.target.checked)} />
       <span className="track" aria-hidden="true" />
       <span className="state">{value ? "On" : "Off"}</span>
     </label>
@@ -295,12 +295,100 @@ export function CommandsSelect({ id, value, onChange, data }) {
   );
 }
 
+/** A list of short texts, like blocked words. Type and press Enter (or paste a comma-separated list). */
+export function StringsInput({ id, field, value, onChange }) {
+  const items = value ?? [];
+  const [text, setText] = useState("");
+  const add = (raw) => {
+    const parts = raw.split(/[,\n]/).map((p) => (field.lowercase ? p.trim().toLowerCase() : p.trim())).filter(Boolean);
+    const known = new Set(items.map((i) => i.toLowerCase()));
+    const next = [...items];
+    for (const part of parts) {
+      if (!known.has(part.toLowerCase()) && (!field.itemMax || part.length <= field.itemMax)) {
+        next.push(part);
+        known.add(part.toLowerCase());
+      }
+    }
+    onChange(field.max ? next.slice(0, field.max) : next);
+    setText("");
+  };
+  return (
+    <>
+      {items.length > 0 ? (
+        <div className="chips">
+          {items.map((item) => (
+            <span className="chip" key={item}>
+              <span>{item}</span>
+              <button type="button" aria-label={`Remove ${item}`} onClick={() => onChange(items.filter((v) => v !== item))}>×</button>
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="empty-hint">Nothing added yet.</p>
+      )}
+      <div className="inline">
+        <input
+          id={id}
+          className="input"
+          value={text}
+          maxLength={field.itemMax ? field.itemMax * 20 : undefined}
+          placeholder={field.placeholder ?? "Type and press Enter"}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              add(text);
+            }
+          }}
+          onPaste={(e) => {
+            const pasted = e.clipboardData.getData("text");
+            if (/[,\n]/.test(pasted)) {
+              e.preventDefault();
+              add(text + pasted);
+            }
+          }}
+        />
+        <button type="button" className="button" disabled={!text.trim() || (field.max && items.length >= field.max)} onClick={() => add(text)}>Add</button>
+      </div>
+      {field.max && items.length > field.max * 0.8 && <div className="char-count">{items.length} / {field.max}</div>}
+    </>
+  );
+}
+
+const TRIGGER_NAMES = { 1: "Blocked words", 3: "Spam", 4: "Flagged words", 5: "Mention spam", 6: "Member profile" };
+
+export function AutomodRuleSelect({ id, value, onChange, data }) {
+  const rules = data.automodRules;
+  if (!rules) return <p className="field-error">Phoenix can't see this server's AutoMod rules. Give it the Manage Server permission, then reload.</p>;
+  const missing = value && !rules.some((r) => r.id === value);
+  return (
+    <select id={id} className="select" value={value ?? ""} onChange={(e) => onChange(e.target.value || null)}>
+      <option value="">{rules.length ? "Pick a rule" : "This server has no AutoMod rules"}</option>
+      {missing && <option value={value}>Deleted rule</option>}
+      {rules.map((r) => (
+        <option key={r.id} value={r.id}>{r.name}{TRIGGER_NAMES[r.triggerType] ? ` (${TRIGGER_NAMES[r.triggerType]})` : ""}{r.enabled ? "" : " — off"}</option>
+      ))}
+    </select>
+  );
+}
+
+/**
+ * Whether a field with showIf should be shown. `get` reads another field's value.
+ * showIf can be a key (shown when that field is on), { key, in: [values] }, or a
+ * list of those that all have to match.
+ */
+export function isShown(field, get) {
+  if (!field.showIf) return true;
+  const rules = Array.isArray(field.showIf) ? field.showIf : [field.showIf];
+  return rules.every((rule) => (typeof rule === "string" ? Boolean(get(rule)) : rule.in.includes(get(rule.key))));
+}
+
 // ---------------------------------------------------------------- lists
 
 export function ListInput({ field, value, onChange, data }) {
   const rows = value ?? [];
   const update = (index, key, next) => onChange(rows.map((row, i) => (i === index ? { ...row, [key]: next } : row)));
-  const blank = Object.fromEntries(field.fields.map((f) => [f.key, f.type === "commands" ? [] : f.type === "duration" ? 0 : null]));
+  const blank = Object.fromEntries(field.fields.map((f) => [f.key, f.type === "commands" || f.type === "strings" ? [] : f.type === "duration" ? 0 : null]));
 
   return (
     <>
@@ -308,7 +396,7 @@ export function ListInput({ field, value, onChange, data }) {
       <div className="list-rows">
         {rows.map((row, index) => (
           <div className="list-row" key={index}>
-            {field.fields.map((sub) => (
+            {field.fields.filter((sub) => isShown(sub, (key) => row[key])).map((sub) => (
               <div key={sub.key}>
                 <label htmlFor={`${field.key}-${index}-${sub.key}`}>{sub.label}</label>
                 <Control id={`${field.key}-${index}-${sub.key}`} field={sub} value={row[sub.key]} onChange={(v) => update(index, sub.key, v)} data={data} />
@@ -345,6 +433,8 @@ export function Control(props) {
     case "commands": return <CommandsSelect {...props} />;
     case "select": return <SelectInput {...props} />;
     case "list": return <ListInput {...props} />;
+    case "strings": return <StringsInput {...props} />;
+    case "automodRule": return <AutomodRuleSelect {...props} />;
     default: return <p className="field-error">Unknown setting type {props.field.type}</p>;
   }
 }

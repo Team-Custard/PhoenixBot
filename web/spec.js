@@ -15,6 +15,12 @@
 //   commands         list of command names
 //   select           one of `options`
 //   list             a table of rows, each row described by `fields`
+//   strings          a list of short texts, like blocked words (max = how many, itemMax = length)
+//   automodRule      one of the server's Discord AutoMod rules
+//
+// Other field options: group (fields with the same group are drawn together, see the
+// section's `groups`), showIf (only show the field when another field is on, or when
+// { key, in: [values] } matches; a list of these must all match).
 
 // Discord channel types: text and announcement channels.
 const TEXT_CHANNELS = [0, 5];
@@ -22,6 +28,42 @@ const TEXT_CHANNELS = [0, 5];
 const LOGGABLE_CHANNELS = [0, 5, 2, 13, 15, 16, 4];
 
 const PLACEHOLDERS = "{{mention}}, {{username}}, {{displayname}}, {{nickname}}, {{userid}}, {{membercount}}, {{servername}}";
+
+const PUNISHMENTS = [
+  { value: "warn", label: "Warn" },
+  { value: "mute", label: "Mute" },
+  { value: "kick", label: "Kick" },
+  { value: "ban", label: "Ban" },
+];
+
+const FILTER_ACTIONS = [
+  { value: "delete", label: "Delete the message" },
+  { value: "warn", label: "Delete and warn" },
+  { value: "mute", label: "Delete and mute" },
+  { value: "kick", label: "Delete and kick" },
+  { value: "ban", label: "Delete and ban" },
+];
+
+/** The fields for one automod filter: on/off, its options, what to do and for how long. */
+function filterFields(name, options) {
+  const base = `automod.filters.${name}`;
+  const enabled = `${base}.enabled`;
+  return [
+    { key: enabled, type: "toggle", label: "Filter on", group: name, groupToggle: true },
+    ...options.map((field) => ({ ...field, key: `${base}.${field.key}`, group: name, showIf: enabled })),
+    { key: `${base}.action`, type: "select", label: "Then", required: true, options: FILTER_ACTIONS, group: name, showIf: enabled },
+    {
+      key: `${base}.duration`,
+      type: "duration",
+      label: "For",
+      min: 0,
+      max: 365 * 86_400_000,
+      group: name,
+      showIf: [enabled, { key: `${base}.action`, in: ["mute", "ban"] }],
+      help: "0 = permanent. Mutes over 28 days use the mute role.",
+    },
+  ];
+}
 
 const sections = [
   {
@@ -99,13 +141,85 @@ const sections = [
     ],
   },
   {
-    id: "automod",
-    name: "Automod",
+    id: "joins",
+    name: "Join gate",
     description: "Keep raiders and throwaway accounts out.",
     fields: [
       { key: "automod.minimumAge", type: "duration", label: "Minimum account age", min: 0, max: 365 * 86_400_000, units: ["day"], help: "Kick accounts younger than this when they join. 0 turns it off." },
       { key: "automod.autokick.duration", type: "duration", label: "Autokick after", min: 0, max: 30 * 86_400_000, minNonZero: 15_000, help: "Kick new members who don't get a role within this time. 0 turns it off." },
       { key: "automod.autokick.neededRole", type: "role", label: "Role they need", help: "Leave empty to accept any role." },
+    ],
+  },
+  {
+    id: "automod",
+    name: "Automod",
+    description: "Phoenix's message filters. Turn on the ones you want and pick what happens to people who trip them. Actions are logged to the Automod log channel.",
+    groups: {
+      everyone: { label: "Who automod checks" },
+      spam: { label: "Spam", help: "Too many messages in a short time. The whole burst is deleted." },
+      duplicates: { label: "Repeated messages", help: "The same message sent again and again within 30 seconds." },
+      invites: { label: "Server invites", help: "Invite links to other Discord servers." },
+      links: { label: "Links", help: "Any link, except to the sites you allow." },
+      mentions: { label: "Mass mentions", help: "Mentioning lots of people or roles in one message." },
+      caps: { label: "Capital letters", help: "MESSAGES THAT SHOUT." },
+      words: { label: "Blocked words", help: "Words and phrases that aren't allowed. Catches l00k-alike spellings too." },
+      emojis: { label: "Emoji spam", help: "Too many emojis in one message." },
+      lines: { label: "Wall of text", help: "Messages with lots of lines." },
+    },
+    fields: [
+      { key: "automod.ignoreModerators", type: "toggle", label: "Ignore moderators", group: "everyone", help: "People with Manage Messages or Manage Server aren't checked." },
+      { key: "automod.exemptRoles", type: "roles", label: "Ignored roles", group: "everyone" },
+      { key: "automod.exemptChannels", type: "channels", channelTypes: LOGGABLE_CHANNELS, label: "Ignored channels", group: "everyone", help: "Channels or whole categories automod leaves alone." },
+      { key: "automod.notifyChannel", type: "toggle", label: "Tell people why", group: "everyone", help: "Post a short note in the channel (deleted after a few seconds) when a message is removed." },
+      ...filterFields("spam", [
+        { key: "maxMessages", type: "number", min: 2, max: 30, label: "More than this many messages" },
+        { key: "seconds", type: "number", min: 1, max: 30, label: "Within (seconds)" },
+      ]),
+      ...filterFields("duplicates", [
+        { key: "count", type: "number", min: 2, max: 20, label: "Same message this many times" },
+      ]),
+      ...filterFields("invites", [
+        { key: "allowOwnServer", type: "toggle", label: "Allow invites to this server" },
+      ]),
+      ...filterFields("links", [
+        { key: "allowedDomains", type: "strings", max: 100, itemMax: 100, lowercase: true, placeholder: "e.g. youtube.com", label: "Allowed sites", help: "Subdomains are allowed too: youtube.com also allows m.youtube.com." },
+      ]),
+      ...filterFields("mentions", [
+        { key: "max", type: "number", min: 1, max: 50, label: "More than this many mentions" },
+      ]),
+      ...filterFields("caps", [
+        { key: "percent", type: "number", min: 50, max: 100, label: "At least this % capitals" },
+        { key: "minLength", type: "number", min: 1, max: 200, label: "In messages with at least this many letters" },
+      ]),
+      ...filterFields("words", [
+        { key: "words", type: "strings", max: 500, itemMax: 100, placeholder: "Add a word or phrase", label: "Blocked words", help: "Whole words only. Add * to match inside words too: *scam* also catches “scammer”." },
+      ]),
+      ...filterFields("emojis", [
+        { key: "max", type: "number", min: 1, max: 100, label: "More than this many emojis" },
+      ]),
+      ...filterFields("lines", [
+        { key: "max", type: "number", min: 2, max: 200, label: "More than this many lines" },
+      ]),
+    ],
+  },
+  {
+    id: "discord-automod",
+    name: "Discord AutoMod",
+    description: "Punish people who break your Discord AutoMod rules (Server Settings → AutoMod). Discord blocks the message; Phoenix adds the warning, mute, kick or ban.",
+    fields: [
+      {
+        key: "automod.discordRules",
+        type: "list",
+        label: "Linked rules",
+        help: "Phoenix needs the Manage Server permission to see AutoMod rules and when they're broken.",
+        max: 25,
+        uniqueBy: "ruleId",
+        fields: [
+          { key: "ruleId", type: "automodRule", label: "AutoMod rule", required: true },
+          { key: "action", type: "select", label: "Then", required: true, options: PUNISHMENTS },
+          { key: "duration", type: "duration", label: "For", min: 0, max: 365 * 86_400_000, showIf: { key: "action", in: ["mute", "ban"] }, help: "0 = permanent." },
+        ],
+      },
     ],
   },
   {
@@ -149,6 +263,7 @@ const sections = [
     description: "Members earn XP for chatting and level up.",
     fields: [
       { key: "leveling.enable", type: "toggle", label: "Leveling" },
+      { key: "leveling.publicLeaderboard", type: "toggle", label: "Public leaderboard", help: "Anyone with the link can see the top 100 on the website, and the leaderboard command links there." },
       { key: "leveling.message", type: "textarea", max: 2000, label: "Level up message", preview: true, help: "Use {{level}} for the new level. Leave empty to not announce level ups." },
       { key: "leveling.announceChannel", type: "channel", channelTypes: TEXT_CHANNELS, label: "Announce level ups in", help: "Leave empty to announce in the channel where they leveled up." },
       { key: "leveling.rates.minimum", type: "number", min: 1, max: 1000, label: "Least XP per message" },
