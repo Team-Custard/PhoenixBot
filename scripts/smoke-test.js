@@ -125,6 +125,22 @@ async function main() {
     .map((c) => c.name);
   console.log(`Prefix-only commands: ${prefixOnly.join(", ") || "none"}`);
 
+  // The website's command list is built from the same commands.
+  try {
+    const catalog = require("../tools/commandCatalog").buildCatalog();
+    if (!catalog?.commands.length) throw new Error("The command list for the website is empty.");
+    JSON.stringify(catalog);
+    console.log(`Website command list: ${catalog.commands.length} commands in ${catalog.categories.length} categories.`);
+  }
+  catch (err) {
+    fail("website command list", err);
+  }
+
+  // The built website must exist, since server.js serves it as is.
+  if (!fs.existsSync(path.join(root, "frontend/dist/index.html"))) {
+    fail("website build", "frontend/dist/index.html is missing. Run `npm run build:web`.");
+  }
+
   if (failures) {
     console.error(`\n${failures} problem(s) found.`);
     process.exit(1);

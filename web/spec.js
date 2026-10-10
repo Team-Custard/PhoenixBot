@@ -167,7 +167,7 @@ const sections = [
       lines: { label: "Wall of text", help: "Messages with lots of lines." },
     },
     fields: [
-      { key: "automod.ignoreModerators", type: "toggle", label: "Ignore moderators", group: "everyone", help: "People with Manage Messages or Manage Server aren't checked." },
+      { key: "automod.ignoreModerators", type: "toggle", label: "Ignore moderators", group: "everyone", help: "People who can delete messages, time out, kick or ban aren't checked. Server managers never are." },
       { key: "automod.exemptRoles", type: "roles", label: "Ignored roles", group: "everyone" },
       { key: "automod.exemptChannels", type: "channels", channelTypes: LOGGABLE_CHANNELS, label: "Ignored channels", group: "everyone", help: "Channels or whole categories automod leaves alone." },
       { key: "automod.notifyChannel", type: "toggle", label: "Tell people why", group: "everyone", help: "Post a short note in the channel (deleted after a few seconds) when a message is removed." },
@@ -205,7 +205,7 @@ const sections = [
   {
     id: "discord-automod",
     name: "Discord AutoMod",
-    description: "Punish people who break your Discord AutoMod rules (Server Settings → AutoMod). Discord blocks the message; Phoenix adds the warning, mute, kick or ban.",
+    description: "Punish people who break your Discord AutoMod rules (Server Settings → AutoMod). Discord blocks the message; Phoenix adds the warning, mute, kick or ban. Moderators and the roles and channels ignored on the Automod page are left alone.",
     fields: [
       {
         key: "automod.discordRules",
@@ -263,7 +263,7 @@ const sections = [
     description: "Members earn XP for chatting and level up.",
     fields: [
       { key: "leveling.enable", type: "toggle", label: "Leveling" },
-      { key: "leveling.publicLeaderboard", type: "toggle", label: "Public leaderboard", help: "Anyone with the link can see the top 100 on the website, and the leaderboard command links there." },
+      { key: "leveling.publicLeaderboard", type: "toggle", label: "Public leaderboard", help: "While leveling is on, anyone with the link can see the top 100 on the website, and the leaderboard command links there." },
       { key: "leveling.message", type: "textarea", max: 2000, label: "Level up message", preview: true, help: "Use {{level}} for the new level. Leave empty to not announce level ups." },
       { key: "leveling.announceChannel", type: "channel", channelTypes: TEXT_CHANNELS, label: "Announce level ups in", help: "Leave empty to announce in the channel where they leveled up." },
       { key: "leveling.rates.minimum", type: "number", min: 1, max: 1000, label: "Least XP per message" },

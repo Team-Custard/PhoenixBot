@@ -12,17 +12,22 @@ const ACTION_TEXT = { delete: "Deleted the message", warn: "Warned", mute: "Mute
 
 // Invite codes that lead to the server itself, so its own invites can be allowed.
 const inviteCache = new Map();
-async function ownInviteCodes(guild) {
+async function ownInviteCodes(guild, codes) {
   const cached = inviteCache.get(guild.id);
-  if (cached && cached.expires > Date.now()) return cached.codes;
-  const codes = new Set();
-  if (guild.vanityURLCode) codes.add(guild.vanityURLCode);
+  const fresh = cached && cached.expires > Date.now();
+  // A code we haven't seen may be an invite made in the last few minutes: look again,
+  // but not more than every 30 seconds.
+  const unknown = codes.some((code) => !cached?.codes.has(code));
+  if (fresh && (!unknown || Date.now() - cached.fetchedAt < 30_000)) return cached.codes;
+
+  const own = new Set();
+  if (guild.vanityURLCode) own.add(guild.vanityURLCode);
   if (guild.members.me?.permissions.has(PermissionFlagsBits.ManageGuild)) {
     const invites = await guild.invites.fetch({ cache: false }).catch(() => null);
-    invites?.forEach((invite) => codes.add(invite.code));
+    invites?.forEach((invite) => own.add(invite.code));
   }
-  inviteCache.set(guild.id, { codes, expires: Date.now() + 10 * 60_000 });
-  return codes;
+  inviteCache.set(guild.id, { codes: own, fetchedAt: Date.now(), expires: Date.now() + 10 * 60_000 });
+  return own;
 }
 
 /**
@@ -40,22 +45,24 @@ async function runAutomod(message, { edited = false } = {}) {
 
   const filters = config.filters;
   let hit = null;
-  if (!edited) hit = automod.checkHistory(filters, {
-    id: message.id,
-    guildId: message.guildId,
-    channelId: message.channelId,
-    authorId: message.author.id,
-    content: message.content,
-    createdTimestamp: message.createdTimestamp,
-  });
+  if (!edited) {
+    hit = automod.checkHistory(filters, {
+      id: message.id,
+      guildId: message.guildId,
+      channelId: message.channelId,
+      authorId: message.author.id,
+      content: message.content,
+      createdTimestamp: message.createdTimestamp,
+    });
+  }
 
   if (!hit) {
-    const needsInvites = filters.invites?.enabled && filters.invites.allowOwnServer !== false && automod.findInvites(message.content).length;
+    const codes = filters.invites?.enabled && filters.invites.allowOwnServer !== false ? automod.findInvites(message.content) : [];
     hit = automod.checkContent(filters, {
       content: message.content,
       // Count each person or role once, like Discord's own mention limit.
       mentionCount: message.mentions.users.size + message.mentions.roles.size + (message.mentions.everyone ? 1 : 0),
-    }, { ownInviteCodes: needsInvites ? await ownInviteCodes(message.guild) : undefined });
+    }, { ownInviteCodes: codes.length ? await ownInviteCodes(message.guild, codes) : undefined });
   }
   if (!hit) return;
 
@@ -66,9 +73,10 @@ async function runAutomod(message, { edited = false } = {}) {
   const reason = `${automod.LABELS[hit.filter]} (${hit.detail})`;
   let result = null;
   // Spam bursts and repeat offenders only get punished once every few seconds.
+  // Start counting again after a spam or repeat hit, so the next message isn't another hit.
+  if (hit.messages) automod.clearHistory(message.guildId, message.author.id);
   if (action !== "delete" && automod.shouldPunish(`${message.guildId}:${message.author.id}`)) {
     result = await punish({ member, settings, action, duration: rule.duration, reason, source: "Automod" });
-    if (hit.filter === "spam" || hit.filter === "duplicates") automod.clearHistory(message.guildId, message.author.id);
   }
 
   if (config.notifyChannel !== false && automod.shouldPunish(`notice:${message.channelId}:${message.author.id}`, 5_000)) {
@@ -77,6 +85,9 @@ async function runAutomod(message, { edited = false } = {}) {
       .catch(() => null);
     if (notice) setTimeout(() => notice.delete().catch(() => undefined), 6_000);
   }
+
+  // One log entry per member and filter every few seconds, unless someone was punished.
+  if (!result && !automod.shouldPunish(`log:${message.guildId}:${message.author.id}:${hit.filter}`, 5_000)) return;
 
   const done = action === "delete" || result?.ok;
   const actionText = action === "delete" || !result ? ACTION_TEXT.delete

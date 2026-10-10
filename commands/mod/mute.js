@@ -4,6 +4,7 @@ const { getSettings } = require("../../tools/guildSettings");
 const { emoji } = require("../../tools/errorReporter");
 const mod = require("../../tools/moderation");
 const common = require("../../tools/commonArgs");
+const { scheduleMemberTask } = require("../../tools/tasks");
 
 class MuteCommand extends PhoenixCommand {
   constructor(context, options) {
@@ -69,9 +70,14 @@ class MuteCommand extends PhoenixCommand {
         duration: duration ?? null,
       });
 
+    // Mutes longer than a timeout allows use the role, so take it off again when they end.
+    if (!useTimeout && duration) {
+      await scheduleMemberTask("tempMute", { guildid: ctx.guild.id, memberid: member.id, caseid: caseDoc.caseId, roleid: settings.moderation.muteRole }, duration);
+    }
+
     await mod.sendModlog(ctx.guild, settings, caseDoc, { moderator: `${ctx.user}`, duration: duration ?? null });
     return ctx.reply(
-      `${emoji("success")} Muted **${member.user.tag}**${useTimeout ? ` for ${await mod.formatDuration(duration)}` : ""}. ${!silent && notified ? "" : "User was not notified."}`,
+      `${emoji("success")} Muted **${member.user.tag}**${duration ? ` for ${await mod.formatDuration(duration)}` : ""}. ${!silent && notified ? "" : "User was not notified."}`,
     );
   }
 }

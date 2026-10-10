@@ -11,8 +11,9 @@
     "prettier": "prettier . -w",
     "migrate": "node scripts/migrate-v2.js",
     "test": "node scripts/smoke-test.js",
-    "build:dashboard": "npm --prefix dashboard install && npm --prefix dashboard run build",
-    "dev:dashboard": "npm --prefix dashboard run watch"
+    "build:web": "npm --prefix frontend install && npm --prefix frontend run build",
+    "build:dashboard": "npm run build:web",
+    "dev:web": "npm --prefix frontend run watch"
   },
   "keywords": [
     "PhoenixBot",
@@ -35,8 +36,6 @@
     "@sapphire/plugin-hmr": "^3.0.2",
     "@sapphire/plugin-scheduled-tasks": "^10.0.1",
     "@sapphire/plugin-subcommands": "^6.0.3",
-    "bootstrap": "^5.3.3",
-    "bootstrap-select": "^1.14.0-beta3",
     "bullmq": "^5.10.4",
     "canvacord": "^6.0.2",
     "deepl-node": "^1.13.0",
@@ -44,10 +43,8 @@
     "discord-perms-array": "^1.0.4",
     "discord.js": "^14.16.0",
     "dotenv": "^16.4.5",
-    "ejs": "^3.1.9",
     "emoji-progressbar": "^2.0.2",
     "express": "^4.19.2",
-    "jquery": "^3.7.1",
     "languagedetect": "^2.0.0",
     "moment-timezone": "^0.5.45",
     "mongoose": "^8.3.1",

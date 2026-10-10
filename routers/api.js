@@ -157,8 +157,4 @@ router.get("/api/profile/:id", async function(req, res) {
   });
 });
 
-router.get("/api", async function(req, res) {
-  res.render("pages/api", { title: "Api reference" });
-});
-
 module.exports = router;

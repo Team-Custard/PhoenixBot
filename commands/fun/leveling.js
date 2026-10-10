@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { PermissionFlagsBits, EmbedBuilder, Colors } = require("discord.js");
+const { PermissionFlagsBits, EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 const { PaginatedMessage } = require("@sapphire/discord.js-utilities");
 const { emojibarv2 } = require("emoji-progressbar");
 const { PhoenixCommand } = require("../../tools/PhoenixCommand");
@@ -8,6 +8,7 @@ const { getSettings } = require("../../tools/guildSettings");
 const { emoji } = require("../../tools/errorReporter");
 const { confirm } = require("../../tools/warningEmbed");
 const { LevelMember, xpForLevel, getRank, getLeaderboard } = require("../../tools/leveling");
+const { dashboard } = require("../../tools/config");
 
 const RANKCARD_DIR = path.join(__dirname, "../../static/rankcards");
 const PAGE_SIZE = 10;
@@ -34,7 +35,7 @@ class LevelingCommand extends PhoenixCommand {
           run: "rank",
           args: [{ name: "member", type: "member", description: "Whose level to show (defaults to you)" }],
         },
-        { name: "leaderboard", aliases: ["lb", "top"], description: "Shows the server's leaderboard", run: "leaderboard" },
+        { name: "leaderboard", aliases: ["lb", "top"], description: "Links to the server's leaderboard page", run: "leaderboard" },
         {
           name: "set_level",
           description: "Sets a member's level (Manage Server)",
@@ -109,6 +110,24 @@ class LevelingCommand extends PhoenixCommand {
     }
     const own = await LevelMember.findOne({ guildId: ctx.guild.id, userId: ctx.user.id }).lean();
     const ownRank = own ? await getRank(ctx.guild.id, own) : null;
+    const settings = await getSettings(ctx.guild.id);
+
+    // Public leaderboards live on the website now; the command shows the top 5 and links there.
+    if (settings.leveling?.enable && settings.leveling.publicLeaderboard !== false) {
+      const url = `${dashboard.baseUrl}/leaderboard/${ctx.guild.id}`;
+      const top = await getLeaderboard(ctx.guild.id, { limit: 5 });
+      const medals = ["🥇", "🥈", "🥉"];
+      const lines = top.map((r, i) => `${medals[i] ?? `\` ${i + 1} \``} <@${r.userId}> · level ${r.level}`);
+      const embed = new EmbedBuilder()
+        .setAuthor({ name: `${ctx.guild.name} leaderboard`, iconURL: ctx.guild.iconURL() ?? undefined })
+        .setDescription(`${lines.join("\n")}\n\n${ownRank ? `You're ranked **#${ownRank}** of ${total}.` : "You aren't ranked yet. Keep chatting!"}\n[See the full leaderboard](${url})`)
+        .setColor(Colors.Orange);
+      // Discord may refuse link buttons to localhost, so only add one for real sites.
+      const components = url.startsWith("https://")
+        ? [new ActionRowBuilder().addComponents(new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("Open leaderboard").setURL(url))]
+        : [];
+      return ctx.reply({ embeds: [embed], components, allowedMentions: { parse: [] } });
+    }
 
     // Only the top 100 are paged through, so huge servers don't load everyone.
     const top = await getLeaderboard(ctx.guild.id, { limit: 100 });

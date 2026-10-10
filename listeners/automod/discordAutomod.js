@@ -4,6 +4,7 @@ const { peekSettings } = require("../../tools/guildSettings");
 const { yieldsToStaging } = require("../../tools/staging");
 const { sendLog, truncate } = require("../../tools/logging");
 const { punish } = require("../../tools/punish");
+const { isExempt } = require("../../tools/automod");
 const { formatDuration } = require("../../tools/moderation");
 
 const TRIGGERS = {
@@ -44,6 +45,9 @@ class DiscordAutomod extends Listener {
 
     const member = execution.member ?? (await guild.members.fetch(userId).catch(() => null));
     if (!member) return;
+    // The same people Phoenix's own filters leave alone (moderators, ignored roles and channels).
+    const channel = execution.channelId ? guild.channels.cache.get(execution.channelId) : null;
+    if (isExempt(settings.automod, member, channel)) return;
 
     const rule = execution.autoModerationRule ?? (await guild.autoModerationRules.fetch(ruleId).catch(() => null));
     const ruleName = rule?.name ?? "a Discord AutoMod rule";

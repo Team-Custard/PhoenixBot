@@ -30,6 +30,8 @@ class ReadyListener extends Listener {
         `Bot client successfully started as ${username} (${id})`,
       );
       this.warnIfNotMigrated(client);
+      // The website's command list, for when it runs without the bot (dashboard-only mode).
+      if (!client.cluster || client.cluster.id === 0) require("../../tools/commandCatalog").saveCatalog();
       client.user.setActivity({
         name: `/help || phoenix.sylveondev.xyz 🦊`,
         type: ActivityType.Custom,

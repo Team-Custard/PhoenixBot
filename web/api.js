@@ -1,4 +1,4 @@
-// JSON API used by the React dashboard (dashboard/src). Everything under
+// JSON API used by the React dashboard (frontend/src/pages). Everything under
 // /api/dashboard needs a login; everything under /api/dashboard/guilds/:guildId also
 // needs Manage Server in that server and the bot to be in it.
 const fs = require("fs");
@@ -435,6 +435,9 @@ function validateField(field, value, ctx, label = field.label) {
   }
 }
 
+/** Mutes Discord's timeouts can't do (permanent, or over 28 days) use the mute role. */
+const needsMuteRole = (duration) => !duration || duration > 28 * 86_400_000;
+
 /** Extra rules that involve more than one field. */
 function checkSection(sectionId, values, doc) {
   const get = (key) => (key in values ? values[key] : doc.get(key));
@@ -449,16 +452,16 @@ function checkSection(sectionId, values, doc) {
     const { FILTERS } = require("../tools/automod");
     for (const name of FILTERS) {
       const key = `automod.filters.${name}`;
-      if (get(`${key}.enabled`) && get(`${key}.action`) === "mute" && !get(`${key}.duration`) && !get("moderation.muteRole")) {
+      if (get(`${key}.enabled`) && get(`${key}.action`) === "mute" && needsMuteRole(get(`${key}.duration`)) && !get("moderation.muteRole")) {
         const label = sections.find((s) => s.id === "automod").groups[name].label;
-        throw new ApiError(400, `${label}: a permanent mute needs a mute role (Moderation page). Pick a duration instead.`, { field: `${key}.duration` });
+        throw new ApiError(400, `${label}: mutes that are permanent or longer than 28 days need a mute role (Moderation page).`, { field: `${key}.duration` });
       }
     }
   }
   if (sectionId === "discord-automod") {
     for (const rule of get("automod.discordRules") ?? []) {
-      if (rule.action === "mute" && !rule.duration && !get("moderation.muteRole")) {
-        throw new ApiError(400, "Linked rules: a permanent mute needs a mute role (Moderation page). Pick a duration instead.");
+      if (rule.action === "mute" && needsMuteRole(rule.duration) && !get("moderation.muteRole")) {
+        throw new ApiError(400, "Linked rules: mutes that are permanent or longer than 28 days need a mute role (Moderation page).");
       }
     }
   }

@@ -4,6 +4,7 @@ const { getSettings } = require("../../tools/guildSettings");
 const { emoji } = require("../../tools/errorReporter");
 const mod = require("../../tools/moderation");
 const common = require("../../tools/commonArgs");
+const { cancelMemberTask } = require("../../tools/tasks");
 
 class UnmuteCommand extends PhoenixCommand {
   constructor(context, options) {
@@ -41,6 +42,7 @@ class UnmuteCommand extends PhoenixCommand {
     }
     else if (muteRole && member.roles.cache.has(muteRole)) {
       await member.roles.remove(muteRole, auditReason);
+      await cancelMemberTask("tempMute", ctx.guild.id, member.id);
     }
     else {
       return ctx.reply(`${emoji("error")} That user isn't muted.`);

@@ -1,7 +1,7 @@
 // Punishments Phoenix hands out by itself: automod filters, Discord AutoMod rules
 // and the warn punishment system. Each one opens a case (moderator = Phoenix),
 // DMs the member and posts to the mod log, the same as a moderator using a command.
-const { EmbedBuilder, Colors } = require("discord.js");
+const { EmbedBuilder, Colors, PermissionFlagsBits } = require("discord.js");
 const { container } = require("@sapphire/framework");
 const mod = require("./moderation");
 const { emoji } = require("./errorReporter");
@@ -12,6 +12,7 @@ const CASE_NAMES = { warn: "Warn", mute: "Mute", kick: "Kick", ban: "Ban", shado
 /** Whether Phoenix is able to do this to the member at all. */
 function canPunish(member, action) {
   if (!member || member.id === member.guild.ownerId || member.user.bot) return false;
+  if (member.permissions?.has(PermissionFlagsBits.Administrator)) return false;
   switch (action) {
     case "warn": return true;
     case "mute": return member.moderatable || member.manageable;
@@ -35,7 +36,7 @@ async function carryOut(member, settings, action, duration, audit) {
       }
       if (settings.moderation?.muteRole) {
         await member.roles.add(settings.moderation.muteRole, audit);
-        return true;
+        return "role";
       }
       return false;
     case "kick":
@@ -47,17 +48,28 @@ async function carryOut(member, settings, action, duration, audit) {
     case "shadowban": {
       const role = settings.moderation?.shadowBannedRole;
       if (!role) return false;
-      settings.moderation.shadowbannedUsers.push({
-        user: member.id,
-        roles: member.roles.cache.filter((r) => r.id !== member.guild.id).map((r) => r.id),
-      });
+      const roles = member.roles.cache.filter((r) => r.id !== member.guild.id).map((r) => r.id);
       await member.roles.set([role], audit);
-      await settings.save();
+      // An atomic update: the settings object may be the shared cached copy, which must
+      // not be saved (two saves at once fail, and a failed change would stick around).
+      const ServerSettings = require("./SettingsSchema");
+      await ServerSettings.updateOne({ _id: member.guild.id }, { $push: { "moderation.shadowbannedUsers": { user: member.id, roles } } });
       return true;
     }
     default:
       return false;
   }
+}
+
+/** Mutes that had to use the mute role are lifted by the tempMute task when they end. */
+async function scheduleUnmute(member, settings, caseDoc, duration) {
+  const { scheduleMemberTask } = require("./tasks");
+  await scheduleMemberTask("tempMute", {
+    guildid: member.guild.id,
+    memberid: member.id,
+    caseid: caseDoc.caseId,
+    roleid: settings.moderation?.muteRole,
+  }, duration);
 }
 
 /**
@@ -132,6 +144,7 @@ async function punish({ member, settings, action, duration = null, reason, sourc
   }
   if (!leaves) notified = await mod.notifyUser(member, guild, notice);
 
+  if (done === "role" && duration) await scheduleUnmute(member, settings, caseDoc, duration);
   if (action === "ban" && duration) {
     const { scheduleMemberTask } = require("./tasks");
     await scheduleMemberTask("tempBan", { guildid: guild.id, memberid: member.id, caseid: caseDoc.caseId }, duration);
@@ -162,13 +175,14 @@ async function applySystemStep(member, settings, step) {
   const duration = step.duration > 0 ? step.duration : null;
   if (!canPunish(member, action)) return { ok: false };
   const audit = `(Punishment system) Reached ${step.warnings} active warnings.`;
+  let done = false;
   try {
-    if (!(await carryOut(member, settings, action, duration, audit))) return { ok: false };
+    done = await carryOut(member, settings, action, duration, audit);
   }
   catch (err) {
     console.log(`[punish] Punishment system step failed`, err?.message ?? err);
-    return { ok: false };
   }
+  if (!done) return { ok: false };
   const client = container.client;
   const caseDoc = await mod.openCase(member.guild.id, {
     punishment: step.punishment,
@@ -177,6 +191,7 @@ async function applySystemStep(member, settings, step) {
     reason: `(Automod) Reached ${step.warnings} active warnings.`,
     expiretime: mod.expiryFromNow(duration),
   });
+  if (done === "role" && duration) await scheduleUnmute(member, settings, caseDoc, duration);
   if (action === "ban" && duration) {
     const { scheduleMemberTask } = require("./tasks");
     await scheduleMemberTask("tempBan", { guildid: member.guild.id, memberid: member.id, caseid: caseDoc.caseId }, duration);

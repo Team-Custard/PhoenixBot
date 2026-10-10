@@ -16,11 +16,8 @@ else {
   const client = new PhoenixClient();
 
   client.cluster.on("ready", (cluster) => {
-    // The web dashboard lives on cluster 0 so it can use the bot client directly.
-    if (settings.process.dashboard === true && cluster.id === 0) {
-      global.bottype = botmode;
-      require("./server");
-    }
+    // The website and dashboard live on cluster 0 so they can use the bot client directly.
+    if (settings.process.dashboard === true && cluster.id === 0) require("./server");
     console.log(`Cluster ${cluster.id} is ready.`);
   });
 

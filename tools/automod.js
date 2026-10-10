@@ -62,8 +62,19 @@ function plainText(text) {
   return text.toLowerCase().normalize("NFKD").replace(/\p{M}/gu, "");
 }
 
+/** Swaps look-alikes back ("h3ll0" → "hello"), but only in words that have letters, so numbers stay numbers. */
 function leet(text) {
-  return text.replace(/[0134578@$!|]/g, (c) => LOOKALIKES[c] ?? c);
+  return text.replace(/\S+/g, (token) => {
+    if (!/\p{L}/u.test(token)) return token;
+    return token
+      .replace(/[0134578@$]/g, (c) => LOOKALIKES[c])
+      .replace(/[!|](?=[\p{L}\p{N}])/gu, "i");
+  });
+}
+
+/** Joins single letters split up with symbols ("b.a.d" → "bad"), without joining real words ("he'll"). */
+function unspace(text) {
+  return text.replace(/(?<![\p{L}\p{N}])\p{L}(?:[^\p{L}\p{N}\s]\p{L})+(?![\p{L}\p{N}])/gu, (m) => m.replace(/[^\p{L}]/gu, ""));
 }
 
 /**
@@ -75,8 +86,8 @@ function findBlockedWord(content, words) {
   if (!words?.length) return null;
   const plain = plainText(content);
   // Check the text as written, with look-alikes swapped back ("h3ll0") and with
-  // symbols squashed out ("b.a.d").
-  const variants = [...new Set([plain, leet(plain), plain.replace(/[^\p{L}\p{N}\s]/gu, ""), leet(plain).replace(/[^\p{L}\p{N}\s]/gu, "")])];
+  // spelled-out letters joined ("b.a.d").
+  const variants = [...new Set([plain, leet(plain), unspace(plain), unspace(leet(plain))])];
   for (const raw of words) {
     const entry = plainText(String(raw).trim());
     if (!entry) continue;
@@ -198,13 +209,22 @@ function shouldPunish(key, windowMs = 10_000) {
   return true;
 }
 
-/** Whether automod should leave this member or channel alone. */
+const MODERATOR_PERMISSIONS = [
+  PermissionFlagsBits.ManageMessages,
+  PermissionFlagsBits.KickMembers,
+  PermissionFlagsBits.BanMembers,
+  PermissionFlagsBits.ModerateMembers,
+];
+
+/**
+ * Whether automod should leave this member or channel alone. People with Manage
+ * Server are always left alone, like Discord's own AutoMod does.
+ */
 function isExempt(automod, member, channel) {
   if (!member) return true;
   if (member.id === member.guild.ownerId) return true;
-  if (automod.ignoreModerators !== false && member.permissions.any([PermissionFlagsBits.ManageMessages, PermissionFlagsBits.ManageGuild, PermissionFlagsBits.Administrator])) {
-    return true;
-  }
+  if (member.permissions.any([PermissionFlagsBits.ManageGuild, PermissionFlagsBits.Administrator])) return true;
+  if (automod.ignoreModerators !== false && member.permissions.any(MODERATOR_PERMISSIONS)) return true;
   const roles = automod.exemptRoles ?? [];
   if (roles.length && member.roles.cache.some((r) => roles.includes(r.id))) return true;
   const channels = automod.exemptChannels ?? [];
