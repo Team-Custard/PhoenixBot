@@ -1,43 +1,13 @@
 const { Listener } = require("@sapphire/framework");
-const { ActivityType, EmbedBuilder, Colors } = require("discord.js");
+const { report } = require("../../tools/errorReporter");
 
-class ReadyListener extends Listener {
+class ClientErrorListener extends Listener {
   constructor(context, options) {
-    super(context, {
-      ...options,
-      once: false,
-      event: "error",
-    });
+    super(context, { ...options, event: "error" });
   }
-  async run(error) {
-    if (require("../../config.json").process.botmode != "custom") {
-      const embed = new EmbedBuilder()
-        .setTitle("Caught error")
-        .setDescription(`\`\`\`${error}\`\`\``)
-        .setColor(Colors.Orange)
-        .setTimestamp(new Date());
 
-      const webhook = await require('../../tools/webhookFetch').find(process.env["errwebhookid"]);
-
-      if (!webhook) {
-        console.log("Welp didn't find a webhook, sry.");
-        return;
-      }
-
-      await webhook
-        .send({
-          // content: '',
-          username: this.container.client.user.username,
-          avatarURL: this.container.client.user.displayAvatarURL({
-            extension: "png",
-            size: 512,
-          }),
-          embeds: [embed],
-        })
-        .catch((err) => console.error(`[error] Error on sending webhook`, err));
-    }
+  run(error) {
+    return report("Caught client error", error);
   }
 }
-module.exports = {
-  ReadyListener,
-};
+module.exports = { ClientErrorListener };

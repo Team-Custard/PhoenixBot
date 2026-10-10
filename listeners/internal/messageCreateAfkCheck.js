@@ -1,110 +1,61 @@
-const { isGuildBasedChannel } = require("@sapphire/discord.js-utilities");
 const { Listener, Events } = require("@sapphire/framework");
 const UserDB = require("../../tools/UserDB");
 const config = require("../../config.json");
+const { yieldsToStaging } = require("../../tools/staging");
 
-class ReadyListener extends Listener {
+const MAX_MENTIONS_CHECKED = 5;
+
+// Tells people when someone they mention is AFK, and clears your own AFK status
+// when you talk again.
+class AfkCheck extends Listener {
   constructor(context, options) {
-    super(context, {
-      ...options,
-      once: false,
-      name: "messageCreateAfkCheck",
-      event: Events.MessageCreate,
-    });
+    super(context, { ...options, name: "messageCreateAfkCheck", event: Events.MessageCreate });
   }
-  async run(message) {
-    if (message.author.bot) return;
-    if (!config.userdb.global && !config.userdb.afkEnabled) return;
-    if (!isGuildBasedChannel(message.channel)) return;
-    if (!message.member) return;
-    if (!message.member.id) return;
 
-    if (
-      this.container.client.id == "1171286616967479377" ||
-      this.container.client.id == "1239263616025493504"
-    ) {
-      const hasStaging = await message.guild.members
-        .fetch("1227318291475730443")
-        .catch(() => undefined);
-      if (hasStaging) return;
-    }
-    /*
-    // Only SylveonDev can use these lines. Testing specific shit
-    if (message.guild && message.content.toLowerCase() == "test welcomer please" && message.author.id == "763631377152999435") {
-      message.reply(`Yes mother Abby, I will obey. <3`);
-      this.container.client.emit('guildMemberAdd', message.member);
-      this.container.client.emit('guildMemberRemove', message.member);
-    }
-    if (message.guild && message.content.toLowerCase() == "thanks phoenix" && message.author.id == "763631377152999435") {
-      message.reply(`You're welcome, mother.`);
-    }
-    if (message.guild && message.content.toLowerCase() == "not good phoenix" && message.author.id == "763631377152999435") {
-      message.reply(`Awww I'm sorry... :sob:`);
-    }
-    if (message.guild && message.content.toLowerCase() == "shut down phoenix" && message.author.id == "763631377152999435") {
-      await message.reply(`Awww already?:( Okayyy mother`);
-      process.exit(0);
-    }*/
-    let usersettings;
-    if (
-      message.inGuild() &&
-      !message.author.bot &&
-      message.mentions.members.size > 0
-    ) {
-      if (message.mentions.members.size == 0) return;
-      const member = message.mentions.members.first();
-      usersettings = await UserDB.findById(
-        member.id,
-        UserDB.upsert,
-      ).cacheQuery();
-      if (!usersettings) return;
-      if (usersettings.afk.status) {
-        if (member.id != message.member.id) {
-          message.reply(
-            `${member.user.username} is afk. \`${usersettings.afk.status}\` <t:${usersettings.afk.since}:R>`,
-          );
-        } else {
-          usersettings.afk.since = null;
-          usersettings.afk.status = null;
-          await usersettings
-            .save()
-            .then(() => {
-              message.reply({
-                content: `Welcome back ${message.member}! I have cleared your afk status.`,
-              });
-            })
-            .catch((err) => {
-              message.reply(
-                `Welcome back ${message.member}!\nOops! I was unable to clear your afk status though. Error: ${err}`,
-              );
-            });
-        }
+  /** @param {import("discord.js").Message} message */
+  async run(message) {
+    if (message.author.bot || !message.inGuild() || !message.member) return;
+    if (!config.userdb.global && !config.userdb.afkEnabled) return;
+    if (await yieldsToStaging(message.guild)) return;
+
+    // Don't clear an AFK status with the very command that sets it.
+    const prefix = await this.container.client.fetchPrefix(message);
+    const prefixes = Array.isArray(prefix) ? prefix : [prefix];
+    const isCommand = prefixes.some((p) => p && message.content.startsWith(p));
+
+    if (!isCommand) {
+      const own = await UserDB.findById(message.author.id).select("afk").lean().cacheQuery();
+      if (own?.afk?.since) {
+        // Saved through the document so the query cache is cleared.
+        const doc = await UserDB.findById(message.author.id);
+        doc.afk = { since: null, status: null };
+        await doc
+          .save()
+          .then(() => message.reply(`Welcome back ${message.member}! I have cleared your afk status.`))
+          .catch((err) => message.reply(`Welcome back ${message.member}!\nOops! I was unable to clear your afk status though. Error: ${err}`))
+          .catch(() => undefined);
       }
     }
-    usersettings = await UserDB.findById(
-      message.member.id,
-      UserDB.upsert,
-    ).cacheQuery();
-    if (!usersettings) return;
 
-    if (usersettings.afk.since) {
-      usersettings.afk.since = null;
-      usersettings.afk.status = null;
-      await usersettings
-        .save()
-        .then(() => {
-          message.reply({
-            content: `Welcome back ${message.member}! I have cleared your afk status.`,
-          });
+    const mentioned = [...message.mentions.members.values()]
+      .filter((m) => m.id !== message.author.id && !m.user.bot)
+      .slice(0, MAX_MENTIONS_CHECKED);
+    if (mentioned.length === 0) return;
+
+    const afk = await UserDB.find({ _id: { $in: mentioned.map((m) => m.id) }, "afk.status": { $ne: null } })
+      .select("afk")
+      .lean();
+    for (const entry of afk) {
+      if (!entry.afk?.status) continue;
+      const member = mentioned.find((m) => m.id === entry._id);
+      await message
+        .reply({
+          content: `${member.user.username} is afk. \`${entry.afk.status}\`${entry.afk.since ? ` <t:${entry.afk.since}:R>` : ""}`,
+          allowedMentions: { parse: [] },
         })
-        .catch((err) => {
-          message.reply(
-            `Welcome back ${message.member}!\nOops! I was unable to clear your afk status though. Error: ${err}`,
-          );
-        });
+        .catch(() => undefined);
     }
   }
 }
-module.exports = {
-  ReadyListener,
-};
+
+module.exports = { AfkCheck };

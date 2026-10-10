@@ -1,18 +1,12 @@
 const { Listener } = require("@sapphire/framework");
-const { EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
-class scheduledTaskNotFound extends Listener {
+class ScheduledTaskNotFound extends Listener {
   constructor(context, options) {
-    super(context, {
-      ...options,
-      once: false,
-      event: "scheduledTaskNotFound",
-    });
+    super(context, { ...options, event: "scheduledTaskNotFound" });
   }
-  async run(task) {
-    console.log(`Task not found: ${task}`);
+
+  run(task) {
+    console.warn(`[warning] Scheduled task ${task} was not found`);
   }
 }
-module.exports = {
-    scheduledTaskNotFound,
-};
+module.exports = { ScheduledTaskNotFound };

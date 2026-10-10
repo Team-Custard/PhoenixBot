@@ -1,17 +1,20 @@
-const { isGuildBasedChannel } = require("@sapphire/discord.js-utilities");
-const { SapphireClient } = require("@sapphire/framework");
+const { SapphireClient, ApplicationCommandRegistries, RegisterBehavior } = require("@sapphire/framework");
 const { GatewayIntentBits, Partials } = require("discord.js");
-const database = require("../tools/SettingsSchema");
-const settings = require("../config.json");
+const { ClusterClient, getInfo } = require("discord-hybrid-sharding");
+const ServerSettings = require("./SettingsSchema");
+const { settings, botmode } = require("./config");
 
-const { ClusterClient, getInfo } = require('discord-hybrid-sharding');
+// Replace the whole set of global slash commands with exactly what the code defines.
+// This removes commands that no longer exist (the old config commands like /welcomer)
+// instead of leaving them in Discord's menu, and is a single API call.
+ApplicationCommandRegistries.setDefaultBehaviorWhenNotIdentical(RegisterBehavior.BulkOverwrite);
 
-require('@sapphire/plugin-hmr/register');
-require('@sapphire/plugin-scheduled-tasks/register');
-const redisParse = require('./parseRedisUrl').parse();
+require("@sapphire/plugin-hmr/register");
+require("@sapphire/plugin-scheduled-tasks/register");
 
 class PhoenixClient extends SapphireClient {
   constructor() {
+    const redis = require("./parseRedisUrl").parse();
     super({
       shards: getInfo().SHARD_LIST,
       shardCount: getInfo().TOTAL_SHARDS,
@@ -28,73 +31,57 @@ class PhoenixClient extends SapphireClient {
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessageReactions,
         GatewayIntentBits.GuildVoiceStates,
-        GatewayIntentBits.GuildPresences
+        GatewayIntentBits.GuildPresences,
+        // Lets the logging webhook cache know when a channel's webhooks change.
+        GatewayIntentBits.GuildWebhooks,
       ],
       loadDefaultErrorListeners: true,
       loadMessageCommandListeners: true,
       typing: true,
-      partials: [
-        Partials.Message,
-        Partials.Reaction
-      ],
+      partials: [Partials.Message, Partials.Reaction],
       tasks: {
         bull: {
           connection: {
-            host: redisParse.host,
-            password: redisParse.password,
-            port: redisParse.port,
-            db: process.env["bullmq"]
-          }
-        }
+            host: redis.host,
+            port: redis.port,
+            username: redis.username,
+            password: redis.password,
+            db: process.env["bullmq"] ? Number(process.env["bullmq"]) : undefined,
+          },
+        },
       },
       hmr: {
-        enabled: settings.enableHmr
+        enabled: settings.enableHmr,
       },
-      allowedMentions: { parse: ['everyone', 'roles', 'users'], repliedUser: false }
+      allowedMentions: { parse: ["everyone", "roles", "users"], repliedUser: false },
     });
-  }
-
-  cluster = new ClusterClient(this);
-
-  async login(token) {
-    return super.login(token);
-  }
-
-  async destroy() {
-    return super.destroy();
+    this.cluster = new ClusterClient(this);
   }
 
   /**
-   * Retrieves the prefix for the guild, or if the command used in a guild then default prefix.
-   * @param message The message that gives context.
+   * Retrieves the prefix for the guild, or the default prefix outside of guilds.
+   * Returning null disables prefix commands (servers can turn them off on the dashboard).
+   * @param {import("discord.js").Message} message
    */
   fetchPrefix = async (message) => {
-    // Return if message is blank
-    if (
-      message.content == "" ||
-      message.content == null ||
-      message.content == undefined
-    )
-      return this.options.defaultPrefix;
-    if (isGuildBasedChannel(message.channel)) {
-      // Oh my hot roblox :flushed:
-      try {
-        if (settings.process.botmode == "test") return settings.testingprefix;
-        const serverdb = await database.findById(message.guild.id).exec();
-        if (serverdb === null) {
-          return this.options.defaultPrefix;
-        }
-        const prefixes = serverdb.prefix;
-        return prefixes;
-      } catch (err) {
-        console.warn("Database error", err);
-        return this.options.defaultPrefix;
-      }
-    }
+    if (!message.content) return this.options.defaultPrefix;
+    if (!message.inGuild()) return this.options.defaultPrefix;
+    if (botmode === "test") return settings.testingprefix;
 
-    return this.options.defaultPrefix;
+    try {
+      // Runs for every message, so only read the two fields we need, through the cache.
+      const serverdb = await ServerSettings.findById(message.guildId).select("prefix enablePrefix").lean().cacheQuery();
+      if (!serverdb) return this.options.defaultPrefix;
+      if (serverdb.enablePrefix === false) return null;
+      return serverdb.prefix || this.options.defaultPrefix;
+    }
+    catch (err) {
+      console.warn("Database error", err);
+      return this.options.defaultPrefix;
+    }
   };
 }
+
 module.exports = {
   PhoenixClient,
 };

@@ -1,26 +1,13 @@
 const { Listener } = require("@sapphire/framework");
+const { emoji, replyToInteraction } = require("../../tools/errorReporter");
 
-class chatInputSubcommandDenied extends Listener {
+class ChatInputSubcommandDenied extends Listener {
   constructor(context, options) {
-    super(context, {
-      ...options,
-      once: false,
-      event: "chatInputSubcommandDenied",
-    });
+    super(context, { ...options, event: "chatInputSubcommandDenied" });
   }
-  run(error, { interaction }) {
-    if (interaction.deferred || interaction.replied) {
-      return interaction.editReply({
-        content: `${this.container.emojis.error} ${error}`,
-      });
-    }
 
-    return interaction.reply({
-      content: `${this.container.emojis.error} ${error}`,
-      ephemeral: true,
-    });
+  run(error, { interaction }) {
+    return replyToInteraction(interaction, `${emoji("error")} ${error}`);
   }
 }
-module.exports = {
-  chatInputSubcommandDenied,
-};
+module.exports = { ChatInputSubcommandDenied };

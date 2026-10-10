@@ -1,5 +1,3 @@
-const { EmbedBuilder } = require("discord.js");
-
 const { Schema, model } = require("mongoose");
 const { SpeedGooseCacheAutoCleaner } = require("speedgoose");
 
@@ -113,7 +111,7 @@ const settingsSchema = new Schema({
     muteduration: String,
     pingreport: String,
     nsfwimage: [],
-    nsfwweight: {type: Number, default: 50},
+    nsfwweight: { type: Number, default: 50 },
   },
   starboard: {
     emoji: String,
@@ -121,41 +119,22 @@ const settingsSchema = new Schema({
     threshold: String,
     selfstar: Boolean,
   },
-  infractions: [
-    {
-      id: Number,
-      punishment: String,
-      member: String,
-      moderator: String,
-      reason: String,
-      expiretime: String,
-      expired: Boolean,
-      hidden: Boolean,
-      modlogID: String,
-      creationDate: String,
-    },
-  ],
   leveling: {
-    enable: {type: Boolean, default: false},
-    users: [{
-      id: String,
-      xp: {type: Number, default: 0},
-      level: {type: Number, default: 0},
-    }],
+    enable: { type: Boolean, default: false },
     blacklistRole: [String],
     blacklistChannels: [String],
-    stackRoles: {type: Boolean, default: true},
+    stackRoles: { type: Boolean, default: true },
     rates: {
-      minimum: {type: Number, default: 5},
-      maximum: {type: Number, default: 15}
+      minimum: { type: Number, default: 5 },
+      maximum: { type: Number, default: 15 }
     },
     levelRoles: [{
       level: String,
       roleId: String,
     }],
-    message: {type: String, default: `Congrats {{mention}}, you've reached level **{{level}}**!`},
+    message: { type: String, default: `Congrats {{mention}}, you've reached level **{{level}}**!` },
     announceChannel: String,
-    backgroundTransparency: {type: Number, default: 90},
+    backgroundTransparency: { type: Number, default: 90 },
     useEmbed: Boolean,
   },
   embeds: [{
@@ -185,13 +164,13 @@ const settingsSchema = new Schema({
   }]
 }).plugin(SpeedGooseCacheAutoCleaner);
 
+// Moderation cases and leveling progress used to be stored in this document too;
+// they now live in tools/models/Case.js and tools/models/LevelMember.js.
+// Run `npm run migrate` once to move existing data over.
+
 const settings = model(
-  require("../config.json").process.botmode == "prod" ||
-    require("../config.json").process.botmode == "custom"
-    ? "settings"
-    : "settingsStaging",
+  require("./config").usesProdCollections ? "settings" : "settingsStaging",
   settingsSchema,
 );
 
 module.exports = settings;
-exports.upsert = { upsert: true, setDefaultsOnInsert: true };

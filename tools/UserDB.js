@@ -21,7 +21,7 @@ const settingsSchema = new Schema({
     blackReason: String,
   },
   reportedServers: [],
-  
+
   afk: {
     since: String,
     status: String,
@@ -32,5 +32,4 @@ const settingsSchema = new Schema({
 const settings = model("userdb", settingsSchema);
 if (config.userdb.global) {
   module.exports = settings;
-  exports.upsert = { upsert: true, setDefaultsOnInsert: true };
 }

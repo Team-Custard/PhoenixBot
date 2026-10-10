@@ -1,5 +1,4 @@
 const { Listener } = require("@sapphire/framework");
-const { ActivityType, EmbedBuilder, Colors } = require("discord.js");
 const database = require("../../tools/database");
 
 class ReadyListener extends Listener {

@@ -1,5 +1,5 @@
 const { Listener, container } = require("@sapphire/framework");
-const { ActivityType, REST } = require("discord.js");
+const { REST } = require("discord.js");
 const fs = require('fs');
 const { setTimeout } = require("timers/promises");
 
@@ -42,7 +42,7 @@ class ReadyListener extends Listener {
             emojiList.success = `<:${successEmoji.name}:${successEmoji.id}>`;
         }
         else {
-            const emoji = fetchImg(__dirname+"/../../static/success.png");
+            const emoji = fetchImg(__dirname + "/../../static/success.png");
             const emojiPayload = await rest.post(`/applications/${client.id}/emojis`, {
                 body: {
                     image: emoji,
@@ -51,7 +51,7 @@ class ReadyListener extends Listener {
             })
             .catch(console.error);
             if (emojiPayload) {
-                console.log(`Registered success emoji successfully.`)
+                console.log(`Registered success emoji successfully.`);
                 emojiList.success = `<:${emojiPayload.name}:${emojiPayload.id}>`;
             }
         }
@@ -60,7 +60,7 @@ class ReadyListener extends Listener {
             emojiList.error = `<:${errorEmoji.name}:${errorEmoji.id}>`;
         }
         else {
-            const emoji = fetchImg(__dirname+"/../../static/error.png");
+            const emoji = fetchImg(__dirname + "/../../static/error.png");
             const emojiPayload = await rest.post(`/applications/${client.id}/emojis`, {
                 body: {
                     image: emoji,
@@ -69,7 +69,7 @@ class ReadyListener extends Listener {
             })
             .catch(console.error);
             if (emojiPayload) {
-                console.log(`Registered error emoji successfully.`)
+                console.log(`Registered error emoji successfully.`);
                 emojiList.error = `<:${emojiPayload.name}:${emojiPayload.id}>`;
             }
         }
@@ -78,7 +78,7 @@ class ReadyListener extends Listener {
             emojiList.warning = `<:${warningEmoji.name}:${warningEmoji.id}>`;
         }
         else {
-            const emoji = fetchImg(__dirname+"/../../static/warning.png");
+            const emoji = fetchImg(__dirname + "/../../static/warning.png");
             const emojiPayload = await rest.post(`/applications/${client.id}/emojis`, {
                 body: {
                     image: emoji,
@@ -87,7 +87,7 @@ class ReadyListener extends Listener {
             })
             .catch(console.error);
             if (emojiPayload) {
-                console.log(`Registered warning emoji successfully.`)
+                console.log(`Registered warning emoji successfully.`);
                 emojiList.warning = `<:${emojiPayload.name}:${emojiPayload.id}>`;
             }
         }
@@ -96,7 +96,7 @@ class ReadyListener extends Listener {
             emojiList.info = `<:${infoEmoji.name}:${infoEmoji.id}>`;
         }
         else {
-            const emoji = fetchImg(__dirname+"/../../static/info.png");
+            const emoji = fetchImg(__dirname + "/../../static/info.png");
             const emojiPayload = await rest.post(`/applications/${client.id}/emojis`, {
                 body: {
                     image: emoji,
@@ -105,7 +105,7 @@ class ReadyListener extends Listener {
             })
             .catch(console.error);
             if (emojiPayload) {
-                console.log(`Registered info emoji successfully.`)
+                console.log(`Registered info emoji successfully.`);
                 emojiList.info = `<:${emojiPayload.name}:${emojiPayload.id}>`;
             }
         }
@@ -114,7 +114,7 @@ class ReadyListener extends Listener {
             emojiList.loading = `<a:${loadingEmoji.name}:${loadingEmoji.id}>`;
         }
         else {
-            const emoji = fetchImg(__dirname+"/../../static/loading.gif");
+            const emoji = fetchImg(__dirname + "/../../static/loading.gif");
             const emojiPayload = await rest.post(`/applications/${client.id}/emojis`, {
                 body: {
                     image: emoji,
@@ -123,12 +123,12 @@ class ReadyListener extends Listener {
             })
             .catch(console.error);
             if (emojiPayload) {
-                console.log(`Registered loading emoji successfully.`)
+                console.log(`Registered loading emoji successfully.`);
                 emojiList.loading = `<:${emojiPayload.name}:${emojiPayload.id}>`;
             }
         }
         await setTimeout(250);
-        console.log("Emojis loaded successfully.")
+        console.log("Emojis loaded successfully.");
     }
     container.emojis = emojiList;
   }
