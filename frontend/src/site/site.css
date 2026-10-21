@@ -2554,3 +2554,8 @@
     border-radius: 18px;
   }
 }
+
+.ud-card .emoji-field > textarea,
+.ud-card .emoji-field > input {
+  padding-right: 44px;
+}

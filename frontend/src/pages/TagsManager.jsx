@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { EmojiField } from "../components/emoji/EmojiField.jsx";
 import { api } from "../api.js";
 import { useToast } from "../components/Toasts.jsx";
 import { EmbedSelect } from "../components/fields.jsx";
@@ -45,8 +46,8 @@ function TagForm({ data, me, initial, onSubmit, onCancel, submitLabel }) {
         </div>
       </div>
       <label htmlFor={`tag-text-${initial?.name ?? "new"}`}>Text</label>
-      <textarea id={`tag-text-${initial?.name ?? "new"}`} className="textarea" maxLength={2048} value={text} onChange={(e) => setText(e.target.value)} />
-      <MessagePreview text={text} data={data} me={me} />
+      <EmojiField as="textarea" id={`tag-text-${initial?.name ?? "new"}`} className="textarea" maxLength={2048} value={text} onChange={setText} />
+      <MessagePreview text={text} embed={embed} data={data} me={me} />
       <div className="inline" style={{ marginTop: 10 }}>
         <button type="submit" className="button primary" disabled={(!editing && !name) || (!text.trim() && !embed) || busy}>{busy ? "Saving..." : submitLabel}</button>
         {onCancel && <button type="button" className="button quiet" onClick={onCancel}>Cancel</button>}

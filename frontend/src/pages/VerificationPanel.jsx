@@ -1,19 +1,21 @@
 import { useState } from "react";
 import { api } from "../api.js";
 import { ChannelSelect } from "../components/fields.jsx";
+import { EmojiField, EmojiSelect } from "../components/emoji/EmojiField.jsx";
 import { useToast } from "../components/Toasts.jsx";
 
 export function VerificationPanel({ data }) {
   const toast = useToast();
   const [channelId, setChannelId] = useState(null);
   const [label, setLabel] = useState("Verify");
+  const [emoji, setEmoji] = useState("✅");
   const [busy, setBusy] = useState(false);
   const ready = Boolean(data.settings["verification.role"]);
 
   async function post() {
     setBusy(true);
     try {
-      await api.post(`/guilds/${data.guild.id}/verification/post`, { channelId, label });
+      await api.post(`/guilds/${data.guild.id}/verification/post`, { channelId, label, emoji });
       toast("Verification panel posted.");
     }
     catch (err) {
@@ -35,7 +37,11 @@ export function VerificationPanel({ data }) {
         </div>
         <div>
           <label htmlFor="verify-label">Button text</label>
-          <input id="verify-label" className="input" maxLength={80} value={label} onChange={(e) => setLabel(e.target.value)} />
+          <EmojiField id="verify-label" className="input" maxLength={80} value={label} onChange={setLabel} unicodeOnly />
+        </div>
+        <div>
+          <label htmlFor="verify-emoji">Button emoji</label>
+          <EmojiSelect id="verify-emoji" value={emoji} onChange={setEmoji} label="Button emoji" placeholder="✅" />
         </div>
         <button type="button" className="button primary" disabled={!ready || !channelId || busy} onClick={post}>
           {busy ? "Posting..." : "Post panel"}
