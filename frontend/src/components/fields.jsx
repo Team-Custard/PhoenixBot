@@ -1,5 +1,6 @@
 // Form controls for every setting type described in web/spec.js.
 import { useId, useMemo, useState } from "react";
+import { EmojiField, EmojiSelect } from "./emoji/EmojiField.jsx";
 
 const CHANNEL_PREFIX = { 0: "#", 5: "📢 ", 2: "🔊 ", 13: "🎙 ", 15: "💬 ", 16: "🖼 ", 4: "📁 " };
 
@@ -32,6 +33,9 @@ export function Field({ field, error, children, wide }) {
 // ---------------------------------------------------------------- simple inputs
 
 export function TextInput({ id, field, value, onChange }) {
+  if (field.emoji) {
+    return <EmojiField id={id} className="input" type="text" value={value} maxLength={field.max} onChange={onChange} unicodeOnly={field.emoji === "unicode"} />;
+  }
   return (
     <input
       id={id}
@@ -49,7 +53,9 @@ export function TextArea({ id, field, value, onChange, preview }) {
   const length = (value ?? "").length;
   return (
     <>
-      <textarea id={id} className="textarea" value={value ?? ""} onChange={(e) => onChange(e.target.value)} />
+      {field.emoji === false
+        ? <textarea id={id} className="textarea" value={value ?? ""} onChange={(e) => onChange(e.target.value)} />
+        : <EmojiField as="textarea" id={id} className="textarea" value={value} onChange={onChange} unicodeOnly={field.emoji === "unicode"} />}
       {field.max && <div className={`char-count${length > field.max ? " over" : ""}`}>{length} / {field.max}</div>}
       {preview}
     </>
@@ -60,8 +66,9 @@ export function UrlInput({ id, value, onChange }) {
   return <input id={id} className="input" type="url" placeholder="https://" value={value ?? ""} onChange={(e) => onChange(e.target.value)} />;
 }
 
-export function EmojiInput({ id, value, onChange }) {
-  return <input id={id} className="input" type="text" placeholder="⭐" value={value ?? ""} onChange={(e) => onChange(e.target.value)} />;
+/** A setting that is one emoji: clicking it opens the emoji picker. */
+export function EmojiInput({ id, field, value, onChange }) {
+  return <EmojiSelect id={id} value={value} onChange={onChange} required={field.required} placeholder={field.placeholder ?? "⭐"} label={field.label ?? "Emoji"} />;
 }
 
 export function NumberInput({ id, field, value, onChange }) {

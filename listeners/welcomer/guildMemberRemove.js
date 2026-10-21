@@ -1,6 +1,6 @@
 const { Listener } = require("@sapphire/framework");
 const { peekSettings } = require("../../tools/guildSettings");
-const { render, contextFrom } = require("../../tools/placeholders");
+const { buildMessage, contextFrom } = require("../../tools/placeholders");
 const { send } = require("../../tools/queue");
 
 class WelcomerRemove extends Listener {
@@ -13,9 +13,11 @@ class WelcomerRemove extends Listener {
     if (member.user.bot) return;
     const settings = await peekSettings(member.guild.id);
     const goodbyes = settings?.goodbyes;
-    if (!goodbyes?.channel || !goodbyes.message) return;
+    if (!goodbyes?.channel || !(goodbyes.message || goodbyes.embed)) return;
     const channel = await member.guild.channels.fetch(goodbyes.channel).catch(() => null);
-    await send(channel, { content: render(goodbyes.message, contextFrom({ member, channel })).slice(0, 2000), allowedMentions: { parse: [] } });
+    const payload = buildMessage(settings, { content: goodbyes.message, embed: goodbyes.embed }, contextFrom({ member, channel }));
+    // They've left, so mentioning them shouldn't ping.
+    if (payload) await send(channel, { ...payload, allowedMentions: { parse: [] } });
   }
 }
 

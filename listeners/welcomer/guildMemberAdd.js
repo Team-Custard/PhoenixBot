@@ -1,8 +1,7 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 const { Listener } = require("@sapphire/framework");
 const { peekSettings } = require("../../tools/guildSettings");
-const { parse } = require("../../tools/textParser");
-const { render, contextFrom } = require("../../tools/placeholders");
+const { buildMessage, contextFrom } = require("../../tools/placeholders");
 const { send } = require("../../tools/queue");
 
 class WelcomerAdd extends Listener {
@@ -16,13 +15,16 @@ class WelcomerAdd extends Listener {
     const welcomer = settings?.welcomer;
     if (!welcomer) return;
 
-    if (welcomer.channel && welcomer.message) {
+    // Text, a saved embed, or both (set on the dashboard's Welcome & goodbye page).
+    if (welcomer.channel && (welcomer.message || welcomer.embed)) {
       const channel = await member.guild.channels.fetch(welcomer.channel).catch(() => null);
-      const content = render(welcomer.message, contextFrom({ member, channel })).slice(0, 2000);
-      await send(channel, { content, allowedMentions: { users: [member.id] } });
+      const payload = buildMessage(settings, { content: welcomer.message, embed: welcomer.embed }, contextFrom({ member, channel }));
+      if (payload) await send(channel, payload);
     }
 
-    if (welcomer.dmtext) {
+    if (welcomer.dmtext || welcomer.dmEmbed) {
+      const payload = buildMessage(settings, { content: welcomer.dmtext, embed: welcomer.dmEmbed }, contextFrom({ member }));
+      if (!payload) return;
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId("dmServerInfo")
@@ -30,7 +32,7 @@ class WelcomerAdd extends Listener {
           .setStyle(ButtonStyle.Primary)
           .setLabel(`Sent from: ${member.guild.name}`.slice(0, 80)),
       );
-      await member.send({ content: await parse(welcomer.dmtext, member), components: [row] }).catch(() => undefined);
+      await member.send({ ...payload, components: [row] }).catch(() => undefined);
     }
   }
 }

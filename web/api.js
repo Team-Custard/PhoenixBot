@@ -12,8 +12,8 @@ const LevelMember = require("../tools/models/LevelMember");
 const { buildModlogEmbed } = require("../tools/moderation");
 const xpForLevel = require("../tools/xpToLevel");
 const { EmbedError, cleanEmbedData, toDiscordEmbed, isEmptyEmbed, embedUsers, describeUsers } = require("../tools/embeds");
-const { sections, fieldsByKey } = require("./spec");
-const { placeholderList, contextFrom, render, renderEmbed } = require("../tools/placeholders");
+const { sections, fieldsByKey, HONEYPOT_WARNING } = require("./spec");
+const { placeholderList, contextFrom, render, renderEmbed, buildMessage } = require("../tools/placeholders");
 const discord = require("./discord");
 const { refreshGuilds, logout } = require("./session");
 const { recordAudit, listAudit } = require("./audit");
@@ -22,7 +22,8 @@ const router = express.Router();
 const RANKCARD_DIR = path.join(__dirname, "../static/rankcards");
 const SNOWFLAKE = /^\d{17,20}$/;
 const CUSTOM_EMOJI = /^<(a?):(\w{2,32}):(\d{17,20})>$/;
-const UNICODE_EMOJI = /^(\p{Extended_Pictographic}|\p{Emoji_Presentation}|\p{Regional_Indicator}{2})(️|‍|\p{Extended_Pictographic}|\p{Emoji_Modifier}|⃣)*$/u;
+// Also keycaps (1️⃣ #️⃣) and the England, Scotland and Wales flags (tag characters).
+const UNICODE_EMOJI = /^(?:[#*0-9]\uFE0F?\u20E3|(\p{Extended_Pictographic}|\p{Emoji_Presentation}|\p{Regional_Indicator}{2})(\uFE0F|\u200D|\p{Extended_Pictographic}|\p{Emoji_Modifier}|\u20E3|[\u{E0020}-\u{E007F}])*)$/u;
 
 const { LIMITS: PLUS_LIMITS, limitsFor, limitMessage } = require("../tools/limits");
 const LIMITS = { ...PLUS_LIMITS, roleMenuRoles: 16 };
@@ -246,6 +247,21 @@ function tagBody(doc, body) {
   return { description: description ?? "", embed };
 }
 
+/**
+ * The server's custom emojis Phoenix can use, for the emoji picker. Emojis locked to
+ * roles Phoenix doesn't have, and ones the server lost (boost level dropped), are left out.
+ */
+function usableEmojis(guild, botMember) {
+  const botRoles = new Set(botMember?.roles ?? []);
+  const all = guild.emojis ?? [];
+  const canUse = (e) => e.available !== false && (!e.roles?.length || e.roles.some((id) => botRoles.has(id)));
+  return {
+    emojis: all.filter((e) => e.id && canUse(e)).map((e) => ({ id: e.id, name: e.name, animated: Boolean(e.animated) })),
+    // So the dashboard can say why an emoji that's already set won't work.
+    hiddenEmojiIds: all.filter((e) => e.id && !canUse(e)).map((e) => e.id),
+  };
+}
+
 router.get("/guilds/:guildId", wrap(async (req, res) => {
   const guildId = req.params.guildId;
   const [doc, context, premium, caseCount, levelCount, automodRules] = await Promise.all([
@@ -268,6 +284,7 @@ router.get("/guilds/:guildId", wrap(async (req, res) => {
       ownerId: req.guild.owner_id,
     },
     placeholders: placeholderList(),
+    ...usableEmojis(req.guild, context.botMember),
     premium,
     channels: [...context.channels.values()]
       .map((c) => ({ id: c.id, name: c.name, type: c.type, parentId: c.parent_id ?? null, position: c.position }))
@@ -695,11 +712,23 @@ router.post("/guilds/:guildId/verification/post", wrap(async (req, res) => {
   const ctx = { ...context, guildId };
   const channelId = validateField({ key: "channel", type: "channel", channelTypes: [0, 5], required: true }, req.body?.channelId, ctx, "Channel");
   const label = validateField({ key: "label", type: "text", max: 80 }, req.body?.label, ctx, "Button text") || "Verify";
-  const content = doc.verification.messageText || "Press the button below to verify and get access to the server.";
+  const emojiText = validateField({ key: "emoji", type: "emoji" }, req.body?.emoji, ctx, "Button emoji");
+  const buttonEmoji = emojiText ? parseEmoji(emojiText) : undefined;
+  // Server placeholders are filled in. There's no member yet, so member ones come out empty.
+  const fill = contextFrom({ guild: req.guild, channel: context.channels.get(channelId) });
+  const text = render(doc.verification.messageText || "Press the button below to verify and get access to the server.", fill);
+  // With a saved embed, the text goes above it. Without one, it goes in the usual orange box.
+  const message = doc.verification.embed
+    ? buildMessage(doc, { content: doc.verification.messageText ?? "", embed: doc.verification.embed }, fill)
+    : null;
+  const body = message
+    ? { content: message.content, embeds: message.embeds }
+    : { embeds: [new EmbedBuilder().setDescription(text.slice(0, 4096) || "Press the button below to verify.").setColor(Colors.Orange).toJSON()] };
 
   await discord.sendMessage(channelId, {
-    embeds: [new EmbedBuilder().setDescription(content).setColor(Colors.Orange).toJSON()],
-    components: [{ type: 1, components: [{ type: 2, style: 1, custom_id: "verify", label }] }],
+    ...body,
+    allowed_mentions: { parse: [] },
+    components: [{ type: 1, components: [{ type: 2, style: 1, custom_id: "verify", label, emoji: buttonEmoji }] }],
   }).catch((err) => {
     throw new ApiError(400, `Discord refused to post the panel: ${err.message}. Check that Phoenix can send messages in that channel.`);
   });
@@ -711,15 +740,20 @@ router.post("/guilds/:guildId/verification/post", wrap(async (req, res) => {
 // Honeypot warning
 // ---------------------------------------------------------------------------
 
-const HONEYPOT_WARNING = "⚠️ **Don't post in this channel.** It's a trap for spam bots: anyone who sends a message here is removed from the server automatically.";
-
 router.post("/guilds/:guildId/honeypot/warning", wrap(async (req, res) => {
   const doc = await getSettingsDoc(req.params.guildId);
   const honeypot = doc.automod?.honeypot;
   if (!honeypot?.channel) throw new ApiError(400, "Pick and save a honeypot channel first.");
-  await discord.sendMessage(honeypot.channel, {
-    embeds: [new EmbedBuilder().setDescription(honeypot.warning || HONEYPOT_WARNING).setColor(Colors.Red).toJSON()],
-  }).catch((err) => {
+  const context = await getGuildContext(req.params.guildId);
+  // Server placeholders are filled in; nobody in particular is the member here.
+  const fill = contextFrom({ guild: req.guild, channel: context.channels.get(honeypot.channel) });
+  // With a saved embed, the warning text (if any) goes above it. Without one, the
+  // text goes in the usual red box.
+  const message = honeypot.embed ? buildMessage(doc, { content: honeypot.warning ?? "", embed: honeypot.embed }, fill) : null;
+  const body = message
+    ? { content: message.content, embeds: message.embeds }
+    : { embeds: [new EmbedBuilder().setDescription(render(honeypot.warning || HONEYPOT_WARNING, fill).slice(0, 4096) || HONEYPOT_WARNING).setColor(Colors.Red).toJSON()] };
+  await discord.sendMessage(honeypot.channel, { ...body, allowed_mentions: { parse: [] } }).catch((err) => {
     throw new ApiError(400, `Discord refused to post the warning: ${err.message}. Check that Phoenix can send messages in that channel.`);
   });
   await recordAudit(req, { action: "honeypot.post", summary: `Posted the honeypot warning in <#${honeypot.channel}>` });

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { EmojiField } from "../components/emoji/EmojiField.jsx";
 import { api } from "../api.js";
 import { useToast } from "../components/Toasts.jsx";
 
@@ -58,7 +59,7 @@ export function BotProfile({ data, onChange }) {
             }}
           >
             <label className="visually-hidden" htmlFor="bot-nick">Nickname</label>
-            <input id="bot-nick" className="input" maxLength={32} placeholder={profile.username} value={nick} onChange={(e) => setNick(e.target.value)} />
+            <EmojiField id="bot-nick" className="input" wrapperClassName="grow" maxLength={32} placeholder={profile.username} value={nick} onChange={setNick} unicodeOnly />
             <button type="submit" className="button primary" disabled={busy !== null || nick.trim() === (profile.nick ?? "")}>
               {busy === "nick" ? "Saving..." : "Save"}
             </button>
@@ -123,7 +124,7 @@ export function BotProfile({ data, onChange }) {
           <h3>Server bio</h3>
           <p>The "About me" people see on Phoenix's profile in this server.</p>
           <label className="visually-hidden" htmlFor="bot-bio">Bio</label>
-          <textarea id="bot-bio" className="textarea" maxLength={190} value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Your friendly server bot." />
+          <EmojiField as="textarea" id="bot-bio" className="textarea" maxLength={190} value={bio} onChange={setBio} placeholder="Your friendly server bot." unicodeOnly />
           <div className="char-count">{bio.length} / 190</div>
           <div className="inline">
             <button type="button" className="button primary" disabled={busy !== null || bio.trim() === (profile.bio ?? "")} onClick={() => saveBio(bio.trim())}>

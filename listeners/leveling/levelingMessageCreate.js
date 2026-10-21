@@ -1,6 +1,6 @@
 const { Listener, Events } = require("@sapphire/framework");
 const { peekSettings } = require("../../tools/guildSettings");
-const { render, contextFrom } = require("../../tools/placeholders");
+const { buildMessage, contextFrom } = require("../../tools/placeholders");
 const { send } = require("../../tools/queue");
 const { LevelMember, xpForLevel, rewardRoleChanges } = require("../../tools/leveling");
 const { yieldsToStaging } = require("../../tools/staging");
@@ -62,12 +62,13 @@ class LevelingMessageCreate extends Listener {
     if (changes.add.length) await message.member.roles.add(changes.add, "Level roles").catch(() => undefined);
     if (changes.remove.length) await message.member.roles.remove(changes.remove, "Level roles").catch(() => undefined);
 
-    if (leveledUp && leveling.message && entry.level > 1) {
+    if (leveledUp && (leveling.message || leveling.embed) && entry.level > 1) {
       const channel = leveling.announceChannel
         ? await message.guild.channels.fetch(leveling.announceChannel).catch(() => null)
         : message.channel;
-      const content = render(leveling.message, contextFrom({ member: message.member, channel, extra: { level: entry.level } })).slice(0, 2000);
-      await send(channel, { content, allowedMentions: { users: [message.author.id] } });
+      const ctx = contextFrom({ member: message.member, channel, extra: { level: String(entry.level) } });
+      const payload = buildMessage(settings, { content: leveling.message, embed: leveling.embed }, ctx);
+      if (payload) await send(channel, payload);
     }
   }
 }

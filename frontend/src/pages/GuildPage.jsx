@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../api.js";
 import { Link, useRouter } from "../router.jsx";
 import { SectionForm } from "../components/SectionForm.jsx";
@@ -15,6 +15,7 @@ import { HoneypotPanel } from "./HoneypotPanel.jsx";
 import { PlusPage } from "./PlusPage.jsx";
 import { AuditLog } from "./AuditLog.jsx";
 import { SettingsSearch } from "../components/SettingsSearch.jsx";
+import { ServerEmojis } from "../components/emoji/emojiShared.js";
 
 // Pages that aren't plain settings forms.
 const CUSTOM_PAGES = {
@@ -56,6 +57,12 @@ export function GuildPage({ me, guildId, sectionId }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  // The emoji picker's server section: this server's emojis Phoenix can use.
+  const emojiContext = useMemo(
+    () => (data ? { emojis: data.emojis ?? [], hiddenIds: data.hiddenEmojiIds ?? [], hidden: data.hiddenEmojiIds?.length ?? 0, guildName: data.guild.name } : null),
+    [data?.emojis, data?.hiddenEmojiIds, data?.guild?.name],
+  );
 
   if (error) {
     return (
@@ -102,6 +109,7 @@ export function GuildPage({ me, guildId, sectionId }) {
   };
 
   return (
+    <ServerEmojis.Provider value={emojiContext}>
     <div className="guild">
       <aside className="sidebar">
         <Link className="back" to="/dash" onClick={(e) => go(e)}>All servers</Link>
@@ -163,5 +171,6 @@ export function GuildPage({ me, guildId, sectionId }) {
         {current.id === "embeds" && <EmbedBuilder data={data} me={me?.user} onSaved={(embeds) => setData((d) => ({ ...d, embeds }))} />}
       </main>
     </div>
+    </ServerEmojis.Provider>
   );
 }

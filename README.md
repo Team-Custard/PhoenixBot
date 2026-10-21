@@ -58,6 +58,7 @@ web/               Dashboard backend: OAuth sessions, settings API, settings spe
 frontend/          Website and dashboard (React, built with esbuild)
   src/site/          Public pages: home, commands, leaderboards, UserDB profiles...
   src/pages/         Dashboard pages
+  src/components/emoji/  Emoji picker (the emoji list loads on demand)
 routers/           Public API (public.js for the website, api.js for UserDB) and short links
 scripts/           smoke-test.js, migrate-v2.js
 ```

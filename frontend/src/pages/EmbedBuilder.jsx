@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { api } from "../api.js";
 import { ChannelSelect } from "../components/fields.jsx";
+import { EmojiField } from "../components/emoji/EmojiField.jsx";
 import { useToast } from "../components/Toasts.jsx";
 import { useUnsavedWarning } from "../components/SectionForm.jsx";
 import { Markdown } from "../components/Markdown.jsx";
@@ -24,7 +25,7 @@ const blank = () => ({
 });
 
 /** Stored data (with nulls) → editor state (with empty strings). */
-function toEditor(data) {
+export function toEditor(data) {
   const base = blank();
   if (!data) return base;
   return {
@@ -66,11 +67,17 @@ function Count({ value, max }) {
   return <span className={`char-count${length > max ? " over" : ""}`}>{length} / {max}</span>;
 }
 
-function Input({ id, label, value, onChange, max, placeholder, type = "text" }) {
+// emoji: "all" adds the emoji button, "unicode" one without server emojis (they don't
+// show in embed author names and footers).
+function Input({ id, label, value, onChange, max, placeholder, type = "text", emoji = null }) {
   return (
     <div className="eb-input">
       <label htmlFor={id}>{label}</label>
-      <input id={id} className="input" type={type} value={value} maxLength={max ? max + 200 : undefined} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+      {emoji ? (
+        <EmojiField id={id} className="input" type={type} value={value} maxLength={max ? max + 200 : undefined} placeholder={placeholder} onChange={onChange} unicodeOnly={emoji === "unicode"} />
+      ) : (
+        <input id={id} className="input" type={type} value={value} maxLength={max ? max + 200 : undefined} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+      )}
       {max && <Count value={value} max={max} />}
     </div>
   );
@@ -89,8 +96,8 @@ function Group({ title, children, open = false }) {
 // Preview, drawn like Discord's own embeds
 // ---------------------------------------------------------------------------
 
-export function EmbedPreview({ embed: raw, data, content, me }) {
-  const values = sampleValues(data, me);
+export function EmbedPreview({ embed: raw, data, content, me, extra = {} }) {
+  const values = sampleValues(data, me, extra);
   const ctx = {
     channels: data.channels,
     roles: data.roles,
@@ -327,17 +334,17 @@ export function EmbedBuilder({ data, me, onSaved }) {
                 {embed.color !== null && <button type="button" className="button quiet small" onClick={() => set({ color: null })}>Phoenix orange</button>}
               </div>
             </div>
-            <Input id="eb-title" label="Title" value={embed.title} max={LIMITS.title} onChange={(title) => set({ title })} />
+            <Input id="eb-title" label="Title" value={embed.title} max={LIMITS.title} emoji="all" onChange={(title) => set({ title })} />
             <Input id="eb-url" label="Title link" type="text" placeholder="https:// or a placeholder like {{avatar}}" value={embed.url} onChange={(url) => set({ url })} />
             <div className="eb-input">
               <label htmlFor="eb-description">Description</label>
-              <textarea id="eb-description" className="textarea" rows={6} value={embed.description} onChange={(e) => set({ description: e.target.value })} placeholder="Supports **bold**, *italics*, [links](https://...), lists, quotes and more." />
+              <EmojiField as="textarea" id="eb-description" className="textarea" rows={6} value={embed.description} onChange={(description) => set({ description })} placeholder="Supports **bold**, *italics*, [links](https://...), lists, quotes and more." />
               <Count value={embed.description} max={LIMITS.description} />
             </div>
           </Group>
 
           <Group title="Author">
-            <Input id="eb-author" label="Name" value={embed.author.name} max={LIMITS.author} onChange={(v) => setNested("author", { name: v })} />
+            <Input id="eb-author" label="Name" value={embed.author.name} max={LIMITS.author} emoji="unicode" onChange={(v) => setNested("author", { name: v })} />
             <Input id="eb-author-icon" label="Icon link" type="text" placeholder="https:// or a placeholder like {{avatar}}" value={embed.author.icon_url} onChange={(v) => setNested("author", { icon_url: v })} />
             <Input id="eb-author-url" label="Link" type="text" placeholder="https:// or a placeholder like {{avatar}}" value={embed.author.url} onChange={(v) => setNested("author", { url: v })} />
           </Group>
@@ -358,10 +365,10 @@ export function EmbedBuilder({ data, me, onSaved }) {
                     <button type="button" className="icon-button" aria-label={`Remove field ${index + 1}`} onClick={() => set({ fields: embed.fields.filter((_, i) => i !== index) })}>✕</button>
                   </div>
                 </div>
-                <Input id={`eb-field-name-${index}`} label="Name" value={field.name} max={LIMITS.fieldName} onChange={(v) => setField(index, { name: v })} />
+                <Input id={`eb-field-name-${index}`} label="Name" value={field.name} max={LIMITS.fieldName} emoji="all" onChange={(v) => setField(index, { name: v })} />
                 <div className="eb-input">
                   <label htmlFor={`eb-field-value-${index}`}>Text</label>
-                  <textarea id={`eb-field-value-${index}`} className="textarea" rows={3} value={field.value} onChange={(e) => setField(index, { value: e.target.value })} />
+                  <EmojiField as="textarea" id={`eb-field-value-${index}`} className="textarea" rows={3} value={field.value} onChange={(value) => setField(index, { value })} />
                   <Count value={field.value} max={LIMITS.fieldValue} />
                 </div>
                 <label className="eb-check">
@@ -381,7 +388,7 @@ export function EmbedBuilder({ data, me, onSaved }) {
           </Group>
 
           <Group title="Footer">
-            <Input id="eb-footer" label="Text" value={embed.footer.text} max={LIMITS.footer} onChange={(v) => setNested("footer", { text: v })} />
+            <Input id="eb-footer" label="Text" value={embed.footer.text} max={LIMITS.footer} emoji="unicode" onChange={(v) => setNested("footer", { text: v })} />
             <Input id="eb-footer-icon" label="Icon link" type="text" placeholder="https:// or a placeholder like {{avatar}}" value={embed.footer.icon_url} onChange={(v) => setNested("footer", { icon_url: v })} />
             <div className="eb-input">
               <label htmlFor="eb-time">Timestamp</label>
@@ -409,7 +416,7 @@ export function EmbedBuilder({ data, me, onSaved }) {
               </div>
               <div className="eb-input">
                 <label htmlFor="eb-content">Message above the embed (optional)</label>
-                <textarea id="eb-content" className="textarea" rows={2} maxLength={2000} value={content} onChange={(e) => setContent(e.target.value)} />
+                <EmojiField as="textarea" id="eb-content" className="textarea" rows={2} maxLength={2000} value={content} onChange={setContent} />
               </div>
               <p className="field-help">Mentions in the message won't ping anyone.</p>
               <button type="button" className="button primary" disabled={busy !== null || !channelId || empty || overLimit} onClick={send}>

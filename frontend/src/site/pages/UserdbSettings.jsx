@@ -3,6 +3,7 @@ import { api, userAvatar } from "../../api.js";
 import { Link } from "../../router.jsx";
 import { useTitle } from "../publicApi.js";
 import { Icon } from "../icons.jsx";
+import { EmojiField } from "../../components/emoji/EmojiField.jsx";
 
 const PRONOUNS = ["she/her", "he/him", "they/them", "she/they", "he/they", "any pronouns", "ask me"];
 
@@ -221,7 +222,7 @@ export function UserdbSettings() {
         <section className="ud-card">
           <h2>About you</h2>
           <label className="visually-hidden" htmlFor="ud-about">About you</label>
-          <textarea id="ud-about" className={field("description")} maxLength={300} rows={3} value={form.description} placeholder="Hello, I'm a Phoenix user." onChange={(e) => set({ description: e.target.value })} />
+          <EmojiField as="textarea" id="ud-about" className={field("description").trim()} maxLength={300} rows={3} value={form.description} placeholder="Hello, I'm a Phoenix user." onChange={(description) => set({ description })} unicodeOnly />
           <p className="muted small ud-count">{form.description.length} / 300</p>
         </section>
 

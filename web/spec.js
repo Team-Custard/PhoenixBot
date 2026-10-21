@@ -27,6 +27,8 @@
 
 // Discord channel types: text and announcement channels.
 const TEXT_CHANNELS = [0, 5];
+// The honeypot warning when none is set (web/api.js posts it).
+const HONEYPOT_WARNING = "⚠️ **Don't post in this channel.** It's a trap for spam bots: anyone who sends a message here is removed from the server automatically.";
 // Plus voice, stage, forum, media and categories.
 const LOGGABLE_CHANNELS = [0, 5, 2, 13, 15, 16, 4];
 
@@ -187,7 +189,8 @@ const sections = [
         options: [{ value: "ban", label: "Ban them" }, { value: "kick", label: "Kick them" }, { value: "shadowban", label: "Shadowban them" }],
       },
       { key: "automod.honeypot.cleanup", type: "toggle", label: "Also delete their messages from the past hour", group: "honeypot", showIf: [{ key: "automod.honeypot.action", in: ["ban", "kick"] }, "automod.honeypot.channel"], help: "Kicks become a quick ban and unban to do this." },
-      { key: "automod.honeypot.warning", type: "textarea", max: 2000, label: "Warning message", group: "honeypot", showIf: "automod.honeypot.channel", help: "Posted in the channel with the button below. Leave empty for the default warning." },
+      { key: "automod.honeypot.warning", type: "textarea", max: 2000, label: "Warning message", group: "honeypot", showIf: "automod.honeypot.channel", preview: "panel", panelColor: 0xed4245, panelDefault: HONEYPOT_WARNING, embedKey: "automod.honeypot.embed", help: "Posted in the channel with the button below. Leave empty for the default warning. Server placeholders like {{servername}} work here." },
+      { key: "automod.honeypot.embed", type: "embed", label: "Warning embed", group: "honeypot", showIf: "automod.honeypot.channel", help: "Optional. Replaces the plain red box, with the warning text (if any) above it." },
       ...filterFields("spam", [
         { key: "maxMessages", type: "number", min: 2, max: 30, label: "More than this many messages" },
         { key: "seconds", type: "number", min: 1, max: 30, label: "Within (seconds)" },
@@ -246,10 +249,13 @@ const sections = [
     placeholders: true,
     fields: [
       { key: "welcomer.channel", type: "channel", channelTypes: TEXT_CHANNELS, label: "Welcome channel" },
-      { key: "welcomer.message", type: "textarea", max: 2000, label: "Welcome message", preview: true },
-      { key: "welcomer.dmtext", type: "textarea", max: 2000, label: "Welcome DM", preview: true, help: "Sent privately to new members. Leave empty to not send one." },
+      { key: "welcomer.message", type: "textarea", max: 2000, label: "Welcome message", preview: true, embedKey: "welcomer.embed" },
+      { key: "welcomer.embed", type: "embed", label: "Welcome embed", help: "Optional. A saved embed sent with (or instead of) the welcome message. Placeholders work in it too." },
+      { key: "welcomer.dmtext", type: "textarea", max: 2000, label: "Welcome DM", preview: true, embedKey: "welcomer.dmEmbed", help: "Sent privately to new members. Leave this and the DM embed empty to not send one." },
+      { key: "welcomer.dmEmbed", type: "embed", label: "Welcome DM embed", help: "Optional. Sent in the DM with (or instead of) the text." },
       { key: "goodbyes.channel", type: "channel", channelTypes: TEXT_CHANNELS, label: "Goodbye channel" },
-      { key: "goodbyes.message", type: "textarea", max: 2000, label: "Goodbye message", preview: true },
+      { key: "goodbyes.message", type: "textarea", max: 2000, label: "Goodbye message", preview: true, embedKey: "goodbyes.embed" },
+      { key: "goodbyes.embed", type: "embed", label: "Goodbye embed", help: "Optional. Sent with (or instead of) the goodbye message." },
     ],
   },
   {
@@ -261,7 +267,8 @@ const sections = [
       { key: "verification.role", type: "role", assignable: true, label: "Verified role", help: "Given to members once they verify." },
       { key: "verification.unverifiedRole", type: "role", assignable: true, label: "Unverified role", help: "Optional. Removed once they verify." },
       { key: "verification.managerRole", type: "role", label: "Verification managers", help: "Can verify members by hand with the verify command." },
-      { key: "verification.messageText", type: "textarea", max: 2000, label: "Verification panel text", help: "Shown above the Verify button when you post the panel below." },
+      { key: "verification.messageText", type: "textarea", max: 2000, label: "Verification panel text", preview: "panel", embedKey: "verification.embed", help: "Shown above the Verify button when you post the panel below. Server placeholders like {{servername}} work here; member ones are left empty, since the panel isn't for one member." },
+      { key: "verification.embed", type: "embed", label: "Verification panel embed", help: "Optional. Replaces the plain orange box, with the panel text above it." },
       { key: "verification.verifiedText", type: "textarea", max: 1000, label: "Message after verifying", preview: true },
     ],
   },
@@ -271,7 +278,7 @@ const sections = [
     description: "Repost messages that get enough reactions.",
     fields: [
       { key: "starboard.channel", type: "channel", channelTypes: TEXT_CHANNELS, label: "Starboard channel" },
-      { key: "starboard.emoji", type: "emoji", label: "Reaction", help: "A normal emoji like ⭐ or a custom one like <:star:123456789012345678>." },
+      { key: "starboard.emoji", type: "emoji", label: "Reaction", help: "The reaction that stars a message. Click to pick one; this server's emojis are listed too." },
       { key: "starboard.threshold", type: "number", min: 1, max: 1000, label: "Reactions needed", storeAs: "string" },
       { key: "starboard.selfstar", type: "toggle", label: "Let people star their own messages" },
     ],
@@ -284,7 +291,8 @@ const sections = [
     fields: [
       { key: "leveling.enable", type: "toggle", label: "Leveling" },
       { key: "leveling.publicLeaderboard", type: "toggle", label: "Public leaderboard", help: "While leveling is on, anyone with the link can see the top 100 on the website, and the leaderboard command links there." },
-      { key: "leveling.message", type: "textarea", max: 2000, label: "Level up message", preview: true, help: "Use {{level}} for the new level. Leave empty to not announce level ups." },
+      { key: "leveling.message", type: "textarea", max: 2000, label: "Level up message", preview: true, embedKey: "leveling.embed", help: "Use {{level}} for the new level. Leave this and the embed empty to not announce level ups." },
+      { key: "leveling.embed", type: "embed", label: "Level up embed", help: "Optional. Sent with (or instead of) the level up message. {{level}} works in it too." },
       { key: "leveling.announceChannel", type: "channel", channelTypes: TEXT_CHANNELS, label: "Announce level ups in", help: "Leave empty to announce in the channel where they leveled up." },
       { key: "leveling.rates.minimum", type: "number", min: 1, max: 1000, label: "Least XP per message" },
       { key: "leveling.rates.maximum", type: "number", min: 1, max: 1000, label: "Most XP per message" },
@@ -335,7 +343,7 @@ const sections = [
     placeholders: true,
     fields: [
       { key: "afk.enabled", type: "toggle", label: "Tell people when someone is AFK" },
-      { key: "afk.message", type: "textarea", max: 2000, label: "AFK message", preview: true, showIf: "afk.enabled", help: "Placeholders are about the AFK member. {{afkreason}} is their reason and {{afksince}} is how long ago they left. Leave empty for the default." },
+      { key: "afk.message", type: "textarea", max: 2000, label: "AFK message", preview: true, embedKey: "afk.embed", showIf: "afk.enabled", help: "Placeholders are about the AFK member. {{afkreason}} is their reason and {{afksince}} is how long ago they left. Leave empty for the default." },
       { key: "afk.embed", type: "embed", label: "AFK embed", showIf: "afk.enabled", help: "Optional. Placeholders work in the embed too." },
       { key: "afk.welcomeBack", type: "toggle", label: "Welcome people back", help: "When an AFK member talks again, their status is cleared either way. This says so." },
       { key: "afk.welcomeBackMessage", type: "textarea", max: 2000, label: "Welcome back message", preview: true, showIf: "afk.welcomeBack", help: "Leave empty for the default." },
@@ -433,4 +441,4 @@ const sections = [
 const fieldsByKey = new Map();
 for (const section of sections) for (const field of section.fields) fieldsByKey.set(field.key, { section: section.id, field });
 
-module.exports = { sections, fieldsByKey, TEXT_CHANNELS };
+module.exports = { sections, fieldsByKey, TEXT_CHANNELS, HONEYPOT_WARNING };

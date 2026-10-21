@@ -96,7 +96,7 @@ export function SectionForm({ section, data, me, onSaved, focus, children }) {
             onChange={(value) => setDraft((d) => ({ ...d, [field.key]: value }))}
             data={data}
             preview={field.preview ? (
-              <MessagePreview text={draft[field.key]} data={data} me={me.user} extra={{ level: "5" }} />
+              <MessagePreview text={draft[field.key]} embed={field.embedKey ? draft[field.embedKey] : null} panel={field.preview === "panel"} panelColor={field.panelColor} panelDefault={field.panelDefault} data={data} me={me.user} extra={{ level: "5" }} />
             ) : null}
           />
         )}

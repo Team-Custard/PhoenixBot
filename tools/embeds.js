@@ -155,14 +155,22 @@ function fromDiscordEmbed(json = {}) {
   };
 }
 
-/** What still uses a saved embed (tags, autoresponses, timed, sticky and AFK messages), to stop it being deleted. */
+/** What still uses a saved embed (tags, autoresponses, timed, sticky, welcome and other messages), to stop it being deleted. */
 function embedUsers(settings, name) {
   return [
     ...(settings.tags ?? []).filter((t) => t.embed === name).map((t) => `tag “${t.name}”`),
     ...(settings.autoresponses ?? []).flatMap((a, i) => (a.embed === name ? [`autoresponse ${i + 1}`] : [])),
     ...(settings.timedMessages ?? []).flatMap((t, i) => (t.embed === name ? [`timed message ${i + 1}`] : [])),
     ...(settings.stickyMessages ?? []).flatMap((t, i) => (t.embed === name ? [`sticky message ${i + 1}`] : [])),
-    ...(settings.afk?.embed === name ? ["the AFK message"] : []),
+    ...[
+      [settings.welcomer?.embed, "the welcome message"],
+      [settings.welcomer?.dmEmbed, "the welcome DM"],
+      [settings.goodbyes?.embed, "the goodbye message"],
+      [settings.leveling?.embed, "the level up message"],
+      [settings.verification?.embed, "the verification panel"],
+      [settings.automod?.honeypot?.embed, "the honeypot warning"],
+      [settings.afk?.embed, "the AFK message"],
+    ].filter(([embed]) => embed === name).map(([, where]) => where),
   ];
 }
 

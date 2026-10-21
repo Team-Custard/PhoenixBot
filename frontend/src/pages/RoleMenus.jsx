@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import { ChannelSelect, RoleSelect } from "../components/fields.jsx";
+import { EmojiField, EmojiSelect } from "../components/emoji/EmojiField.jsx";
 import { SaveBar } from "../components/SaveBar.jsx";
 import { useToast } from "../components/Toasts.jsx";
 import { useUnsavedWarning } from "../components/SectionForm.jsx";
@@ -37,7 +38,7 @@ function PostMenu({ data, menu, disabled }) {
           </div>
           <div>
             <label htmlFor={`text-${menu.id}`}>Message (optional)</label>
-            <input id={`text-${menu.id}`} className="input" maxLength={2000} placeholder={`Pick your roles from ${menu.name} below.`} value={content} onChange={(e) => setContent(e.target.value)} />
+            <EmojiField id={`text-${menu.id}`} className="input" maxLength={2000} placeholder={`Pick your roles from ${menu.name} below.`} value={content} onChange={setContent} />
           </div>
           <button type="button" className="button" disabled={disabled || !channelId || busy} onClick={post}>
             {busy ? "Posting..." : "Post menu"}
@@ -96,12 +97,11 @@ export function RoleMenus({ data, onSaved }) {
               {menu.roles.length === 0 && <p className="empty-hint">Add the roles people can pick.</p>}
               {menu.roles.map((item, roleIndex) => (
                 <div className="menu-role" key={roleIndex}>
-                  <input
-                    className="input"
-                    aria-label="Emoji"
-                    value={item.emoji ?? ""}
-                    placeholder="⭐"
-                    onChange={(e) => updateMenu(index, { roles: menu.roles.map((r, i) => (i === roleIndex ? { ...r, emoji: e.target.value } : r)) })}
+                  <EmojiSelect
+                    required
+                    label="Emoji"
+                    value={item.emoji || "⭐"}
+                    onChange={(emoji) => updateMenu(index, { roles: menu.roles.map((r, i) => (i === roleIndex ? { ...r, emoji } : r)) })}
                   />
                   <RoleSelect
                     field={{ assignable: true, required: true }}
