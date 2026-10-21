@@ -27,6 +27,8 @@
 
 // Discord channel types: text and announcement channels.
 const TEXT_CHANNELS = [0, 5];
+// The honeypot warning when none is set (web/api.js posts it).
+const HONEYPOT_WARNING = "⚠️ **Don't post in this channel.** It's a trap for spam bots: anyone who sends a message here is removed from the server automatically.";
 // Plus voice, stage, forum, media and categories.
 const LOGGABLE_CHANNELS = [0, 5, 2, 13, 15, 16, 4];
 
@@ -187,7 +189,8 @@ const sections = [
         options: [{ value: "ban", label: "Ban them" }, { value: "kick", label: "Kick them" }, { value: "shadowban", label: "Shadowban them" }],
       },
       { key: "automod.honeypot.cleanup", type: "toggle", label: "Also delete their messages from the past hour", group: "honeypot", showIf: [{ key: "automod.honeypot.action", in: ["ban", "kick"] }, "automod.honeypot.channel"], help: "Kicks become a quick ban and unban to do this." },
-      { key: "automod.honeypot.warning", type: "textarea", max: 2000, label: "Warning message", group: "honeypot", showIf: "automod.honeypot.channel", help: "Posted in the channel with the button below. Leave empty for the default warning." },
+      { key: "automod.honeypot.warning", type: "textarea", max: 2000, label: "Warning message", group: "honeypot", showIf: "automod.honeypot.channel", preview: "panel", panelColor: 0xed4245, panelDefault: HONEYPOT_WARNING, embedKey: "automod.honeypot.embed", help: "Posted in the channel with the button below. Leave empty for the default warning. Server placeholders like {{servername}} work here." },
+      { key: "automod.honeypot.embed", type: "embed", label: "Warning embed", group: "honeypot", showIf: "automod.honeypot.channel", help: "Optional. Replaces the plain red box, with the warning text (if any) above it." },
       ...filterFields("spam", [
         { key: "maxMessages", type: "number", min: 2, max: 30, label: "More than this many messages" },
         { key: "seconds", type: "number", min: 1, max: 30, label: "Within (seconds)" },
@@ -438,4 +441,4 @@ const sections = [
 const fieldsByKey = new Map();
 for (const section of sections) for (const field of section.fields) fieldsByKey.set(field.key, { section: section.id, field });
 
-module.exports = { sections, fieldsByKey, TEXT_CHANNELS };
+module.exports = { sections, fieldsByKey, TEXT_CHANNELS, HONEYPOT_WARNING };

@@ -12,7 +12,7 @@ const LevelMember = require("../tools/models/LevelMember");
 const { buildModlogEmbed } = require("../tools/moderation");
 const xpForLevel = require("../tools/xpToLevel");
 const { EmbedError, cleanEmbedData, toDiscordEmbed, isEmptyEmbed, embedUsers, describeUsers } = require("../tools/embeds");
-const { sections, fieldsByKey } = require("./spec");
+const { sections, fieldsByKey, HONEYPOT_WARNING } = require("./spec");
 const { placeholderList, contextFrom, render, renderEmbed, buildMessage } = require("../tools/placeholders");
 const discord = require("./discord");
 const { refreshGuilds, logout } = require("./session");
@@ -740,15 +740,20 @@ router.post("/guilds/:guildId/verification/post", wrap(async (req, res) => {
 // Honeypot warning
 // ---------------------------------------------------------------------------
 
-const HONEYPOT_WARNING = "⚠️ **Don't post in this channel.** It's a trap for spam bots: anyone who sends a message here is removed from the server automatically.";
-
 router.post("/guilds/:guildId/honeypot/warning", wrap(async (req, res) => {
   const doc = await getSettingsDoc(req.params.guildId);
   const honeypot = doc.automod?.honeypot;
   if (!honeypot?.channel) throw new ApiError(400, "Pick and save a honeypot channel first.");
-  await discord.sendMessage(honeypot.channel, {
-    embeds: [new EmbedBuilder().setDescription(honeypot.warning || HONEYPOT_WARNING).setColor(Colors.Red).toJSON()],
-  }).catch((err) => {
+  const context = await getGuildContext(req.params.guildId);
+  // Server placeholders are filled in; nobody in particular is the member here.
+  const fill = contextFrom({ guild: req.guild, channel: context.channels.get(honeypot.channel) });
+  // With a saved embed, the warning text (if any) goes above it. Without one, the
+  // text goes in the usual red box.
+  const message = honeypot.embed ? buildMessage(doc, { content: honeypot.warning ?? "", embed: honeypot.embed }, fill) : null;
+  const body = message
+    ? { content: message.content, embeds: message.embeds }
+    : { embeds: [new EmbedBuilder().setDescription(render(honeypot.warning || HONEYPOT_WARNING, fill).slice(0, 4096) || HONEYPOT_WARNING).setColor(Colors.Red).toJSON()] };
+  await discord.sendMessage(honeypot.channel, { ...body, allowed_mentions: { parse: [] } }).catch((err) => {
     throw new ApiError(400, `Discord refused to post the warning: ${err.message}. Check that Phoenix can send messages in that channel.`);
   });
   await recordAudit(req, { action: "honeypot.post", summary: `Posted the honeypot warning in <#${honeypot.channel}>` });

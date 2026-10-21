@@ -9,10 +9,10 @@ import { EmbedPreview, toEditor } from "../pages/EmbedBuilder.jsx";
 const NO_MEMBER = { mention: "", username: "", displayname: "", nickname: "", userid: "", avatar: "", serveravatar: "" };
 
 /**
- * `panel`: preview it like the verification panel, where text without a saved embed
- * goes in an orange box and member placeholders are empty.
+ * `panel`: preview it like a panel Phoenix posts (verification, honeypot warning):
+ * text without a saved embed goes in a colored box, and member placeholders are empty.
  */
-export function MessagePreview({ text, data, me, extra = {}, embed = null, panel = false }) {
+export function MessagePreview({ text, data, me, extra = {}, embed = null, panel = false, panelColor = 0xe67e22, panelDefault = "Press the button below to verify and get access to the server." }) {
   const saved = embed ? (data?.embeds ?? []).find((e) => e.name === embed) : null;
   const fill = panel ? { ...extra, ...NO_MEMBER } : extra;
   if (saved) {
@@ -27,7 +27,7 @@ export function MessagePreview({ text, data, me, extra = {}, embed = null, panel
     return (
       <>
         <div className="preview-label">Preview</div>
-        <EmbedPreview embed={toEditor({ color: 0xe67e22, description: text || "Press the button below to verify and get access to the server." })} data={data} me={me} extra={fill} />
+        <EmbedPreview embed={toEditor({ color: panelColor, description: text || panelDefault })} data={data} me={me} extra={fill} />
       </>
     );
   }

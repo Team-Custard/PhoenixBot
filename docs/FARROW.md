@@ -429,8 +429,8 @@ automatically.
 
 ### Embeds on more messages
 
-The welcome message, welcome DM, goodbye message, level up message and verification
-panel can each have a saved embed (made on the Embeds page), sent with the text or
+The welcome message, welcome DM, goodbye message, level up message, verification
+panel and honeypot warning can each have a saved embed (made on the Embeds page), sent with the text or
 instead of it. Placeholders work in the embed too, and `{{level}}` works in the level
 up embed. The preview under each message shows the text and embed together, like
 Discord does. Old settings with only text keep working as before.
@@ -441,6 +441,8 @@ Discord does. Old settings with only text keep working as before.
   With one, the text goes above the embed. Server placeholders like `{{servername}}`
   are filled in; member ones are left empty, since the panel isn't for one member.
   The panel's button can also have an emoji now (✅ by default).
+- **Honeypot warning:** works the same way: the red box as before, or the warning
+  text above a saved embed. Server placeholders are filled in here too.
 - Embeds used by any of these can't be deleted until they're swapped out, like
   embeds used by tags or autoresponses.
 

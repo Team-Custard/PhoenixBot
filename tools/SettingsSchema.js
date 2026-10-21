@@ -129,6 +129,8 @@ const settingsSchema = new Schema({
       // Also delete their other messages from the past hour.
       cleanup: { type: Boolean, default: true },
       warning: String,
+      // Saved embed for the warning, instead of the plain red box.
+      embed: String,
     },
     // Message filters (listeners/automod/automodMessage.js, tools/automod.js).
     ignoreModerators: { type: Boolean, default: true },
