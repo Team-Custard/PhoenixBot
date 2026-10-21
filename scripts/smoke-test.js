@@ -90,6 +90,19 @@ async function main() {
     }
   }
 
+  // Every precondition a command uses has to exist, or the command fails at run time.
+  const preconditionStore = container.stores.get("preconditions");
+  const preconditionNames = (array) => array.entries.flatMap((e) => (e.entries ? preconditionNames(e) : [e.name]));
+  for (const command of commands.values()) {
+    for (const name of preconditionNames(command.preconditions)) {
+      if (!preconditionStore.has(name)) fail(`precondition "${name}"`, `used by ${command.name} but not loaded`);
+    }
+    // Commands that work outside servers mustn't make slash replies need channel permissions.
+    if (command.guildOnly === false && preconditionNames(command.preconditions).includes("ClientPermissions")) {
+      fail(`client permissions for ${command.name}`, "works outside servers but uses the full ClientPermissions check");
+    }
+  }
+
   const slash = new Map();
   const registered = new Set();
   for (const command of commands.values()) {

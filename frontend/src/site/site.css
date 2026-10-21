@@ -2326,3 +2326,231 @@
 .clicker-line img {
   vertical-align: middle;
 }
+
+/* ------------------------------------------------------------ UserDB page */
+
+.ud-head {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.ud-head img {
+  flex: none;
+  border-radius: 50%;
+  border: 3px solid var(--smoke);
+}
+
+.ud-head .lede {
+  font-size: 16px;
+}
+
+.ud-afk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ud-form {
+  display: grid;
+  gap: 14px;
+}
+
+.ud-card {
+  padding: 22px;
+  border-radius: 18px;
+  background: var(--soot);
+  border: 1px solid var(--smoke-soft);
+}
+
+.ud-card h2 {
+  font-size: 20px;
+  margin: 0 0 6px;
+}
+
+.ud-card .muted {
+  margin: 0 0 12px;
+}
+
+.site .small {
+  font-size: 13px;
+}
+
+.ud-card input:not([type="checkbox"]),
+.ud-card textarea {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--smoke);
+  background: var(--ash);
+  color: var(--cinder);
+  font-size: 16px;
+  font-family: inherit;
+}
+
+.ud-card textarea {
+  resize: vertical;
+}
+
+.ud-card input:focus,
+.ud-card textarea:focus {
+  outline: none;
+  border-color: var(--flame);
+  box-shadow: 0 0 0 3px var(--flame-wash);
+}
+
+.ud-card .has-error input,
+.ud-card input.has-error,
+.ud-card textarea.has-error {
+  border-color: var(--danger);
+}
+
+.ud-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ud-row input {
+  flex: 1;
+  min-width: 220px;
+}
+
+.ud-clock {
+  margin: 12px 0 0;
+  color: var(--haze);
+}
+
+.ud-clock .icon {
+  color: var(--flame);
+  vertical-align: -3px;
+  margin-right: 6px;
+}
+
+.ud-clock.error {
+  color: #ffb3b6;
+}
+
+.ud-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.ud-chips button {
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--smoke);
+  background: transparent;
+  color: var(--haze);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.ud-chips button[aria-pressed="true"] {
+  background: var(--flame-wash);
+  border-color: rgba(255, 138, 61, 0.6);
+  color: var(--flame);
+}
+
+.ud-count {
+  text-align: right;
+  margin: 4px 0 0 !important;
+}
+
+.ud-socials {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.ud-socials label span {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.ud-toggle {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.ud-toggle input {
+  width: 20px;
+  height: 20px;
+  margin-top: 3px;
+  accent-color: var(--flame);
+  flex: none;
+}
+
+.ud-toggle .muted {
+  display: block;
+  margin: 2px 0 0;
+}
+
+.ud-save {
+  position: static;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 999px;
+  background: rgba(34, 28, 43, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--smoke-soft);
+}
+
+.ud-save.dirty {
+  position: sticky;
+  bottom: 16px;
+}
+
+.ud-save p {
+  margin: 0;
+  flex: 1;
+  padding-left: 8px;
+}
+
+.ud-ok {
+  color: var(--ok);
+}
+
+.ud-error {
+  color: #ffb3b6;
+}
+
+.ud-danger {
+  margin-top: 32px;
+  border-color: rgba(242, 84, 91, 0.35);
+}
+
+.site .btn.danger {
+  color: #ffb3b6;
+  border-color: rgba(242, 84, 91, 0.5);
+}
+
+.site .btn.danger-solid {
+  background: var(--danger);
+  color: #fff;
+}
+
+@media (max-width: 560px) {
+  .ud-head {
+    flex-direction: column;
+  }
+
+  .ud-save {
+    border-radius: 18px;
+  }
+}

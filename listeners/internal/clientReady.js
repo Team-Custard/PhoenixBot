@@ -32,7 +32,11 @@ class ReadyListener extends Listener {
       this.warnIfNotMigrated(client);
       require("../../tools/timedMessages").startTimedMessages();
       // The website's command list, for when it runs without the bot (dashboard-only mode).
-      if (!client.cluster || client.cluster.id === 0) require("../../tools/commandCatalog").saveCatalog();
+      if (!client.cluster || client.cluster.id === 0) {
+        require("../../tools/commandCatalog").saveCatalog();
+        // Reminders that came due while the bot was offline.
+        require("../../tools/reminders").recoverReminders().catch((err) => console.error("[reminders] Recovery failed", err));
+      }
       client.user.setActivity({
         name: `/help || phoenix.sylveondev.xyz 🦊`,
         type: ActivityType.Custom,

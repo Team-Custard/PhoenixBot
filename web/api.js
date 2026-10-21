@@ -11,11 +11,12 @@ const Case = require("../tools/models/Case");
 const LevelMember = require("../tools/models/LevelMember");
 const { buildModlogEmbed } = require("../tools/moderation");
 const xpForLevel = require("../tools/xpToLevel");
-const { SAVED_LIMIT, EmbedError, cleanEmbedData, toDiscordEmbed, isEmptyEmbed, embedUsers, describeUsers } = require("../tools/embeds");
+const { EmbedError, cleanEmbedData, toDiscordEmbed, isEmptyEmbed, embedUsers, describeUsers } = require("../tools/embeds");
 const { sections, fieldsByKey } = require("./spec");
 const { placeholderList, contextFrom, render, renderEmbed } = require("../tools/placeholders");
 const discord = require("./discord");
 const { refreshGuilds, logout } = require("./session");
+const { recordAudit, listAudit } = require("./audit");
 
 const router = express.Router();
 const RANKCARD_DIR = path.join(__dirname, "../static/rankcards");
@@ -23,11 +24,8 @@ const SNOWFLAKE = /^\d{17,20}$/;
 const CUSTOM_EMOJI = /^<(a?):(\w{2,32}):(\d{17,20})>$/;
 const UNICODE_EMOJI = /^(\p{Extended_Pictographic}|\p{Emoji_Presentation}|\p{Regional_Indicator}{2})(️|‍|\p{Extended_Pictographic}|\p{Emoji_Modifier}|⃣)*$/u;
 
-const LIMITS = {
-  roleMenus: { free: 3, premium: 20 },
-  roleMenuRoles: 16,
-  tags: { free: 25, premium: 500 },
-};
+const { LIMITS: PLUS_LIMITS, limitsFor, limitMessage } = require("../tools/limits");
+const LIMITS = { ...PLUS_LIMITS, roleMenuRoles: 16 };
 
 class ApiError extends Error {
   constructor(status, message, extra = {}) {
@@ -88,6 +86,9 @@ router.get("/me", wrap(async (req, res) => {
   });
 }));
 
+// Your own UserDB settings (the /userdb page on the website).
+router.use(require("./userdb"));
+
 // Every route below works on one server the user can manage.
 router.use("/guilds/:guildId", wrap(async (req, res, next) => {
   const { guildId } = req.params;
@@ -142,6 +143,14 @@ async function getGuildContext(guildId) {
     botPermissions,
     botMember,
   };
+}
+
+/** Where to buy Phoenix Plus for a server: the app's store page in Discord. */
+async function plusStoreUrl() {
+  const config = require("../config.json");
+  if (!config.premiumId) return "/plus";
+  const appId = await discord.getApplicationId().catch(() => null);
+  return appId ? `https://discord.com/application-directory/${appId}/store/${config.premiumId}` : "/plus";
 }
 
 /** The bot's name and avatar in a server, for the Bot profile page. */
@@ -281,11 +290,18 @@ router.get("/guilds/:guildId", wrap(async (req, res) => {
     tags: tagsOf(doc),
     embeds: embedsOf(doc),
     stats: { cases: caseCount, levelMembers: levelCount, hasRankCard },
-    limits: {
-      roleMenus: premium ? LIMITS.roleMenus.premium : LIMITS.roleMenus.free,
-      roleMenuRoles: LIMITS.roleMenuRoles,
-      tags: premium ? LIMITS.tags.premium : LIMITS.tags.free,
-      embeds: premium ? SAVED_LIMIT.premium : SAVED_LIMIT.free,
+    limits: { ...limitsFor(premium), roleMenuRoles: LIMITS.roleMenuRoles },
+    // For the Plus page: every limit with and without Plus, and how much is used.
+    plus: {
+      active: premium,
+      storeUrl: await plusStoreUrl(),
+      limits: Object.entries(PLUS_LIMITS).map(([key, l]) => ({
+        key,
+        label: l.label,
+        free: l.free,
+        premium: l.premium,
+        used: { roleMenus: doc.rolesMenu?.length, tags: doc.tags?.length, embeds: doc.embeds?.length, autoresponses: doc.autoresponses?.length, timedMessages: doc.timedMessages?.length, stickyMessages: doc.stickyMessages?.length }[key] ?? 0,
+      })),
     },
   });
 }));
@@ -450,7 +466,11 @@ function validateField(field, value, ctx, label = field.label) {
     case "list": {
       if (empty) return [];
       if (!Array.isArray(value)) fail("must be a list.");
-      if (field.max && value.length > field.max) fail(`can have at most ${field.max} entries.`);
+      // Some lists are bigger with Phoenix Plus (tools/limits.js).
+      let max = field.limit ? ctx.limits?.[field.limit] ?? PLUS_LIMITS[field.limit].free : field.max;
+      // A server over its limit (Plus ran out) can keep and edit what it has, just not add more.
+      if (field.limit && Array.isArray(ctx.current?.[field.key])) max = Math.max(max, ctx.current[field.key].length);
+      if (max && value.length > max) fail(field.limit ? limitMessage(field.limit, ctx.premium) : `can have at most ${max} entries.`);
       const rows = value.map((row, index) => {
         if (!row || typeof row !== "object") fail(`entry ${index + 1} is invalid.`);
         const out = {};
@@ -541,12 +561,14 @@ router.patch("/guilds/:guildId/settings/:section", wrap(async (req, res) => {
 
   const guildId = req.params.guildId;
   const needsRules = section.fields.some((f) => f.type === "automodRule" || f.fields?.some((sub) => sub.type === "automodRule"));
-  const [doc, context, automodRules] = await Promise.all([
+  const [doc, context, automodRules, premium] = await Promise.all([
     getSettingsDoc(guildId),
     getGuildContext(guildId),
     needsRules ? discord.getAutomodRules(guildId) : null,
+    discord.hasPremium(guildId),
   ]);
-  const ctx = { ...context, guildId, commands: commandList(), automodRules, embedNames: (doc.embeds ?? []).map((e) => e.name) };
+  const before = settingsValues(doc);
+  const ctx = { ...context, guildId, commands: commandList(), automodRules, embedNames: (doc.embeds ?? []).map((e) => e.name), premium, limits: limitsFor(premium), current: before };
 
   const clean = {};
   for (const [key, value] of Object.entries(input)) {
@@ -559,7 +581,17 @@ router.patch("/guilds/:guildId/settings/:section", wrap(async (req, res) => {
   for (const [key, value] of Object.entries(clean)) doc.set(key, value);
   // Saving the document (not updateOne) also clears the bot's Redis query cache.
   await doc.save();
-  res.json({ settings: settingsValues(doc) });
+  const after = settingsValues(doc);
+  const changes = Object.keys(clean)
+    .filter((key) => JSON.stringify(before[key] ?? null) !== JSON.stringify(after[key] ?? null))
+    .map((key) => {
+      const field = section.fields.find((f) => f.key === key);
+      const group = field.group ? section.groups?.[field.group]?.label : null;
+      const label = group && !field.groupToggle ? `${group}: ${field.label}` : group ? `${group} filter` : field.label;
+      return { key, label, type: field.type, before: before[key], after: after[key] };
+    });
+  if (changes.length) await recordAudit(req, { action: "settings", summary: `Changed ${section.name} settings`, changes });
+  res.json({ settings: after });
 }));
 
 // ---------------------------------------------------------------------------
@@ -575,9 +607,10 @@ router.put("/guilds/:guildId/rolemenus", wrap(async (req, res) => {
   const menus = req.body?.roleMenus;
   if (!Array.isArray(menus)) throw new ApiError(400, "Nothing to save.");
   const [doc, context, premium] = await Promise.all([getSettingsDoc(guildId), getGuildContext(guildId), discord.hasPremium(guildId)]);
-  const limit = premium ? LIMITS.roleMenus.premium : LIMITS.roleMenus.free;
+  // Over the limit (Plus ran out): menus can still be edited or removed, not added.
+  const limit = Math.max(limitsFor(premium).roleMenus, doc.rolesMenu?.length ?? 0);
   if (menus.length > limit) {
-    throw new ApiError(400, premium ? `You can have up to ${limit} role menus.` : `Free servers can have ${limit} role menus. Phoenix Plus raises this to ${LIMITS.roleMenus.premium}.`);
+    throw new ApiError(400, limitMessage("roleMenus", premium));
   }
 
   const ctx = { ...context, guildId };
@@ -602,8 +635,10 @@ router.put("/guilds/:guildId/rolemenus", wrap(async (req, res) => {
     return { id, name, menutype, roles };
   });
 
+  const beforeCount = doc.rolesMenu?.length ?? 0;
   doc.rolesMenu = clean;
   await doc.save();
+  await recordAudit(req, { action: "rolemenus", summary: "Saved the role menus", changes: [{ label: "Role menus", type: "list", before: { count: beforeCount }, after: { count: clean.length } }] });
   res.json({ roleMenus: roleMenusOf(doc) });
 }));
 
@@ -645,6 +680,7 @@ router.post("/guilds/:guildId/rolemenus/:menuId/post", wrap(async (req, res) => 
   }).catch((err) => {
     throw new ApiError(400, `Discord refused to post the menu: ${err.message}. Check that Phoenix can send messages in that channel.`);
   });
+  await recordAudit(req, { action: "rolemenus.post", summary: `Posted the role menu “${menu.name}” in <#${channelId}>` });
   res.json({ ok: true });
 }));
 
@@ -667,6 +703,7 @@ router.post("/guilds/:guildId/verification/post", wrap(async (req, res) => {
   }).catch((err) => {
     throw new ApiError(400, `Discord refused to post the panel: ${err.message}. Check that Phoenix can send messages in that channel.`);
   });
+  await recordAudit(req, { action: "verification.post", summary: `Posted the verification panel in <#${channelId}>` });
   res.json({ ok: true });
 }));
 
@@ -685,6 +722,7 @@ router.post("/guilds/:guildId/honeypot/warning", wrap(async (req, res) => {
   }).catch((err) => {
     throw new ApiError(400, `Discord refused to post the warning: ${err.message}. Check that Phoenix can send messages in that channel.`);
   });
+  await recordAudit(req, { action: "honeypot.post", summary: `Posted the honeypot warning in <#${honeypot.channel}>` });
   res.json({ ok: true });
 }));
 
@@ -702,10 +740,11 @@ router.post("/guilds/:guildId/tags", wrap(async (req, res) => {
   if (doc.tags.some((t) => t.name?.toLowerCase() === name.toLowerCase()) || builtIn.some((t) => t.name.toLowerCase() === name.toLowerCase())) {
     throw new ApiError(400, `A tag called ${name} already exists.`);
   }
-  const limit = premium ? LIMITS.tags.premium : LIMITS.tags.free;
-  if (doc.tags.length >= limit) throw new ApiError(400, `This server has reached its limit of ${limit} tags.`);
+  const limit = limitsFor(premium).tags;
+  if (doc.tags.length >= limit) throw new ApiError(400, limitMessage("tags", premium));
   doc.tags.push({ name, description, embed, creator: req.session.user.username });
   await doc.save();
+  await recordAudit(req, { action: "tags.add", summary: `Added the tag “${name}”`, changes: [{ label: "Text", before: null, after: description }, { label: "Embed", before: null, after: embed }] });
   res.json({ tags: tagsOf(doc) });
 }));
 
@@ -713,8 +752,10 @@ router.put("/guilds/:guildId/tags/:name", wrap(async (req, res) => {
   const doc = await getSettingsDoc(req.params.guildId);
   const tag = doc.tags.find((t) => t.name === req.params.name);
   if (!tag) throw new ApiError(404, "That tag doesn't exist.");
+  const oldTag = { description: tag.description, embed: tag.embed };
   Object.assign(tag, tagBody(doc, req.body));
   await doc.save();
+  await recordAudit(req, { action: "tags.edit", summary: `Edited the tag “${tag.name}”`, changes: [{ label: "Text", before: oldTag.description, after: tag.description }, { label: "Embed", before: oldTag.embed, after: tag.embed }] });
   res.json({ tags: tagsOf(doc) });
 }));
 
@@ -724,6 +765,7 @@ router.delete("/guilds/:guildId/tags/:name", wrap(async (req, res) => {
   if (!tag) throw new ApiError(404, "That tag doesn't exist.");
   doc.tags.pull(tag);
   await doc.save();
+  await recordAudit(req, { action: "tags.delete", summary: `Deleted the tag “${tag.name}”`, changes: [{ label: "Text", before: tag.description, after: null }] });
   res.json({ tags: tagsOf(doc) });
 }));
 
@@ -752,15 +794,16 @@ router.put("/guilds/:guildId/embeds/:name", wrap(async (req, res) => {
   const data = cleanEmbed(req.body?.data);
   const [doc, premium] = await Promise.all([getSettingsDoc(guildId), discord.hasPremium(guildId)]);
   const index = doc.embeds.findIndex((e) => e.name === name);
-  const limit = premium ? SAVED_LIMIT.premium : SAVED_LIMIT.free;
+  const limit = limitsFor(premium).embeds;
   if (index === -1 && doc.embeds.length >= limit) {
     throw new ApiError(400, premium
       ? `You can save up to ${limit} embeds. Delete one to make room.`
-      : `Free servers can save ${limit} embeds. Delete one, or get Phoenix Plus for ${SAVED_LIMIT.premium}.`);
+      : `Free servers can save ${limit} embeds. Delete one, or get Phoenix Plus for ${LIMITS.embeds.premium}.`);
   }
   if (index === -1) doc.embeds.push({ name, data });
   else doc.embeds.set(index, { name, data });
   await doc.save();
+  await recordAudit(req, { action: "embeds.save", summary: `${index === -1 ? "Saved a new" : "Updated the"} embed “${name}”` });
   res.json({ embeds: embedsOf(doc) });
 }));
 
@@ -773,6 +816,7 @@ router.delete("/guilds/:guildId/embeds/:name", wrap(async (req, res) => {
   if (users.length) throw new ApiError(400, `This embed is used by ${describeUsers(users)}. Remove it from those first.`);
   doc.embeds.pull(entry);
   await doc.save();
+  await recordAudit(req, { action: "embeds.delete", summary: `Deleted the embed “${entry.name}”` });
   res.json({ embeds: embedsOf(doc) });
 }));
 
@@ -796,6 +840,7 @@ router.post("/guilds/:guildId/embeds/send", wrap(async (req, res) => {
   }).catch((err) => {
     throw new ApiError(400, `Discord refused the embed: ${err.message}. Check that Phoenix can send messages and embeds in that channel, and that image links point to images.`);
   });
+  await recordAudit(req, { action: "embeds.send", summary: `Sent an embed${data.title ? ` (“${data.title.slice(0, 80)}”)` : ""} to <#${channelId}>` });
   res.json({ ok: true });
 }));
 
@@ -842,11 +887,13 @@ router.patch("/guilds/:guildId/cases/:caseId", wrap(async (req, res) => {
   const caseDoc = await Case.findCase(guildId, Number(req.params.caseId));
   if (!caseDoc) throw new ApiError(404, "That case doesn't exist.");
   const reason = validateField({ key: "reason", type: "textarea", min: 1, max: 1000 }, req.body?.reason, {}, "Reason");
+  const oldReason = caseDoc.reason;
   caseDoc.reason = reason;
   caseDoc.moderator = req.session.user.id;
   await caseDoc.save();
   await editModlog(guildId, caseDoc, await buildModlogEmbed(caseDoc));
   const { _id: _ignored, ...out } = caseDoc.toObject();
+  await recordAudit(req, { action: "cases.reason", summary: `Changed the reason for case ${caseDoc.caseId}`, changes: [{ label: "Reason", before: oldReason, after: reason }] });
   res.json({ case: out });
 }));
 
@@ -860,6 +907,7 @@ router.post("/guilds/:guildId/cases/:caseId/pardon", wrap(async (req, res) => {
   await caseDoc.save();
   await editModlog(guildId, caseDoc, await buildModlogEmbed(caseDoc));
   const { _id: _ignored, ...out } = caseDoc.toObject();
+  await recordAudit(req, { action: "cases.pardon", summary: `Pardoned case ${caseDoc.caseId} (a warning for <@${caseDoc.member}>)` });
   res.json({ case: out });
 }));
 
@@ -927,6 +975,7 @@ router.put("/guilds/:guildId/levels/:userId", wrap(async (req, res) => {
   const user = await discord.getUser(userId);
   if (!user) throw new ApiError(404, "No Discord user has that id.");
   if (user.bot) throw new ApiError(400, "Bots can't have levels.");
+  const previous = await LevelMember.findOne({ guildId, userId }).lean();
   const entry = await LevelMember.findOneAndUpdate(
     { guildId, userId },
     { $set: { level, xp } },
@@ -934,6 +983,7 @@ router.put("/guilds/:guildId/levels/:userId", wrap(async (req, res) => {
   );
   const { getRank } = require("../tools/leveling");
   const [member] = await levelRows([entry], (m) => getRank(guildId, m));
+  await recordAudit(req, { action: "levels.set", summary: `Set <@${userId}>'s level`, changes: [{ label: "Level", type: "number", before: previous?.level ?? null, after: level }, { label: "XP", type: "number", before: previous?.xp ?? null, after: xp }] });
   res.json({ member });
 }));
 
@@ -942,6 +992,7 @@ router.delete("/guilds/:guildId/levels/:userId", wrap(async (req, res) => {
   if (!SNOWFLAKE.test(userId)) throw new ApiError(400, "That isn't a user id.");
   const result = await LevelMember.deleteOne({ guildId, userId });
   if (!result.deletedCount) throw new ApiError(404, "That person doesn't have a level.");
+  await recordAudit(req, { action: "levels.delete", summary: `Deleted <@${userId}>'s level` });
   res.json({ ok: true });
 }));
 
@@ -951,6 +1002,7 @@ router.delete("/guilds/:guildId/levels", wrap(async (req, res) => {
     throw new ApiError(400, "Type the server's name to confirm resetting everyone's levels.");
   }
   const result = await LevelMember.deleteMany({ guildId: req.params.guildId });
+  await recordAudit(req, { action: "levels.reset", summary: `Reset everyone's levels (${result.deletedCount} members)` });
   res.json({ ok: true, deleted: result.deletedCount });
 }));
 
@@ -984,6 +1036,14 @@ router.patch("/guilds/:guildId/profile", wrap(async (req, res) => {
     doc.set("botProfile.bio", body.bio);
     await doc.save();
   }
+  await recordAudit(req, {
+    action: "profile",
+    summary: "Changed Phoenix's profile",
+    changes: [
+      ...("nick" in body ? [{ label: "Nickname", after: body.nick }] : []),
+      ...("bio" in body ? [{ label: "Bio", after: body.bio }] : []),
+    ],
+  });
   res.json({ profile });
 }));
 
@@ -1000,13 +1060,17 @@ router.put(
     // Animated server avatars are a Nitro perk for people, but bots can always use them.
     const image = `data:${type};base64,${buffer.toString("base64")}`;
     const doc = await getSettingsDoc(req.params.guildId);
-    res.json({ profile: await updateBotMember(req.params.guildId, { [req.params.image]: image }, doc.botProfile?.bio) });
+    const profile = await updateBotMember(req.params.guildId, { [req.params.image]: image }, doc.botProfile?.bio);
+    await recordAudit(req, { action: "profile", summary: `Changed Phoenix's server ${req.params.image}` });
+    res.json({ profile });
   }),
 );
 
 router.delete("/guilds/:guildId/profile/:image(avatar|banner)", wrap(async (req, res) => {
   const doc = await getSettingsDoc(req.params.guildId);
-  res.json({ profile: await updateBotMember(req.params.guildId, { [req.params.image]: null }, doc.botProfile?.bio) });
+  const profile = await updateBotMember(req.params.guildId, { [req.params.image]: null }, doc.botProfile?.bio);
+  await recordAudit(req, { action: "profile", summary: `Removed Phoenix's server ${req.params.image}` });
+  res.json({ profile });
 }));
 
 function looksLikeImage(buffer, type) {
@@ -1035,13 +1099,25 @@ router.put(
     if (!buffer.subarray(0, 8).equals(PNG_SIGNATURE)) throw new ApiError(400, "That file isn't a PNG image.");
     await fs.promises.mkdir(RANKCARD_DIR, { recursive: true });
     await fs.promises.writeFile(path.join(RANKCARD_DIR, `${req.params.guildId}-rankcard.png`), buffer);
+    await recordAudit(req, { action: "leveling.background", summary: "Changed the rank card background" });
     res.json({ ok: true });
   }),
 );
 
 router.delete("/guilds/:guildId/leveling/background", wrap(async (req, res) => {
   await fs.promises.rm(path.join(RANKCARD_DIR, `${req.params.guildId}-rankcard.png`), { force: true });
+  await recordAudit(req, { action: "leveling.background", summary: "Removed the rank card background" });
   res.json({ ok: true });
+}));
+
+// ---------------------------------------------------------------------------
+// Audit log
+// ---------------------------------------------------------------------------
+
+router.get("/guilds/:guildId/audit", wrap(async (req, res) => {
+  const page = Math.max(0, Number.parseInt(req.query.page, 10) || 0);
+  const userId = SNOWFLAKE.test(req.query.user ?? "") ? req.query.user : null;
+  res.json(await listAudit(req.params.guildId, { page, userId }));
 }));
 
 // ---------------------------------------------------------------------------
@@ -1052,6 +1128,9 @@ router.use((req, res) => res.status(404).json({ error: "not_found", message: "Un
 
 // eslint-disable-next-line no-unused-vars
 router.use((err, req, res, next) => {
+  if (err?.name === "Error" && err.status && err.status < 500 && !(err instanceof ApiError)) {
+    return res.status(err.status).json({ error: "invalid", message: err.message, field: err.field });
+  }
   if (err instanceof ApiError) {
     return res.status(err.status).json({ error: err.extra.error ?? "invalid", message: err.message, ...err.extra });
   }

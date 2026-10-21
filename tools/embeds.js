@@ -22,7 +22,7 @@ const LIMITS = {
 };
 
 /** How many embeds a server can save. */
-const SAVED_LIMIT = { free: 15, premium: 100 };
+const SAVED_LIMIT = { free: require("./limits").LIMITS.embeds.free, premium: require("./limits").LIMITS.embeds.premium };
 
 class EmbedError extends Error {}
 
@@ -155,13 +155,14 @@ function fromDiscordEmbed(json = {}) {
   };
 }
 
-/** What still uses a saved embed (tags, autoresponses, timed and sticky messages), to stop it being deleted. */
+/** What still uses a saved embed (tags, autoresponses, timed, sticky and AFK messages), to stop it being deleted. */
 function embedUsers(settings, name) {
   return [
     ...(settings.tags ?? []).filter((t) => t.embed === name).map((t) => `tag “${t.name}”`),
     ...(settings.autoresponses ?? []).flatMap((a, i) => (a.embed === name ? [`autoresponse ${i + 1}`] : [])),
     ...(settings.timedMessages ?? []).flatMap((t, i) => (t.embed === name ? [`timed message ${i + 1}`] : [])),
     ...(settings.stickyMessages ?? []).flatMap((t, i) => (t.embed === name ? [`sticky message ${i + 1}`] : [])),
+    ...(settings.afk?.embed === name ? ["the AFK message"] : []),
   ];
 }
 

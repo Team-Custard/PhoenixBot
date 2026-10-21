@@ -1,8 +1,17 @@
 const { Command, CommandOptionsRunTypeEnum } = require("@sapphire/framework");
-const { PermissionsBitField, InteractionContextType } = require("discord.js");
+const { PermissionsBitField, PermissionFlagsBits, InteractionContextType } = require("discord.js");
 const { CommandContext } = require("./CommandContext");
 const { emoji } = require("./errorReporter");
 const { parseDuration } = require("./moderation");
+
+// What replying needs. Interaction replies don't need any of these.
+const REPLY_ONLY_PERMISSIONS = new PermissionsBitField([
+  PermissionFlagsBits.SendMessages,
+  PermissionFlagsBits.ViewChannel,
+  PermissionFlagsBits.EmbedLinks,
+  PermissionFlagsBits.AttachFiles,
+  PermissionFlagsBits.ReadMessageHistory,
+]).freeze();
 
 /**
  * @typedef {object} ArgDefinition
@@ -100,6 +109,25 @@ class PhoenixCommand extends Command {
   }
 
   /** e.g. ["mod", "ban"] or ["tag", "add"]; null for prefix-only commands. */
+  /**
+   * Commands that also work outside the bot's servers (DMs, group DMs, servers where
+   * only the user installed Phoenix) answer slash commands through the interaction,
+   * which needs no channel permissions. Requiring Send Messages there made Discord's
+   * limited "app permissions" fail the check, so those commands never ran. Prefix
+   * commands still need them, so they keep the full check (see
+   * preconditions/phoenixClientPermissions.js).
+   */
+  parseConstructorPreConditionsRequiredClientPermissions(options) {
+    const permissions = new PermissionsBitField(options.requiredClientPermissions);
+    if (permissions.bitfield === 0n) return;
+    if (options.guildOnly ?? true) {
+      super.parseConstructorPreConditionsRequiredClientPermissions(options);
+      return;
+    }
+    const slashPermissions = new PermissionsBitField(permissions).remove(REPLY_ONLY_PERMISSIONS);
+    this.preconditions.append({ name: "phoenixClientPermissions", context: { permissions, slashPermissions } });
+  }
+
   slashPath(subcommand) {
     if (!this.slash) return null;
     const sub = subcommand ? this.subcommandDefs?.find((s) => s.name === subcommand) : null;

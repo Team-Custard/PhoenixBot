@@ -9,7 +9,7 @@ const {
 } = require("discord.js");
 const { createSlashGroup } = require("../../tools/SlashGroup");
 const { emoji } = require("../../tools/errorReporter");
-const { buildUserdbModal } = require("../../tools/userdbModal");
+const { dashboard } = require("../../tools/config");
 const { commandMention } = require("../../tools/CommandContext");
 const UserDB = require("../../tools/UserDB");
 
@@ -23,14 +23,20 @@ const UserdbGroup = createSlashGroup({
   subcommands: [
     {
       name: "set",
-      description: "Sets up your UserDB profile",
+      description: "Set up or change your UserDB profile on the website",
       run: async (ctx) => {
-        if (ctx.isSlash) return ctx.interaction.showModal(buildUserdbModal());
-        // Forms can only be opened from an interaction, so give prefix users a button.
-        const row = new ActionRowBuilder().addComponents(
-          new ButtonBuilder().setCustomId(`userdb-open-${ctx.user.id}`).setLabel("Open UserDB setup").setStyle(ButtonStyle.Primary),
-        );
-        return ctx.reply({ content: "Press the button to set up your UserDB profile.", components: [row] });
+        // UserDB is set up on the website now: time zone detection, every field, and
+        // a button to delete your data.
+        const url = `${dashboard.baseUrl}/userdb`;
+        const components = url.startsWith("https://")
+          ? [new ActionRowBuilder().addComponents(new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("Open UserDB settings").setURL(url))]
+          : [];
+        return ctx.reply({
+          content: `${emoji("info")} Set up your UserDB profile on the website: ${url}
+It detects your time zone, and you can change or delete everything there.`,
+          components,
+          ephemeral: true,
+        });
       },
     },
     {
@@ -70,7 +76,7 @@ const UserdbGroup = createSlashGroup({
     },
     {
       name: "clear",
-      description: "Deletes your UserDB profile",
+      description: "Deletes your UserDB profile (also possible on the website)",
       run: async (ctx) => {
         const doc = await UserDB.findById(ctx.user.id);
         if (doc) await doc.deleteOne();

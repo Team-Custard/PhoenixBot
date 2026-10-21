@@ -77,6 +77,7 @@ const settingsSchema = new Schema({
     voice: String,
     commands: String,
     verification: String,
+    dashboard: String,
   },
   rolesMenu: [{
     id: String,
@@ -173,6 +174,14 @@ const settingsSchema = new Schema({
     announceChannel: String,
     backgroundTransparency: { type: Number, default: 90 },
     useEmbed: Boolean,
+  },
+  // What Phoenix says about AFK members (listeners/internal/messageCreateAfkCheck.js).
+  afk: {
+    enabled: { type: Boolean, default: true },
+    message: String,
+    embed: String,
+    welcomeBack: { type: Boolean, default: true },
+    welcomeBackMessage: String,
   },
   // The bot's server profile bio as last set on the dashboard (Discord doesn't send it back).
   botProfile: { bio: String },

@@ -6,6 +6,7 @@ import { Commands } from "./pages/Commands.jsx";
 import { Leaderboard } from "./pages/Leaderboard.jsx";
 import { Profile } from "./pages/Profile.jsx";
 import { Timezone } from "./pages/Timezone.jsx";
+import { UserdbSettings } from "./pages/UserdbSettings.jsx";
 import { ApiDocs } from "./pages/ApiDocs.jsx";
 import { Terms, Privacy } from "./pages/Legal.jsx";
 import { Invited } from "./pages/Invited.jsx";
@@ -17,6 +18,7 @@ const ROUTES = [
   ["/leaderboard/:guildId", (p) => <Leaderboard key={p.guildId} guildId={p.guildId} />],
   ["/u/:id", (p) => <Profile key={p.id} id={p.id} />],
   ["/userdb/tzhelp", () => <Timezone />],
+  ["/userdb", () => <UserdbSettings />],
   ["/api", () => <ApiDocs />],
   ["/terms", () => <Terms />],
   ["/privacy", () => <Privacy />],
@@ -25,6 +27,7 @@ const ROUTES = [
 
 const NAV = [
   { to: "/commands", label: "Commands" },
+  { to: "/userdb", label: "UserDB" },
   { to: "/api", label: "API" },
   { href: "/plus", label: "Plus" },
   { href: "/server", label: "Support" },

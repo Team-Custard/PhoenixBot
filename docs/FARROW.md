@@ -342,6 +342,89 @@ logged if the bot ever hits Discord's global rate limit.
 `npm install` isn't needed (no new packages). Run `npm test`, then restart. New
 collections (`stickystates`, `timedstates`) are created automatically.
 
+## Part four: UserDB on the website, AFK, Plus, audit log and reminders
+
+### User app fix
+
+`/translate`, `/userdb timefor`, `/userdb pronouns` and the other commands that work
+outside servers failed when Phoenix was installed as a user app. Sapphire checked the
+bot's own permissions (Send Messages and so on) against the interaction, and outside a
+server Phoenix has none, even though an interaction reply doesn't need them.
+`PhoenixCommand` now drops those reply-only permissions for commands that aren't
+server-only, so they run in DMs, group DMs and servers Phoenix isn't in. Commands that
+still need a real permission (like Manage Messages) keep it.
+
+### UserDB on the website
+
+`/userdb` on the website lets people set their time zone, pronouns, about text and
+socials after logging in with Discord. The time zone box suggests the zone the browser
+reports and shows a live clock, so it's easy to tell it's right. There's also a
+toggle for private replies to app commands, a button to clear an AFK status, and
+"Delete my UserDB data", which removes the whole record. `/userdb set` now links to
+the page instead of opening a form in Discord.
+
+### AFK messages (server dashboard)
+
+New **Community > AFK** page:
+
+- Turn AFK notices on or off for the server.
+- The message sent when someone mentions an AFK member, with placeholders and an
+  optional saved embed. `{{afkreason}}` is the reason and `{{afksince}}` is how long
+  ago they went AFK. The other placeholders describe the AFK member.
+- Whether to welcome people back when they talk again, and what that says. Their
+  status is cleared either way.
+
+AFK notices never ping anyone. The welcome back message only pings the person
+returning.
+
+### Phoenix Plus on the dashboard
+
+**Setup > Phoenix Plus** shows each limit, how much the server uses, the free limit
+and the Plus limit, with a link to buy Plus in Discord. Lists on the dashboard show
+"X of Y used" and link to the Plus page when they're full. Limits live in
+`tools/limits.js`:
+
+| | Free | Plus |
+|---|---|---|
+| Role menus | 3 | 20 |
+| Tags | 25 | 500 |
+| Saved embeds | 15 | 100 |
+| Autoresponses | 25 | 100 |
+| Timed messages | 5 | 25 |
+| Sticky messages | 5 | 25 |
+
+Autoresponses, timed and sticky messages had one flat cap before; they now have a
+free tier and a Plus tier. Servers already over a free limit keep what they have but
+can't add more.
+
+### Dashboard audit log
+
+**Setup > Audit log** lists every change made on the dashboard: who, when, and the
+before and after value of each setting. It covers settings pages, role menus,
+verification panels, tags, embeds, case edits, levels, the bot profile and rank card
+backgrounds. Entries are kept for 180 days. To also post them in Discord, pick a
+channel for **Logging > Dashboard changes**.
+
+### Reminders
+
+`/remind set time:30m reminder:Take the pizza out` (or `=remind 30m Take the pizza out`).
+When it's time, Phoenix replies to the command's message in the same chat and pings
+you. Add `dm:true` (`--dm` with the prefix) to get it in your DMs instead. If Phoenix
+can't post in the chat (it was deleted, Phoenix lost access, or the command was used
+as a user app somewhere Phoenix isn't), the reminder goes to your DMs.
+`/remind list` and `/remind cancel` manage them. Reminders can be 1 minute to 1 year
+away, and each person can have 25.
+
+Reminders are stored in MongoDB and scheduled with BullMQ. Each one is claimed
+atomically when sent, so it's never delivered twice, and on startup Phoenix sends any
+that came due while it was offline and reschedules the rest.
+
+### Deploying part four
+
+`npm install` isn't needed (no new packages). Run `npm test` and `npm run build:web`,
+then restart. New collections (`reminders`, `dashboardaudits`) are created
+automatically.
+
 ## Things to check after deploying
 
 - **Logging:** log a message edit and delete, a ban and a role change, and check
@@ -365,4 +448,13 @@ collections (`stickystates`, `timedstates`) are created automatically.
 - **Autoresponses, timed and sticky messages:** add one of each in a test channel and
   check the 15 second autoresponse cooldown and that the sticky stays at the bottom.
 - **Honeypot:** with a test account, post in the honeypot channel.
+- **User app:** with Phoenix installed on your account, run `/translate` and
+  `/userdb timefor` in a DM with a friend.
+- **UserDB:** open `/userdb` on the website, detect your time zone, save, and check
+  `/userdb display`. Then try "Delete my UserDB data" on a test account.
+- **AFK:** set an AFK status, have someone mention you, then talk again.
+- **Audit log:** change a setting and check it appears in the audit log (and the
+  Dashboard changes channel, if set).
+- **Reminders:** `/remind set time:1m reminder:test`, once in a channel and once with
+  `dm:true`.
 - **Startup:** look for the "[commands]" line saying which unused commands were removed.

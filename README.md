@@ -36,7 +36,7 @@ commands/          Slash + prefix commands, one file each (see "Writing a comman
 listeners/         Event listeners (logging, automod, welcomer, starboard, leveling...)
 interaction-handlers/  Buttons, select menus, modals, autocomplete
 preconditions/     Permission checks (module = per-server disable/override rules)
-scheduled-tasks/   Temp-ban expiry and autokick (BullMQ)
+scheduled-tasks/   Temp-ban expiry, autokick and reminders (BullMQ)
 tools/             Shared code
   PhoenixCommand.js    Base class for commands that work as slash and prefix
   CommandContext.js    One reply/defer API over messages and interactions
@@ -45,13 +45,16 @@ tools/             Shared code
   punish.js            Punishments Phoenix gives by itself (automod, punishment system)
   placeholders.js      {{placeholders}} for messages, tags and embeds
   queue.js             Send queue for everything Phoenix posts on its own
+  limits.js            Free and Phoenix Plus limits
+  reminders.js         Reminder scheduling and delivery
   autoresponse.js      Autoresponse matching (regexes run in regexWorker.js)
   timedMessages.js     Timed message scheduler
   automod.js           Automod filters; automodRun.js acts on them
   commandCatalog.js    The command list shown on the website
   logging.js           Server log helper used by listeners/logging
-  models/              Case, LevelMember, Counter (Mongoose)
-web/               Dashboard backend: OAuth sessions, settings API, settings spec
+  models/              Case, LevelMember, Reminder, DashboardAudit... (Mongoose)
+web/               Dashboard backend: OAuth sessions, settings API, settings spec,
+                   UserDB settings (userdb.js), audit log (audit.js)
 frontend/          Website and dashboard (React, built with esbuild)
   src/site/          Public pages: home, commands, leaderboards, UserDB profiles...
   src/pages/         Dashboard pages

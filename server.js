@@ -18,6 +18,7 @@ const PAGES = [
   /^\/leaderboard\/\d{17,20}\/?$/,
   /^\/u\/[^/]+\/?$/,
   /^\/userdb\/tzhelp\/?$/,
+  /^\/userdb\/?$/,
   /^\/api\/?$/,
   /^\/terms\/?$/,
   /^\/privacy\/?$/,

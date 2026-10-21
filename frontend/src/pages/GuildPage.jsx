@@ -12,6 +12,8 @@ import { RoleMenus } from "./RoleMenus.jsx";
 import { TagsManager } from "./TagsManager.jsx";
 import { Cases } from "./Cases.jsx";
 import { HoneypotPanel } from "./HoneypotPanel.jsx";
+import { PlusPage } from "./PlusPage.jsx";
+import { AuditLog } from "./AuditLog.jsx";
 import { SettingsSearch } from "../components/SettingsSearch.jsx";
 
 // Pages that aren't plain settings forms.
@@ -21,14 +23,16 @@ const CUSTOM_PAGES = {
   profile: { name: "Bot profile", description: "Phoenix's nickname, avatar, banner and bio in this server. Server logs use the name and avatar too." },
   embeds: { name: "Embeds", description: "Build embeds, save them for later and send them to a channel. Saved embeds also show up under Load Embed in /embed.", wide: true },
   levels: { name: "Levels", description: "Everyone's level in this server. Search, change or delete them." },
+  plus: { name: "Phoenix Plus", description: "What this server has, and what Phoenix Plus raises." },
+  audit: { name: "Audit log", description: "Every change made on this dashboard, and who made it." },
 };
 
 // The sidebar, in groups.
 const NAV = [
-  { name: "Setup", pages: ["general", "profile"] },
+  { name: "Setup", pages: ["general", "profile", "plus", "audit"] },
   { name: "Moderation", pages: ["moderation", "cases", "logging", "joins", "automod", "discord-automod"] },
   { name: "Messages", pages: ["welcome", "embeds", "autoresponses", "timed", "sticky", "tags"] },
-  { name: "Community", pages: ["verification", "rolemenus", "starboard", "leveling", "levels"] },
+  { name: "Community", pages: ["verification", "rolemenus", "starboard", "leveling", "levels", "afk"] },
 ];
 const ORDER = NAV.flatMap((group) => group.pages);
 
@@ -153,6 +157,8 @@ export function GuildPage({ me, guildId, sectionId }) {
         {current.id === "rolemenus" && <RoleMenus data={data} onSaved={(roleMenus) => setData((d) => ({ ...d, roleMenus }))} />}
         {current.id === "cases" && <Cases data={data} />}
         {current.id === "levels" && <Levels data={data} />}
+        {current.id === "plus" && <PlusPage data={data} />}
+        {current.id === "audit" && <AuditLog data={data} />}
         {current.id === "profile" && <BotProfile data={data} onChange={(profile) => setData((d) => ({ ...d, bot: { ...d.bot, profile } }))} />}
         {current.id === "embeds" && <EmbedBuilder data={data} me={me?.user} onSaved={(embeds) => setData((d) => ({ ...d, embeds }))} />}
       </main>
