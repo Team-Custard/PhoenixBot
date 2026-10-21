@@ -54,16 +54,22 @@ const settingsSchema = new Schema({
     unverifiedRole: String,
     managerRole: String,
     messageText: String,
+    // Saved embed for the verification panel, instead of the default orange box.
+    embed: String,
     verifiedText: String,
   },
   welcomer: {
     channel: String,
     message: String,
+    // Saved embeds (from the Embeds page) sent with the welcome message and DM.
+    embed: String,
     dmtext: String,
+    dmEmbed: String,
   },
   goodbyes: {
     channel: String,
     message: String,
+    embed: String,
   },
   logging: {
     members: String,
@@ -171,6 +177,8 @@ const settingsSchema = new Schema({
       roleId: String,
     }],
     message: { type: String, default: `Congrats {{mention}}, you've reached level **{{level}}**!` },
+    // Saved embed sent with level up messages.
+    embed: String,
     announceChannel: String,
     backgroundTransparency: { type: Number, default: 90 },
     useEmbed: Boolean,
