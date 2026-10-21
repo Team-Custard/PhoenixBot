@@ -425,6 +425,48 @@ that came due while it was offline and reschedules the rest.
 then restart. New collections (`reminders`, `dashboardaudits`) are created
 automatically.
 
+## Part five: message embeds and the emoji picker
+
+### Embeds on more messages
+
+The welcome message, welcome DM, goodbye message, level up message and verification
+panel can each have a saved embed (made on the Embeds page), sent with the text or
+instead of it. Placeholders work in the embed too, and `{{level}}` works in the level
+up embed. The preview under each message shows the text and embed together, like
+Discord does. Old settings with only text keep working as before.
+
+- **Welcome DM:** keeps the "Sent from" button.
+- **Goodbye:** mentions never ping, since the person has left.
+- **Verification panel:** without an embed, the text goes in the orange box as before.
+  With one, the text goes above the embed. Server placeholders like `{{servername}}`
+  are filled in; member ones are left empty, since the panel isn't for one member.
+  The panel's button can also have an emoji now (✅ by default).
+- Embeds used by any of these can't be deleted until they're swapped out, like
+  embeds used by tags or autoresponses.
+
+### Emoji picker
+
+Text boxes that can hold emojis have an emoji button in the corner: message texts
+on every settings page, tags, the embed builder, role menu and embed messages, the
+verification button text, Phoenix's nickname and bio, and the UserDB "About you"
+box. It opens a picker with every standard emoji (search, categories, recently
+used, skin tones) and a section for the server's own emojis. Emojis Phoenix can't
+use (locked to roles it doesn't have, or unavailable on the server's boost level)
+are hidden, and the section header says how many. Places where custom emojis don't
+show in Discord (nicknames, bios, embed author names and footers, button text) only
+offer standard ones.
+
+Settings that are a single emoji (the starboard reaction, role menu options and the
+verification button emoji) open the picker when clicked instead of being typed.
+
+The emoji list loads only when a picker is first opened (about 70 KB). It comes from
+unicode-emoji-json (MIT, license file next to it in `frontend/src/components/emoji`),
+up to Emoji 15.1.
+
+### Deploying part five
+
+`npm install` isn't needed. Run `npm test` and `npm run build:web`, then restart.
+
 ## Things to check after deploying
 
 - **Logging:** log a message edit and delete, a ban and a role change, and check
@@ -457,4 +499,8 @@ automatically.
   Dashboard changes channel, if set).
 - **Reminders:** `/remind set time:1m reminder:test`, once in a channel and once with
   `dm:true`.
+- **Message embeds:** pick a welcome embed, join with a test account, and check the
+  channel message and the DM. Post the verification panel with an embed.
+- **Emoji picker:** add a server emoji to a welcome message with the emoji button and
+  check it shows in Discord; pick a starboard reaction from the picker.
 - **Startup:** look for the "[commands]" line saying which unused commands were removed.
