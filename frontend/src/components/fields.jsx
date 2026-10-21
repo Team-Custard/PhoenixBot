@@ -400,17 +400,19 @@ export function EmbedSelect({ id, value, onChange, data }) {
 
 export function ListInput({ field, value, onChange, data }) {
   const rows = value ?? [];
+  // Lists with a Plus limit (tools/limits.js) get this server's number.
+  const max = field.limit ? data.limits?.[field.limit] : field.max;
   const update = (index, key, next) => onChange(rows.map((row, i) => (i === index ? { ...row, [key]: next } : row)));
   const blank = Object.fromEntries(field.fields.map((f) => [f.key, f.default ?? (["commands", "strings", "channels", "roles"].includes(f.type) ? [] : f.type === "duration" ? 0 : null)]));
 
   return (
     <>
       {rows.length === 0 && <p className="empty-hint">Nothing added yet.</p>}
-      {field.max && rows.length > 5 && <p className="field-help">{rows.length} of {field.max} used.</p>}
+      {max && (field.limit || rows.length > 5) && <p className="field-help">{rows.length} of {max} used.</p>}
       <div className="list-rows">
         {rows.map((row, index) => (
           <div className={`list-row${field.fields.some((f) => f.wide) ? " roomy" : ""}`} key={index}>
-            {field.max > 5 && <div className="list-row-number">#{index + 1}</div>}
+            {max > 5 && <div className="list-row-number">#{index + 1}</div>}
             {field.fields.filter((sub) => isShown(sub, (key) => row[key])).map((sub) => (
               <div key={sub.key} className={sub.wide ? "wide" : undefined}>
                 <label htmlFor={`${field.key}-${index}-${sub.key}`}>{sub.label}</label>
@@ -423,7 +425,8 @@ export function ListInput({ field, value, onChange, data }) {
           </div>
         ))}
       </div>
-      {(!field.max || rows.length < field.max) && (
+      {max && rows.length >= max && !data.premium && field.limit && <p className="field-help">You've reached this server's limit. <a href={`/dash/${data.guild.id}/plus`}>Phoenix Plus</a> raises it.</p>}
+      {(!max || rows.length < max) && (
         <button type="button" className="button small" onClick={() => onChange([...rows, blank])}>{field.addLabel ?? "Add entry"}</button>
       )}
     </>

@@ -1960,3 +1960,145 @@ h5.md-heading { font-size: 1em; }
   font-size: 15px;
   color: var(--cinder);
 }
+
+/* ------------------------------------------------------------------ Plus */
+
+.plus-hero {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  border-radius: var(--radius);
+  background:
+    radial-gradient(80% 120% at 100% 0%, rgba(255, 200, 87, 0.18), transparent 60%),
+    var(--soot);
+  border: 1px solid rgba(255, 200, 87, 0.35);
+}
+
+.plus-hero h3 {
+  font-size: 22px;
+  margin: 10px 0 6px;
+}
+
+.plus-hero p {
+  margin: 0;
+  color: var(--haze);
+  max-width: 52ch;
+}
+
+.plus-badge.big {
+  margin-left: 0;
+  top: 0;
+  font-size: 14px;
+  padding: 3px 12px;
+}
+
+.plus-table + .field-help,
+.table-wrap + .field-help {
+  margin-top: 14px;
+}
+
+.plus-usage {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 160px;
+}
+
+.plus-usage > span {
+  min-width: 7ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.plus-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--smoke-soft);
+  overflow: hidden;
+}
+
+.plus-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--flame-deep), var(--ember));
+}
+
+.plus-table tr.full .plus-bar span {
+  background: var(--danger);
+}
+
+.plus-col {
+  color: var(--ember);
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------- audit log */
+
+.audit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.audit-list > li {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--soot);
+  border: 1px solid var(--smoke-soft);
+}
+
+.audit-list > li > img {
+  border-radius: 50%;
+  flex: none;
+}
+
+.audit-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.audit-line {
+  overflow-wrap: anywhere;
+}
+
+.audit-line time {
+  margin-left: 8px;
+  font-size: 13px;
+  color: var(--haze-dim);
+}
+
+.audit-line .mention,
+.audit-changes .mention {
+  background: rgba(88, 101, 242, 0.25);
+  color: #c9cdfb;
+  border-radius: 3px;
+  padding: 0 3px;
+}
+
+.audit-body .button.quiet {
+  margin-top: 4px;
+  padding-left: 0;
+}
+
+.audit-changes {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.audit-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.audit-none {
+  color: var(--haze-dim);
+  font-style: italic;
+}

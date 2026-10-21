@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTitle } from "../publicApi.js";
 import { Icon } from "../icons.jsx";
+import { Link } from "../../router.jsx";
 
 export function Timezone() {
   useTitle("Find your time zone");
@@ -20,8 +21,9 @@ export function Timezone() {
           </button>
         )}
       </div>
+      <p><Link className="btn flame" to="/userdb">Set it on your UserDB profile</Link></p>
       <p>
-        Use <code>/userdb set</code> and paste this as your time zone. Then people can use the timefor
+        Or use <code>/userdb set</code>, which opens the same page. Then people can use the timefor
         command, or your <a href="/api">UserDB API</a> profile, to see what time it is for you.
       </p>
       <p className="muted">This was worked out by your browser (the <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat/resolvedOptions">Intl API</a>). Nothing was sent to Phoenix.</p>

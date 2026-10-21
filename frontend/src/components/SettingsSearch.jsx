@@ -13,6 +13,9 @@ const PAGE_KEYWORDS = {
   verification: "verify panel button captcha",
   automod: "honeypot trap spam filters",
   tags: "custom commands replies",
+  plus: "premium subscription limits upgrade",
+  audit: "history changes who changed log",
+  afk: "away status welcome back",
 };
 
 function buildIndex(pages) {

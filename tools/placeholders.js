@@ -25,6 +25,8 @@ const PLACEHOLDERS = [
   { name: "time", description: "The current time, shown in each reader's time zone", group: "Time" },
   { name: "datetime", description: "The date and time, shown in each reader's time zone", group: "Time" },
   { name: "level", description: "The new level", group: "Leveling", only: ["leveling"] },
+  { name: "afkreason", description: "Why they're AFK", group: "AFK", only: ["afk"] },
+  { name: "afksince", description: "How long ago they went AFK", group: "AFK", only: ["afk"] },
 ];
 
 const TOKEN = /\{\{\s*([\w.]+)\s*\}\}/g;
@@ -126,6 +128,8 @@ function valueOf(name, ctx, rich) {
       // Only the extra values given, never things like "constructor" from Object itself.
       const extras = ctx.extra ?? {};
       const extra = Object.hasOwn(extras, key) ? extras[key] : Object.hasOwn(extras, name) ? extras[name] : undefined;
+      // An extra value can differ between rich text and plain text: { rich, plain }.
+      if (extra && typeof extra === "object") return rich ? extra.rich : extra.plain;
       return extra != null ? String(extra) : undefined;
     }
   }

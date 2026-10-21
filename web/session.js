@@ -69,7 +69,8 @@ function setCookie(res, name, value, maxAgeSeconds) {
 /** Starts a login: returns the Discord authorize URL and remembers the state value. */
 function beginLogin(res, returnTo = "/dash") {
   const state = crypto.randomBytes(16).toString("hex");
-  const safeReturn = typeof returnTo === "string" && returnTo.startsWith("/dash") ? returnTo : "/dash";
+  // Only send people back to our own pages (never "//other-site.example").
+  const safeReturn = typeof returnTo === "string" && /^\/(dash(\/[\w-]+)*|userdb)\/?$/.test(returnTo) ? returnTo : "/dash";
   setCookie(res, STATE_COOKIE, `${state}|${safeReturn}`, 600);
   return discord.authorizeUrl(state);
 }

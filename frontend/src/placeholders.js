@@ -36,6 +36,8 @@ export function sampleValues(data, me, extra = {}) {
     time: now.toLocaleTimeString(undefined, { timeStyle: "short" }),
     datetime: now.toLocaleString(undefined, { dateStyle: "long", timeStyle: "short" }),
     level: "5",
+    afkreason: "Eating dinner",
+    afksince: "5 minutes ago",
     ...extra,
   };
 }

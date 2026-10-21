@@ -7,8 +7,10 @@ const { buildMessage, contextFrom } = require("../../tools/placeholders");
 const premiumCheck = require("../../tools/premiumCheck");
 const builtInTags = require("../../tools/infoStuff.json");
 
-const FREE_LIMIT = 25;
-const MAX_LIMIT = 500;
+const { LIMITS } = require("../../tools/limits");
+
+const FREE_LIMIT = LIMITS.tags.free;
+const MAX_LIMIT = LIMITS.tags.premium;
 const nameArg = (description, autocomplete = true) => ({ name: "name", type: "string", required: true, maxLength: 12, autocomplete, description });
 
 class TagsCommand extends PhoenixCommand {
