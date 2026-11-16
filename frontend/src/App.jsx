@@ -23,6 +23,8 @@ function TopBar({ me }) {
         <img src="/phoenixlogo.png" alt="" />
         Phoenix
       </Link>
+      {/* A server's settings search is drawn here by GuildPage. */}
+      <div className="topbar-search" id="topbar-search" />
       {me && (
         <div className="account">
           <img src={userAvatar(me.user)} alt="" />

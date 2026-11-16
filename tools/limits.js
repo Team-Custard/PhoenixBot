@@ -7,6 +7,7 @@ const LIMITS = {
   autoresponses: { label: "Autoresponses", free: 25, premium: 100 },
   timedMessages: { label: "Timed messages", free: 5, premium: 25 },
   stickyMessages: { label: "Sticky messages", free: 5, premium: 25 },
+  notifications: { label: "Notification accounts", free: 5, premium: 25 },
 };
 
 /** { roleMenus: 3, tags: 25, ... } for a server with or without Plus. */

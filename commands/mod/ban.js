@@ -97,9 +97,15 @@ class BanCommand extends PhoenixCommand {
 
     await mod.sendModlog(guild, settings, caseDoc, { moderator: `${ctx.user}`, duration: duration ?? null });
 
-    return ctx.reply(
-      `${emoji("success")} Banned **${user.tag}**${duration ? ` for ${await mod.formatDuration(duration)}` : ""}. ${!silent && notified ? "" : "User was not notified."}`,
-    );
+    return mod.replySuccess(ctx, settings, {
+      action: "Banned",
+      user,
+      member,
+      caseDoc,
+      duration,
+      text: `Banned **${user.tag}**${duration ? ` for ${await mod.formatDuration(duration)}` : ""}.`,
+      notes: [!silent && notified ? "" : "User was not notified."],
+    });
   }
 }
 

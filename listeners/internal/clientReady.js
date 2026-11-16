@@ -36,6 +36,8 @@ class ReadyListener extends Listener {
         require("../../tools/commandCatalog").saveCatalog();
         // Reminders that came due while the bot was offline.
         require("../../tools/reminders").recoverReminders().catch((err) => console.error("[reminders] Recovery failed", err));
+        // YouTube, Twitch, Bluesky... notifications.
+        require("../../tools/notifications").start();
       }
       client.user.setActivity({
         name: `/help || phoenix.sylveondev.xyz 🦊`,

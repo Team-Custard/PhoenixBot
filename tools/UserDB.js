@@ -25,6 +25,15 @@ const settingsSchema = new Schema({
   afk: {
     since: String,
     status: String,
+    // Where they were mentioned while away (the last 25), shown when they're back.
+    mentions: [{
+      _id: false,
+      guildId: String,
+      channelId: String,
+      messageId: String,
+      authorId: String,
+      at: Number,
+    }],
   },
   ephemeral: Boolean,
 }).plugin(SpeedGooseCacheAutoCleaner);

@@ -9,6 +9,7 @@ function TagForm({ data, me, initial, onSubmit, onCancel, submitLabel }) {
   const [name, setName] = useState(initial?.name ?? "");
   const [text, setText] = useState(initial?.description ?? "");
   const [embed, setEmbed] = useState(initial?.embed ?? null);
+  const [deleteCommand, setDeleteCommand] = useState(Boolean(initial?.deleteCommand));
   const [busy, setBusy] = useState(false);
   const editing = Boolean(initial);
 
@@ -16,11 +17,12 @@ function TagForm({ data, me, initial, onSubmit, onCancel, submitLabel }) {
     event.preventDefault();
     setBusy(true);
     try {
-      await onSubmit({ name, description: text, embed });
+      await onSubmit({ name, description: text, embed, deleteCommand });
       if (!editing) {
         setName("");
         setText("");
         setEmbed(null);
+        setDeleteCommand(false);
       }
     }
     catch {
@@ -48,6 +50,13 @@ function TagForm({ data, me, initial, onSubmit, onCancel, submitLabel }) {
       <label htmlFor={`tag-text-${initial?.name ?? "new"}`}>Text</label>
       <EmojiField as="textarea" id={`tag-text-${initial?.name ?? "new"}`} className="textarea" maxLength={2048} value={text} onChange={setText} />
       <MessagePreview text={text} embed={embed} data={data} me={me} />
+      <label className="check-row">
+        <input type="checkbox" checked={deleteCommand} onChange={(e) => setDeleteCommand(e.target.checked)} />
+        <span>
+          Delete the command that shows it
+          <span className="field-help">The <code>=tag name</code> message is deleted, and with <code>/tag</code> only the tag is posted.</span>
+        </span>
+      </label>
       <div className="inline" style={{ marginTop: 10 }}>
         <button type="submit" className="button primary" disabled={(!editing && !name) || (!text.trim() && !embed) || busy}>{busy ? "Saving..." : submitLabel}</button>
         {onCancel && <button type="button" className="button quiet" onClick={onCancel}>Cancel</button>}
@@ -60,9 +69,9 @@ export function TagsManager({ data, me, onChange }) {
   const toast = useToast();
   const [editing, setEditing] = useState(null);
 
-  async function add({ name, description, embed }) {
+  async function add({ name, description, embed, deleteCommand }) {
     try {
-      const result = await api.post(`/guilds/${data.guild.id}/tags`, { name, description, embed });
+      const result = await api.post(`/guilds/${data.guild.id}/tags`, { name, description, embed, deleteCommand });
       onChange(result.tags);
       toast(`Added tag ${name}.`);
     }
@@ -72,9 +81,9 @@ export function TagsManager({ data, me, onChange }) {
     }
   }
 
-  async function save(tagName, { description, embed }) {
+  async function save(tagName, { description, embed, deleteCommand }) {
     try {
-      const result = await api.put(`/guilds/${data.guild.id}/tags/${encodeURIComponent(tagName)}`, { description, embed });
+      const result = await api.put(`/guilds/${data.guild.id}/tags/${encodeURIComponent(tagName)}`, { description, embed, deleteCommand });
       onChange(result.tags);
       setEditing(null);
       toast(`Saved tag ${tagName}.`);

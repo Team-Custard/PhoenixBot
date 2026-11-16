@@ -16,7 +16,7 @@ class UnbanCommand extends PhoenixCommand {
       examples: ["unban sylveondev Appeal accepted"],
       args: [
         { name: "user", type: "user", required: true, description: "The user to unban" },
-        common.reason(),
+        common.reason(undefined, { enforce: false }),
       ],
       slash: { group: "mod" },
       ...common.modCooldown,
@@ -50,7 +50,7 @@ class UnbanCommand extends PhoenixCommand {
       reason,
     });
     await mod.sendModlog(ctx.guild, settings, caseDoc, { moderator: `${ctx.user}` });
-    return ctx.reply(`${emoji("success")} Unbanned **${user.tag}**.`);
+    return mod.replySuccess(ctx, settings, { action: "Unbanned", user, caseDoc, text: `Unbanned **${user.tag}**.` });
   }
 }
 

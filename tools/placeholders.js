@@ -27,6 +27,22 @@ const PLACEHOLDERS = [
   { name: "level", description: "The new level", group: "Leveling", only: ["leveling"] },
   { name: "afkreason", description: "Why they're AFK", group: "AFK", only: ["afk"] },
   { name: "afksince", description: "How long ago they went AFK", group: "AFK", only: ["afk"] },
+  { name: "random", description: "Picks one of the choices at random, each time", group: "Text", insert: "{{random: first | second | third}}" },
+  { name: "args", description: "Everything typed after the tag's name, or after an autoresponse's trigger", group: "Text", only: ["tags", "autoresponses"] },
+  { name: "args.1", description: "Just the first word of it ({{args.2}} is the second word, and so on)", group: "Text", only: ["tags", "autoresponses"] },
+  { name: "action", description: "What was done, like Banned or Warned", group: "Moderation", only: ["moderation"] },
+  { name: "reason", description: "The reason given", group: "Moderation", only: ["moderation"] },
+  { name: "duration", description: "How long it lasts (empty when it doesn't run out)", group: "Moderation", only: ["moderation"] },
+  { name: "case", description: "The case number", group: "Moderation", only: ["moderation"] },
+  { name: "moderator", description: "The moderator who did it", group: "Moderation", only: ["moderation"] },
+  { name: "warnings", description: "How many warnings the member has now (for warnings)", group: "Moderation", only: ["moderation"] },
+  { name: "emoji", description: "The server's success emoji", group: "Moderation", only: ["moderation"] },
+  { name: "creator", description: "The creator's name", group: "Notification", only: ["notifications"] },
+  { name: "title", description: "The video, stream or post title", group: "Notification", only: ["notifications"] },
+  { name: "link", description: "Link to the video, stream or post", group: "Notification", only: ["notifications"] },
+  { name: "platform", description: "Where it was posted, like YouTube", group: "Notification", only: ["notifications"] },
+  { name: "game", description: "What's being streamed (Twitch)", group: "Notification", only: ["notifications"] },
+  { name: "thumbnail", description: "Link to the video or stream's thumbnail", group: "Notification", only: ["notifications"], image: true },
 ];
 
 const TOKEN = /\{\{\s*([\w.]+)\s*\}\}/g;
@@ -125,6 +141,13 @@ function valueOf(name, ctx, rich) {
     case "time": return rich ? `<t:${unix}:t>` : `${TIME.format(ctx.now)} UTC`;
     case "datetime": return rich ? `<t:${unix}:f>` : `${DATE.format(ctx.now)}, ${TIME.format(ctx.now)} UTC`;
     default: {
+      // Words typed after a tag's name or an autoresponse's trigger: {{args}}, {{args.2}}.
+      if (key === "args" || /^args\.\d+$/.test(key)) {
+        const args = ctx.extra?.args;
+        if (!Array.isArray(args)) return undefined;
+        if (key === "args") return args.join(" ");
+        return args[Number(key.slice(5)) - 1] ?? "";
+      }
       // Only the extra values given, never things like "constructor" from Object itself.
       const extras = ctx.extra ?? {};
       const extra = Object.hasOwn(extras, key) ? extras[key] : Object.hasOwn(extras, name) ? extras[name] : undefined;
@@ -144,9 +167,68 @@ function valueOf(name, ctx, rich) {
  */
 const KNOWN = new Set(PLACEHOLDERS.filter((p) => !p.only).map((p) => p.name));
 
+// {{random: one | two | three}} picks a choice each time. Choices can hold other
+// placeholders ({{random: Hi {{mention}} | Hello}}), and one level of {{random:}} inside.
+const RANDOM_START = /\{\{\s*(?:random|choose)\s*:/i;
+
+function expandRandom(text, pick = Math.random) {
+  let out = String(text);
+  for (let guard = 0; guard < 50; guard++) {
+    const start = RANDOM_START.exec(out);
+    if (!start) break;
+    // Find the matching "}}", skipping placeholders inside the choices.
+    let depth = 1;
+    let i = start.index + start[0].length;
+    const bodyStart = i;
+    while (i < out.length && depth > 0) {
+      if (out.startsWith("{{", i)) {
+        depth++;
+        i += 2;
+      }
+      else if (out.startsWith("}}", i)) {
+        depth--;
+        i += 2;
+      }
+      else {
+        i++;
+      }
+    }
+    if (depth > 0) break;
+    const body = out.slice(bodyStart, i - 2);
+    // Split on | that isn't inside a nested placeholder.
+    const choices = [];
+    let level = 0;
+    let current = "";
+    for (let j = 0; j < body.length; j++) {
+      if (body.startsWith("{{", j)) {
+        level++;
+        current += "{{";
+        j++;
+      }
+      else if (body.startsWith("}}", j)) {
+        level--;
+        current += "}}";
+        j++;
+      }
+      else if (body[j] === "|" && level === 0) {
+        choices.push(current);
+        current = "";
+      }
+      else {
+        current += body[j];
+      }
+    }
+    choices.push(current);
+    const options = choices.map((c) => c.trim());
+    const chosen = options[Math.min(options.length - 1, Math.floor(pick() * options.length))] ?? "";
+    out = out.slice(0, start.index) + chosen + out.slice(i);
+  }
+  return out;
+}
+
 function render(text, ctx, { rich = true } = {}) {
   if (!text) return text;
-  return String(text).replace(TOKEN, (match, name) => {
+  return expandRandom(text).replace(TOKEN, (match, name) => {
     const value = valueOf(name, ctx, rich);
     if (value !== undefined) return value;
     // A known placeholder with nothing to fill it (like {{mention}} in a timed message,
@@ -217,7 +299,7 @@ function buildMessage(settings, message, ctx) {
 
 /** The list for the dashboard. */
 function placeholderList() {
-  return PLACEHOLDERS.map(({ name, description, group, image, only }) => ({ name, description, group, image: Boolean(image), only: only ?? null }));
+  return PLACEHOLDERS.map(({ name, description, group, image, only, insert }) => ({ name, description, group, image: Boolean(image), only: only ?? null, insert: insert ?? null }));
 }
 
 /** Older helper kept for callers that pass a member and get text back. */
@@ -225,4 +307,4 @@ async function parse(text, member, extra = {}) {
   return render(text, contextFrom({ member, extra }));
 }
 
-module.exports = { PLACEHOLDERS, contextFrom, render, renderEmbed, renderUrl, buildMessage, placeholderList, parse };
+module.exports = { PLACEHOLDERS, contextFrom, render, expandRandom, renderEmbed, renderUrl, buildMessage, placeholderList, parse };

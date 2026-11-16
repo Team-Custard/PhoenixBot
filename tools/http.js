@@ -8,7 +8,9 @@ async function request(url, options = {}) {
     headers: { "User-Agent": "PhoenixBot (https://phoenix.sylveondev.xyz)", ...(options.headers ?? {}) },
     signal: AbortSignal.timeout(options.timeout ?? DEFAULT_TIMEOUT),
   });
-  if (!response.ok) {
+  // With redirect: "manual" the caller follows redirects itself.
+  const redirect = options.redirect === "manual" && response.status >= 300 && response.status < 400;
+  if (!response.ok && !redirect) {
     const error = new Error(`Request failed: ${response.status} ${response.statusText}`);
     error.status = response.status;
     throw error;

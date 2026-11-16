@@ -1,7 +1,10 @@
 // A small renderer for the parts of Discord markdown people use in embeds, so the
 // embed builder preview looks like the message will. It never uses innerHTML.
 
+import { RANDOM, randomChoices } from "../placeholders.js";
+
 const INLINE = [
+  { type: "random", re: RANDOM },
   { type: "placeholder", re: /\{\{\s*([\w.]+)\s*\}\}/ },
   { type: "code", re: /`([^`\n]+)`/ },
   { type: "link", re: /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/ },
@@ -57,6 +60,12 @@ function inline(text, ctx, keyPrefix = "") {
     const k = `${keyPrefix}${key++}`;
     const inner = (value) => inline(value, ctx, `${k}-`);
     switch (rule.type) {
+      case "random": {
+        // Random choices show the first one, and list them all on hover.
+        const choices = randomChoices(match[1]);
+        out.push(<span key={k} className="md-placeholder random" title={`Picked at random from: ${choices.join(" · ")}`}>{inner(choices[0] ?? "")}</span>);
+        break;
+      }
       case "placeholder": {
         // Placeholders are highlighted, filled in with an example when there is one.
         const name = match[1].toLowerCase();

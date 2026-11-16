@@ -5,10 +5,39 @@ const webhookFetch = require("./webhookFetch");
 
 const SUPPORT_FOOTER = `-# This error was logged. [Need help?](<https://discord.gg/PnUYnBbxER> "Invite link to the support server")`;
 
+// A server's own status emojis (General page), for everything said while running one
+// of its commands. AsyncLocalStorage carries them through every await without having
+// to pass the server around (see withServerEmojis).
+const { AsyncLocalStorage } = require("node:async_hooks");
+const serverEmojis = new AsyncLocalStorage();
+const STATUS_EMOJIS = ["success", "error", "warning", "info"];
+
 /** Returns one of the bot's status emojis, with a plain fallback before they're loaded. */
 function emoji(name) {
+  const own = serverEmojis.getStore()?.[name];
+  if (own) return own;
   const fallback = { success: "✅", warning: "⚠️", info: "❔", error: "❌", loading: "⭕" };
   return container.emojis?.[name] ?? fallback[name] ?? "";
+}
+
+/**
+ * Runs fn with the server's own success, error, warning and info emojis in effect for
+ * emoji(). Servers that haven't picked any just run fn.
+ */
+async function withServerEmojis(guildId, fn) {
+  if (!guildId) return fn();
+  let own = null;
+  try {
+    const { peekSettings } = require("./guildSettings");
+    const settings = await peekSettings(guildId);
+    const picked = settings?.statusEmojis;
+    if (picked && STATUS_EMOJIS.some((name) => picked[name])) own = Object.fromEntries(STATUS_EMOJIS.map((name) => [name, picked[name] || null]));
+  }
+  catch {
+    // Settings unavailable: Phoenix's own emojis.
+  }
+  // Always a fresh scope, so nothing carries over from whatever ran this.
+  return serverEmojis.run(own ?? {}, fn);
 }
 
 /**
@@ -67,6 +96,8 @@ async function replyToInteraction(interaction, content) {
 
 module.exports = {
   emoji,
+  withServerEmojis,
+  STATUS_EMOJIS,
   report,
   userErrorMessage,
   replyToInteraction,

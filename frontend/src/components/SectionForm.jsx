@@ -36,7 +36,11 @@ function groupFields(section) {
   return blocks;
 }
 
-export function SectionForm({ section, data, me, onSaved, focus, children }) {
+/**
+ * `renderExtra(field, draft)` can add something under a field (like the welcome card
+ * preview), drawn with the unsaved values.
+ */
+export function SectionForm({ section, data, me, onSaved, focus, children, renderExtra }) {
   const toast = useToast();
   const saved = useMemo(
     () => Object.fromEntries(section.fields.map((f) => [f.key, data.settings[f.key] ?? null])),
@@ -89,16 +93,19 @@ export function SectionForm({ section, data, me, onSaved, focus, children }) {
     return (
       <Field key={field.key} field={field} error={errors[field.key]}>
         {(id) => (
-          <Control
-            id={id}
-            field={field}
-            value={draft[field.key]}
-            onChange={(value) => setDraft((d) => ({ ...d, [field.key]: value }))}
-            data={data}
-            preview={field.preview ? (
-              <MessagePreview text={draft[field.key]} embed={field.embedKey ? draft[field.embedKey] : null} panel={field.preview === "panel"} panelColor={field.panelColor} panelDefault={field.panelDefault} data={data} me={me.user} extra={{ level: "5" }} />
-            ) : null}
-          />
+          <>
+            <Control
+              id={id}
+              field={field}
+              value={draft[field.key]}
+              onChange={(value) => setDraft((d) => ({ ...d, [field.key]: value }))}
+              data={data}
+              preview={field.preview ? (
+                <MessagePreview text={draft[field.key]} embed={field.embedKey ? draft[field.embedKey] : null} panel={field.preview === "panel"} panelColor={field.panelColor} panelDefault={field.panelDefault} data={data} me={me.user} extra={{ level: "5" }} />
+              ) : null}
+            />
+            {renderExtra?.(field, draft)}
+          </>
         )}
       </Field>
     );

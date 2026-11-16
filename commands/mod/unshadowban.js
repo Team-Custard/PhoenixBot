@@ -15,7 +15,7 @@ class UnshadowbanCommand extends PhoenixCommand {
       examples: ["unshadowban sylveondev Appeal accepted"],
       args: [
         { name: "member", type: "member", required: true, description: "The member to unshadowban" },
-        common.reason(),
+        common.reason(undefined, { enforce: false }),
         common.silent,
         common.hidden,
       ],
@@ -64,7 +64,7 @@ class UnshadowbanCommand extends PhoenixCommand {
       });
 
     await mod.sendModlog(ctx.guild, settings, caseDoc, { moderator: `${ctx.user}` });
-    return ctx.reply(`${emoji("success")} Unshadowbanned **${member.user.tag}**. ${!silent && notified ? "" : "User was not notified."}`);
+    return mod.replySuccess(ctx, settings, { action: "Unshadowbanned", member, caseDoc, text: `Unshadowbanned **${member.user.tag}**.`, notes: [!silent && notified ? "" : "User was not notified."] });
   }
 }
 

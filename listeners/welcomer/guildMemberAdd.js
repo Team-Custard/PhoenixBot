@@ -3,6 +3,7 @@ const { Listener } = require("@sapphire/framework");
 const { peekSettings } = require("../../tools/guildSettings");
 const { buildMessage, contextFrom } = require("../../tools/placeholders");
 const { send } = require("../../tools/queue");
+const { attachCard } = require("../../tools/greetingCard");
 
 class WelcomerAdd extends Listener {
   constructor(context, options) {
@@ -15,10 +16,14 @@ class WelcomerAdd extends Listener {
     const welcomer = settings?.welcomer;
     if (!welcomer) return;
 
-    // Text, a saved embed, or both (set on the dashboard's Welcome & goodbye page).
-    if (welcomer.channel && (welcomer.message || welcomer.embed)) {
+    // Text, a saved embed, an image card, or any mix (set on the dashboard's Welcome &
+    // goodbye page).
+    const card = welcomer.card?.enabled ? welcomer.card : null;
+    if (welcomer.channel && (welcomer.message || welcomer.embed || card)) {
       const channel = await member.guild.channels.fetch(welcomer.channel).catch(() => null);
-      const payload = buildMessage(settings, { content: welcomer.message, embed: welcomer.embed }, contextFrom({ member, channel }));
+      const ctx = contextFrom({ member, channel });
+      let payload = buildMessage(settings, { content: welcomer.message, embed: welcomer.embed }, ctx);
+      if (card && channel) payload = await attachCard(payload, { kind: "welcome", guildId: member.guild.id, ctx, card });
       if (payload) await send(channel, payload);
     }
 

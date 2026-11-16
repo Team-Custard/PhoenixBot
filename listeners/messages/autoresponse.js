@@ -42,7 +42,9 @@ class Autoresponse extends Listener {
     if (onCooldown(`${message.guildId}:${found.index}:${message.channelId}`)) return;
     if (await yieldsToStaging(message.guild)) return;
 
-    const payload = buildMessage(settings, found.entry, contextFrom({ member: message.member, channel: message.channel }));
+    // {{args}} is the text after the trigger.
+    const args = (found.rest ?? "").split(/\s+/).filter(Boolean);
+    const payload = buildMessage(settings, found.entry, contextFrom({ member: message.member, channel: message.channel, extra: { args } }));
     if (!payload) return;
     if (found.entry.reply !== false) {
       payload.reply = { messageReference: message.id, failIfNotExists: false };
