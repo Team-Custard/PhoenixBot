@@ -34,7 +34,7 @@ export function Field({ field, error, children, wide }) {
 
 export function TextInput({ id, field, value, onChange }) {
   if (field.emoji) {
-    return <EmojiField id={id} className="input" type="text" value={value} maxLength={field.max} onChange={onChange} unicodeOnly={field.emoji === "unicode"} />;
+    return <EmojiField id={id} className="input" type="text" value={value} maxLength={field.max} placeholder={field.placeholder} onChange={onChange} unicodeOnly={field.emoji === "unicode"} />;
   }
   return (
     <input
@@ -43,6 +43,7 @@ export function TextInput({ id, field, value, onChange }) {
       type="text"
       value={value ?? ""}
       maxLength={field.max}
+      placeholder={field.placeholder}
       onChange={(e) => onChange(e.target.value)}
       spellCheck={false}
     />
@@ -307,7 +308,8 @@ export function StringsInput({ id, field, value, onChange }) {
   const items = value ?? [];
   const [text, setText] = useState("");
   const add = (raw) => {
-    const parts = raw.split(/[,\n]/).map((p) => (field.lowercase ? p.trim().toLowerCase() : p.trim())).filter(Boolean);
+    // Items like moderation reasons can contain commas, so only new lines split those.
+    const parts = raw.split(field.allowCommas ? /\n/ : /[,\n]/).map((p) => (field.lowercase ? p.trim().toLowerCase() : p.trim())).filter(Boolean);
     const known = new Set(items.map((i) => i.toLowerCase()));
     const next = [...items];
     for (const part of parts) {
@@ -349,7 +351,7 @@ export function StringsInput({ id, field, value, onChange }) {
           }}
           onPaste={(e) => {
             const pasted = e.clipboardData.getData("text");
-            if (/[,\n]/.test(pasted)) {
+            if ((field.allowCommas ? /\n/ : /[,\n]/).test(pasted)) {
               e.preventDefault();
               add(text + pasted);
             }

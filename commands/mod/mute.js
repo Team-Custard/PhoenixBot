@@ -76,9 +76,14 @@ class MuteCommand extends PhoenixCommand {
     }
 
     await mod.sendModlog(ctx.guild, settings, caseDoc, { moderator: `${ctx.user}`, duration: duration ?? null });
-    return ctx.reply(
-      `${emoji("success")} Muted **${member.user.tag}**${duration ? ` for ${await mod.formatDuration(duration)}` : ""}. ${!silent && notified ? "" : "User was not notified."}`,
-    );
+    return mod.replySuccess(ctx, settings, {
+      action: "Muted",
+      member,
+      caseDoc,
+      duration,
+      text: `Muted **${member.user.tag}**${duration ? ` for ${await mod.formatDuration(duration)}` : ""}.`,
+      notes: [!silent && notified ? "" : "User was not notified."],
+    });
   }
 }
 

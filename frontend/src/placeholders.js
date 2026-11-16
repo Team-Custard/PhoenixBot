@@ -38,14 +38,60 @@ export function sampleValues(data, me, extra = {}) {
     level: "5",
     afkreason: "Eating dinner",
     afksince: "5 minutes ago",
+    // Words typed after a tag's name: {{args}}, {{args.1}}, {{args.2}}...
+    args: "some words",
+    ...Object.fromEntries(Array.from({ length: 9 }, (_, i) => [`args.${i + 1}`, ["some", "words"][i] ?? ""])),
+    action: "Banned",
+    reason: "Spamming",
+    duration: "1 day",
+    case: "42",
+    moderator: { mention: `@${name}` },
+    warnings: "2",
+    emoji: "✅",
+    creator: "Phoenix Gaming",
+    title: "Building a bot in one day",
+    link: "https://youtu.be/dQw4w9WgXcQ",
+    platform: "YouTube",
+    game: "Minecraft",
+    thumbnail: "https://cdn.discordapp.com/embed/avatars/1.png",
     ...extra,
   };
+}
+
+// {{random: one | two}}: previews show the first choice.
+export const RANDOM = /\{\{\s*(?:random|choose)\s*:((?:[^{}]|\{\{[^{}]*\}\})*)\}\}/i;
+const RANDOM_ALL = new RegExp(RANDOM.source, "gi");
+
+/** The choices in a {{random: ...}} body (splits on | outside nested placeholders). */
+export function randomChoices(body) {
+  const choices = [];
+  let level = 0;
+  let current = "";
+  for (let i = 0; i < body.length; i++) {
+    if (body.startsWith("{{", i)) {
+      level++;
+      current += "{{";
+      i++;
+    }
+    else if (body.startsWith("}}", i)) {
+      level--;
+      current += "}}";
+      i++;
+    }
+    else if (body[i] === "|" && level === 0) {
+      choices.push(current.trim());
+      current = "";
+    }
+    else current += body[i];
+  }
+  choices.push(current.trim());
+  return choices;
 }
 
 /** Plain text with placeholders filled in (for image links and the like). */
 export function fillText(text, values) {
   if (!text) return text;
-  return String(text).replace(TOKEN, (match, key) => {
+  return String(text).replace(RANDOM_ALL, (match, body) => randomChoices(body)[0] ?? "").replace(TOKEN, (match, key) => {
     const value = Object.hasOwn(values, key.toLowerCase()) ? values[key.toLowerCase()] : undefined;
     if (value === undefined) return match;
     return typeof value === "object" ? value.mention : value;

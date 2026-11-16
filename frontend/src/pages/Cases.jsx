@@ -15,7 +15,10 @@ function CaseRow({ data, entry, users, onUpdated }) {
   const [reason, setReason] = useState(entry.reason);
   const [busy, setBusy] = useState(false);
   const name = (id) => users[id] ?? id;
-  const inactive = entry.expired || /\((pardoned|expired)\)/.test(entry.punishment);
+  // Temporary warnings stop counting once they run out.
+  const warningEnds = entry.punishment === "Warn" && entry.expiretime ? entry.expiretime * 1000 : null;
+  const warningOver = warningEnds !== null && warningEnds < Date.now();
+  const inactive = entry.expired || warningOver || /\((pardoned|expired)\)/.test(entry.punishment);
 
   async function saveReason() {
     setBusy(true);
@@ -48,7 +51,14 @@ function CaseRow({ data, entry, users, onUpdated }) {
   return (
     <tr>
       <td className="num">{entry.caseId}</td>
-      <td className={`punishment${inactive ? " inactive" : ""}`}>{entry.punishment}</td>
+      <td className={`punishment${inactive ? " inactive" : ""}`}>
+        {entry.punishment}
+        {warningEnds !== null && (
+          <span className="field-help" title={new Date(warningEnds).toLocaleString()}>
+            {warningOver ? "Expired" : `Expires ${new Date(warningEnds).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
+          </span>
+        )}
+      </td>
       <td>{name(entry.member)}</td>
       <td className="reason">
         {editing ? (

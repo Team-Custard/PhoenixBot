@@ -1,6 +1,6 @@
 const { PermissionsBitField } = require("discord.js");
 const { PhoenixCommand } = require("./PhoenixCommand");
-const { emoji, report, userErrorMessage, replyToInteraction } = require("./errorReporter");
+const { emoji, report, userErrorMessage, replyToInteraction, withServerEmojis } = require("./errorReporter");
 
 /**
  * Creates a slash command that groups other commands as subcommands, e.g. `/mod ban`.
@@ -85,7 +85,11 @@ function createSlashGroup(options) {
       );
     }
 
-    async chatInputRun(interaction, context) {
+    chatInputRun(interaction, context) {
+      return withServerEmojis(interaction.guildId, () => this.runGroup(interaction, context));
+    }
+
+    async runGroup(interaction, context) {
       const group = interaction.options.getSubcommandGroup(false);
       const sub = interaction.options.getSubcommand(false);
 

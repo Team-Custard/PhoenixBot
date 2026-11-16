@@ -11,6 +11,18 @@ function filter(options = {}, action = "delete") {
   };
 }
 
+/** Welcome or goodbye card settings (the background image is a file, see tools/greetingCard.js). */
+function greetingCard() {
+  return {
+    enabled: { type: Boolean, default: false },
+    title: String,
+    subtitle: String,
+    footer: String,
+    // How much the background is darkened, 0-100.
+    overlay: Number,
+  };
+}
+
 const settingsSchema = new Schema({
   _id: { type: String, required: true },
   prefix: {
@@ -38,6 +50,8 @@ const settingsSchema = new Schema({
       description: String,
       creator: String,
       embed: String,
+      // Delete the message (or hide the slash command) that showed the tag.
+      deleteCommand: { type: Boolean, default: false },
     },
   ],
   cc: [
@@ -58,6 +72,43 @@ const settingsSchema = new Schema({
     embed: String,
     verifiedText: String,
   },
+  // The counting channel (tools/counting.js).
+  counting: {
+    channel: String,
+    react: { type: Boolean, default: true },
+    reactEmoji: String,
+    allowTwiceInRow: { type: Boolean, default: false },
+    resetOnMistake: { type: Boolean, default: false },
+    // A role given for a while to people who make too many mistakes in a day.
+    mistakeRole: String,
+    mistakeLimit: { type: Number, default: 3 },
+    mistakeRoleDuration: { type: Number, default: 3_600_000 },
+  },
+  // Accounts to announce new posts and live streams from (tools/notifications).
+  notifications: [{
+    _id: false,
+    platform: String,
+    account: String,
+    channel: String,
+    // "all", "live" (live streams only) or "posts" (uploads and posts only).
+    events: { type: String, default: "all" },
+    role: String,
+    content: String,
+    embed: String,
+    enabled: { type: Boolean, default: true },
+  }],
+  // Messages in these announcement channels are published automatically.
+  autopublish: {
+    channels: [String],
+    includeBots: { type: Boolean, default: true },
+  },
+  // The emojis Phoenix uses in its replies here (empty = Phoenix's own).
+  statusEmojis: {
+    success: String,
+    error: String,
+    warning: String,
+    info: String,
+  },
   welcomer: {
     channel: String,
     message: String,
@@ -65,11 +116,14 @@ const settingsSchema = new Schema({
     embed: String,
     dmtext: String,
     dmEmbed: String,
+    // An image card with the member's avatar (tools/greetingCard.js).
+    card: greetingCard(),
   },
   goodbyes: {
     channel: String,
     message: String,
     embed: String,
+    card: greetingCard(),
   },
   logging: {
     members: String,
@@ -112,7 +166,15 @@ const settingsSchema = new Schema({
     shadowbannedUsers: [{
       user: String,
       roles: [String]
-    }]
+    }],
+    // How long warnings count by default, in ms (empty = forever).
+    warningExpiry: Number,
+    // The server's own reasons, suggested in the mod commands, and whether they're required.
+    reasons: [String],
+    enforceReasons: { type: Boolean, default: false },
+    // Replaces Phoenix's "Banned so-and-so" replies (text and/or a saved embed).
+    successMessage: String,
+    successEmbed: String,
   },
   automod: {
     autokick: {
@@ -192,6 +254,8 @@ const settingsSchema = new Schema({
     embed: String,
     welcomeBack: { type: Boolean, default: true },
     welcomeBackMessage: String,
+    // List where they were mentioned when someone comes back.
+    showMentions: { type: Boolean, default: true },
   },
   // The bot's server profile bio as last set on the dashboard (Discord doesn't send it back).
   botProfile: { bio: String },

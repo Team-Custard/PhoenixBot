@@ -105,6 +105,8 @@ async function punish({ member, settings, action, duration = null, reason, sourc
       member: member.id,
       moderator: client.user.id,
       reason: `(${source}) ${reason}`,
+      // The server's default warning length (Moderation page), if it has one.
+      expiretime: mod.expiryFromNow(mod.warningDuration(settings, null)),
     });
     const warnings = await mod.Case.countWarnings(guild.id, member.id);
     const step = applySystem ? systemStep(settings, warnings) : null;

@@ -1,5 +1,5 @@
 const { Listener } = require("@sapphire/framework");
-const { emoji } = require("../../tools/errorReporter");
+const { emoji, withServerEmojis } = require("../../tools/errorReporter");
 
 class MessageSubcommandDenied extends Listener {
   constructor(context, options) {
@@ -8,7 +8,7 @@ class MessageSubcommandDenied extends Listener {
 
   run(error, { message }) {
     if (Reflect.get(Object(error.context), "silent") || message.channel.isDMBased()) return;
-    return message.reply({ content: `${emoji("error")} ${error}` }).catch(() => undefined);
+    return withServerEmojis(message.guildId, () => message.reply({ content: `${emoji("error")} ${error}` }).catch(() => undefined));
   }
 }
 module.exports = { MessageSubcommandDenied };

@@ -22,7 +22,16 @@ class TagsCommand extends PhoenixCommand {
       description: "Shows and manages server tags. Placeholders like {{mention}} work in tags, and tags can have embeds (set on the dashboard).",
       examples: ["tag list", "tag breezip", "tag add sylveon I like Sylveons"],
       subcommands: [
-        { name: "display", description: "Displays a tag", args: [nameArg("The name of the tag")], run: "display", default: true },
+        {
+          name: "display",
+          description: "Displays a tag",
+          args: [
+            nameArg("The name of the tag"),
+            { name: "args", type: "string", rest: true, maxLength: 1000, description: "Words for the tag's {{args}} placeholders, if it has any" },
+          ],
+          run: "display",
+          default: true,
+        },
         { name: "list", description: "Lists all tags in the server", run: "list" },
         {
           name: "add",
@@ -58,14 +67,40 @@ class TagsCommand extends PhoenixCommand {
     return settings.lockTags && !ctx.member.permissions.has(PermissionFlagsBits.ManageGuild);
   }
 
-  async display(ctx, { name }) {
+  async display(ctx, { name, args }) {
     const settings = await getSettings(ctx.guild.id);
     const found = this.find(settings, name);
     if (!found) return ctx.error(`${emoji("error")} Tag not found.`);
     // Tags can have a saved embed attached on the dashboard; placeholders work in both.
-    const message = buildMessage(settings, { content: found.tag.description, embed: found.tag.embed }, contextFrom({ member: ctx.member, channel: ctx.channel }));
+    // {{args}} is whatever was typed after the tag's name.
+    const words = String(args ?? "").trim().split(/\s+/).filter(Boolean);
+    const values = contextFrom({ member: ctx.member, channel: ctx.channel, extra: { args: words } });
+    const message = buildMessage(settings, { content: found.tag.description, embed: found.tag.embed }, values);
     if (!message) return ctx.error(`${emoji("error")} This tag is empty. Its embed may have been deleted.`);
+    if (found.tag.deleteCommand) {
+      // With the command gone, say who used it when the tag shows what they typed.
+      if (words.length && /\{\{\s*args/i.test(`${found.tag.description} ${JSON.stringify(settings.embeds?.find((e) => e.name === found.tag.embed)?.data ?? "")}`)) {
+        message.content = `${message.content ?? ""}\n-# Used by <@${ctx.user.id}>`.trim().slice(0, 2000);
+      }
+      return this.postWithoutCommand(ctx, message);
+    }
     return ctx.reply(message);
+  }
+
+  /**
+   * Tags set to "delete the command": the =tag message is deleted, and for /tag the
+   * tag is posted on its own (the slash command's "used /tag" line is hidden).
+   */
+  async postWithoutCommand(ctx, message) {
+    if (!ctx.isSlash) {
+      await ctx.message.delete().catch(() => undefined);
+      return ctx.channel.send(message);
+    }
+    await ctx.defer({ ephemeral: true });
+    const sent = await ctx.channel.send(message).catch(() => null);
+    // Phoenix couldn't post in the channel itself (no access), so answer normally.
+    if (!sent) return ctx.interaction.editReply(message);
+    return ctx.interaction.deleteReply().catch(() => undefined);
   }
 
   async list(ctx) {

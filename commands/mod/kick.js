@@ -60,7 +60,7 @@ class KickCommand extends PhoenixCommand {
     }
 
     await mod.sendModlog(ctx.guild, settings, caseDoc, { moderator: `${ctx.user}` });
-    return ctx.reply(`${emoji("success")} Kicked **${member.user.tag}**. ${!silent && notified ? "" : "User was not notified."}`);
+    return mod.replySuccess(ctx, settings, { action: "Kicked", member, caseDoc, text: `Kicked **${member.user.tag}**.`, notes: [!silent && notified ? "" : "User was not notified."] });
   }
 }
 

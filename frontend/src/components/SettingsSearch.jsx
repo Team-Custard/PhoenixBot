@@ -15,7 +15,13 @@ const PAGE_KEYWORDS = {
   tags: "custom commands replies",
   plus: "premium subscription limits upgrade",
   audit: "history changes who changed log",
-  afk: "away status welcome back",
+  afk: "away status welcome back mentions",
+  general: "emojis success error warning info prefix",
+  moderation: "mute role shadowban role reasons warnings expire temporary reply message",
+  welcome: "card image background goodbye",
+  counting: "count numbers game",
+  autopublish: "announcement publish crosspost news",
+  notifications: "youtube twitch bluesky x twitter reddit rss live stream upload alerts feeds",
 };
 
 function buildIndex(pages) {

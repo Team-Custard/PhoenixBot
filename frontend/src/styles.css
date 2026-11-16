@@ -85,9 +85,9 @@ h3 {
 /* ---------------------------------------------------------------- top bar */
 
 .topbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 560px) minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
   height: 56px;
   padding: 0 20px;
@@ -99,6 +99,7 @@ h3 {
 }
 
 .brand {
+  justify-self: start;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -115,6 +116,8 @@ h3 {
 }
 
 .account {
+  grid-column: 3;
+  justify-self: end;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1625,14 +1628,19 @@ h5.md-heading { font-size: 1em; }
 
 /* --------------------------------------------------------- settings search */
 
+/* In the top bar, centered (see App.jsx and GuildPage). */
+.topbar-search {
+  grid-column: 2;
+  min-width: 0;
+}
+
 .settings-search {
   position: relative;
-  margin-bottom: 28px;
 }
 
 .settings-search input {
   width: 100%;
-  min-height: 44px;
+  min-height: 38px;
   padding: 0 44px 0 40px;
   border-radius: 999px;
   border: 1px solid var(--smoke);
@@ -2509,4 +2517,261 @@ h5.md-heading { font-size: 1em; }
 .emoji-field.grow {
   flex: 1;
   min-width: 0;
+}
+
+@media (max-width: 760px) {
+  /* The search gets its own row under the logo and account. */
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: 56px auto;
+    height: auto;
+    row-gap: 0;
+  }
+
+  .account {
+    grid-column: 2;
+  }
+
+  .account .name {
+    display: none;
+  }
+
+  .topbar-search {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .topbar-search:not(:empty) {
+    padding-bottom: 10px;
+  }
+
+  .settings-search-kbd {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------- welcome & goodbye cards */
+
+.greeting-card {
+  margin-top: 14px;
+}
+
+.greeting-card-frame {
+  overflow: hidden;
+  aspect-ratio: 1100 / 500;
+  border-radius: var(--radius);
+  border: 1px solid var(--smoke-soft);
+  background: var(--soot);
+  transition: opacity 160ms ease;
+}
+
+.greeting-card-frame.loading {
+  opacity: 0.65;
+}
+
+.greeting-card-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.greeting-card-empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 16px;
+  color: var(--haze-dim);
+  text-align: center;
+}
+
+.greeting-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-top: 10px;
+}
+
+.greeting-card-actions .field-help {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.button.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* ----------------------------------------------------- mute & shadowban roles */
+
+.role-setup {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.role-setup-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--smoke-soft);
+  border-radius: var(--radius);
+  background: var(--soot);
+}
+
+.role-setup-card h4 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.role-setup-card .field-help {
+  margin: 0;
+}
+
+.role-setup-card > .button,
+.role-setup-card > .inline {
+  margin-top: auto;
+}
+
+.role-setup-progress {
+  display: grid;
+  gap: 6px;
+  margin-top: auto;
+  font-size: 13px;
+  color: var(--haze);
+}
+
+.meter {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--smoke-soft);
+}
+
+.meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--ember), var(--flame));
+  transition: width 300ms ease;
+}
+
+/* ------------------------------------------------------------------- misc */
+
+.punishment .field-help {
+  display: block;
+  margin: 2px 0 0;
+  font-weight: 400;
+}
+
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+  cursor: pointer;
+}
+
+.check-row input {
+  margin-top: 3px;
+  accent-color: var(--flame);
+}
+
+.check-row .field-help {
+  display: block;
+  margin: 2px 0 0;
+}
+
+.md-placeholder.random {
+  text-decoration: underline dotted;
+}
+
+.counting-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+}
+
+.counting-stats > div {
+  display: grid;
+}
+
+.counting-number {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--cinder);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------- notifications */
+
+.notify-status {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notify-status li {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) minmax(0, 1.2fr);
+  align-items: center;
+  gap: 4px 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--smoke-soft);
+  border-left: 3px solid var(--smoke);
+  border-radius: var(--radius-small);
+  background: var(--soot);
+}
+
+.notify-status li.ok {
+  border-left-color: #3ba55d;
+}
+
+.notify-status li.error {
+  border-left-color: #ed4245;
+}
+
+.notify-status li.off {
+  opacity: 0.6;
+}
+
+.notify-platform {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--haze);
+}
+
+.notify-account {
+  display: grid;
+  min-width: 0;
+}
+
+.notify-account strong,
+.notify-account .field-help {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.notify-state {
+  font-size: 13px;
+  color: var(--haze);
+}
+
+.notify-status li.error .notify-state {
+  color: #ff8f8f;
+}
+
+@media (max-width: 640px) {
+  .notify-status li {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

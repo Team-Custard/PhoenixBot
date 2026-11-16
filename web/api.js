@@ -20,6 +20,11 @@ const { recordAudit, listAudit } = require("./audit");
 
 const router = express.Router();
 const RANKCARD_DIR = path.join(__dirname, "../static/rankcards");
+const greetingCard = require("../tools/greetingCard");
+const roleSetup = require("./roleSetup");
+const counting = require("../tools/counting");
+const notifications = require("../tools/notifications");
+const CountingState = require("../tools/models/CountingState");
 const SNOWFLAKE = /^\d{17,20}$/;
 const CUSTOM_EMOJI = /^<(a?):(\w{2,32}):(\d{17,20})>$/;
 // Also keycaps (1️⃣ #️⃣) and the England, Scotland and Wales flags (tag characters).
@@ -236,7 +241,7 @@ function embedsOf(doc) {
 }
 
 function tagsOf(doc) {
-  return (doc.tags ?? []).map((t) => ({ name: t.name, description: t.description ?? "", embed: t.embed ?? null, creator: t.creator }));
+  return (doc.tags ?? []).map((t) => ({ name: t.name, description: t.description ?? "", embed: t.embed ?? null, deleteCommand: Boolean(t.deleteCommand), creator: t.creator }));
 }
 
 /** A tag's text and attached saved embed. A tag needs at least one of them. */
@@ -244,7 +249,7 @@ function tagBody(doc, body) {
   const description = validateField({ key: "description", type: "textarea", max: 2048 }, body?.description, {}, "Tag text");
   const embed = validateField({ key: "embed", type: "embed" }, body?.embed, { embedNames: (doc.embeds ?? []).map((e) => e.name) }, "Embed");
   if (!description?.trim() && !embed) throw new ApiError(400, "Give the tag some text or an embed.");
-  return { description: description ?? "", embed };
+  return { description: description ?? "", embed, deleteCommand: body?.deleteCommand === true };
 }
 
 /**
@@ -273,6 +278,7 @@ router.get("/guilds/:guildId", wrap(async (req, res) => {
     discord.getAutomodRules(guildId),
   ]);
   const hasRankCard = fs.existsSync(path.join(RANKCARD_DIR, `${guildId}-rankcard.png`));
+  const greetingCards = Object.fromEntries(greetingCard.KINDS.map((kind) => [kind, greetingCard.hasBackground(guildId, kind)]));
 
   res.json({
     guild: {
@@ -306,7 +312,7 @@ router.get("/guilds/:guildId", wrap(async (req, res) => {
     roleMenus: roleMenusOf(doc),
     tags: tagsOf(doc),
     embeds: embedsOf(doc),
-    stats: { cases: caseCount, levelMembers: levelCount, hasRankCard },
+    stats: { cases: caseCount, levelMembers: levelCount, hasRankCard, greetingCards },
     limits: { ...limitsFor(premium), roleMenuRoles: LIMITS.roleMenuRoles },
     // For the Plus page: every limit with and without Plus, and how much is used.
     plus: {
@@ -317,7 +323,7 @@ router.get("/guilds/:guildId", wrap(async (req, res) => {
         label: l.label,
         free: l.free,
         premium: l.premium,
-        used: { roleMenus: doc.rolesMenu?.length, tags: doc.tags?.length, embeds: doc.embeds?.length, autoresponses: doc.autoresponses?.length, timedMessages: doc.timedMessages?.length, stickyMessages: doc.stickyMessages?.length }[key] ?? 0,
+        used: { roleMenus: doc.rolesMenu?.length, tags: doc.tags?.length, embeds: doc.embeds?.length, autoresponses: doc.autoresponses?.length, timedMessages: doc.timedMessages?.length, stickyMessages: doc.stickyMessages?.length, notifications: doc.notifications?.length }[key] ?? 0,
       })),
     },
   });
@@ -491,7 +497,11 @@ function validateField(field, value, ctx, label = field.label) {
       const rows = value.map((row, index) => {
         if (!row || typeof row !== "object") fail(`entry ${index + 1} is invalid.`);
         const out = {};
-        for (const sub of field.fields) out[sub.key] = validateField(sub, row[sub.key], ctx, `${label} (entry ${index + 1}) ${sub.label}`);
+        for (const sub of field.fields) {
+          // A setting left out of a row takes its default (like "Announce: everything").
+          const given = row[sub.key] === undefined && sub.default !== undefined ? sub.default : row[sub.key];
+          out[sub.key] = validateField(sub, given, ctx, `${label} (entry ${index + 1}) ${sub.label}`);
+        }
         return out;
       });
       if (field.uniqueBy) {
@@ -563,6 +573,29 @@ function checkSection(sectionId, values, doc) {
       if (!entry.content && !entry.embed) throw new ApiError(400, `${label} ${index + 1}: add a message or an embed.`);
     });
   }
+  if (sectionId === "notifications") {
+    // Tidy up accounts ("https://twitch.tv/Name" -> "name"), refuse bad ones and
+    // platforms this bot isn't set up for.
+    const { PROVIDERS, AccountError } = require("../tools/notifications/providers");
+    const seen = new Set();
+    (get("notifications") ?? []).forEach((row, index) => {
+      const provider = PROVIDERS[row.platform];
+      const label = `Account ${index + 1}`;
+      if (!provider) throw new ApiError(400, `${label}: pick a platform.`);
+      if (provider.available && !provider.available()) throw new ApiError(400, `${label}: ${provider.unavailable}`);
+      try {
+        row.account = provider.normalize(String(row.account ?? ""));
+      }
+      catch (err) {
+        if (err instanceof AccountError) throw new ApiError(400, `${label}: ${err.message}`);
+        throw err;
+      }
+      const key = `${row.platform}:${row.account}:${row.channel}`;
+      if (seen.has(key)) throw new ApiError(400, `${label} is the same account and channel as another one.`);
+      seen.add(key);
+      if (row.platform === "twitch" && row.events === "posts") throw new ApiError(400, `${label}: Twitch only has live streams.`);
+    });
+  }
   if (sectionId === "leveling") {
     const min = get("leveling.rates.minimum") ?? 5;
     const max = get("leveling.rates.maximum") ?? 15;
@@ -598,6 +631,8 @@ router.patch("/guilds/:guildId/settings/:section", wrap(async (req, res) => {
   for (const [key, value] of Object.entries(clean)) doc.set(key, value);
   // Saving the document (not updateOne) also clears the bot's Redis query cache.
   await doc.save();
+  // The notifications module watches each account once for every server following it.
+  if (section.id === "notifications") await notifications.syncGuild(guildId, doc.notifications ?? []);
   const after = settingsValues(doc);
   const changes = Object.keys(clean)
     .filter((key) => JSON.stringify(before[key] ?? null) !== JSON.stringify(after[key] ?? null))
@@ -761,6 +796,78 @@ router.post("/guilds/:guildId/honeypot/warning", wrap(async (req, res) => {
 }));
 
 // ---------------------------------------------------------------------------
+// Notifications: how each followed account is doing
+// ---------------------------------------------------------------------------
+
+router.get("/guilds/:guildId/notifications/status", wrap(async (req, res) => {
+  const doc = await getSettingsDoc(req.params.guildId);
+  res.json({ accounts: await notifications.statusFor(doc.notifications ?? []) });
+}));
+
+// ---------------------------------------------------------------------------
+// Counting (the count itself; settings go through the settings API)
+// ---------------------------------------------------------------------------
+
+router.get("/guilds/:guildId/counting", wrap(async (req, res) => {
+  const state = await CountingState.findById(req.params.guildId).lean();
+  const doc = await getSettingsDoc(req.params.guildId);
+  const channelId = doc.counting?.channel ?? null;
+  const current = state && state.channelId === channelId ? state : null;
+  res.json({ channelId, count: current?.count ?? 0, highScore: state?.highScore ?? 0, highScoreAt: state?.highScoreAt ?? null });
+}));
+
+router.put("/guilds/:guildId/counting", wrap(async (req, res) => {
+  const doc = await getSettingsDoc(req.params.guildId);
+  const channelId = doc.counting?.channel;
+  if (!channelId) throw new ApiError(400, "Pick and save a counting channel first.");
+  const count = Number(req.body?.count);
+  if (!Number.isSafeInteger(count) || count < 0 || count > 1e12) throw new ApiError(400, "The count has to be a whole number, 0 or more.", { field: "count" });
+  const before = await CountingState.findById(req.params.guildId).lean();
+  const state = await counting.setCount(req.params.guildId, channelId, count);
+  await recordAudit(req, {
+    action: "counting.set",
+    summary: `Set the count to ${count}`,
+    changes: [{ label: "Count", before: before?.channelId === channelId ? before.count : 0, after: count }],
+  });
+  res.json({ channelId, count: state.count, highScore: state.highScore ?? 0, highScoreAt: state.highScoreAt ?? null });
+}));
+
+// ---------------------------------------------------------------------------
+// Making the mute and shadowban roles (Moderation page)
+// ---------------------------------------------------------------------------
+
+router.get("/guilds/:guildId/moderation/role-setup", wrap(async (req, res) => {
+  res.json({ job: roleSetup.status(req.params.guildId) });
+}));
+
+router.post("/guilds/:guildId/moderation/role-setup", wrap(async (req, res) => {
+  const guildId = req.params.guildId;
+  const kind = req.body?.kind;
+  if (!Object.hasOwn(roleSetup.KINDS, kind)) throw new ApiError(400, "Pick the mute role or the shadowban role.");
+  const label = kind === "mute" ? "mute role" : "shadowban role";
+  let job;
+  try {
+    job = roleSetup.start(guildId, kind, {
+      save: async (setting, roleId) => {
+        const doc = await getSettingsDoc(guildId);
+        const before = doc.moderation?.[setting] ?? null;
+        doc.set(`moderation.${setting}`, roleId);
+        await doc.save();
+        await recordAudit(req, {
+          action: "moderation.roleSetup",
+          summary: `Made a new ${label}`,
+          changes: [{ key: `moderation.${setting}`, label: kind === "mute" ? "Mute role" : "Shadowban role", type: "role", before, after: roleId }],
+        });
+      },
+    });
+  }
+  catch (err) {
+    throw new ApiError(err.status ?? 500, err.message);
+  }
+  res.json({ job });
+}));
+
+// ---------------------------------------------------------------------------
 // Tags
 // ---------------------------------------------------------------------------
 
@@ -769,14 +876,14 @@ router.post("/guilds/:guildId/tags", wrap(async (req, res) => {
   const [doc, premium] = await Promise.all([getSettingsDoc(guildId), discord.hasPremium(guildId)]);
   const ctx = { guildId };
   const name = validateField({ key: "name", type: "text", min: 1, max: 12, noSpaces: true }, req.body?.name, ctx, "Tag name");
-  const { description, embed } = tagBody(doc, req.body);
+  const { description, embed, deleteCommand } = tagBody(doc, req.body);
   const builtIn = require("../tools/infoStuff.json");
   if (doc.tags.some((t) => t.name?.toLowerCase() === name.toLowerCase()) || builtIn.some((t) => t.name.toLowerCase() === name.toLowerCase())) {
     throw new ApiError(400, `A tag called ${name} already exists.`);
   }
   const limit = limitsFor(premium).tags;
   if (doc.tags.length >= limit) throw new ApiError(400, limitMessage("tags", premium));
-  doc.tags.push({ name, description, embed, creator: req.session.user.username });
+  doc.tags.push({ name, description, embed, deleteCommand, creator: req.session.user.username });
   await doc.save();
   await recordAudit(req, { action: "tags.add", summary: `Added the tag “${name}”`, changes: [{ label: "Text", before: null, after: description }, { label: "Embed", before: null, after: embed }] });
   res.json({ tags: tagsOf(doc) });
@@ -786,10 +893,18 @@ router.put("/guilds/:guildId/tags/:name", wrap(async (req, res) => {
   const doc = await getSettingsDoc(req.params.guildId);
   const tag = doc.tags.find((t) => t.name === req.params.name);
   if (!tag) throw new ApiError(404, "That tag doesn't exist.");
-  const oldTag = { description: tag.description, embed: tag.embed };
+  const oldTag = { description: tag.description, embed: tag.embed, deleteCommand: Boolean(tag.deleteCommand) };
   Object.assign(tag, tagBody(doc, req.body));
   await doc.save();
-  await recordAudit(req, { action: "tags.edit", summary: `Edited the tag “${tag.name}”`, changes: [{ label: "Text", before: oldTag.description, after: tag.description }, { label: "Embed", before: oldTag.embed, after: tag.embed }] });
+  await recordAudit(req, {
+    action: "tags.edit",
+    summary: `Edited the tag “${tag.name}”`,
+    changes: [
+      { label: "Text", before: oldTag.description, after: tag.description },
+      { label: "Embed", before: oldTag.embed, after: tag.embed },
+      { label: "Delete the command", type: "boolean", before: oldTag.deleteCommand, after: tag.deleteCommand },
+    ].filter((c) => c.before !== c.after),
+  });
   res.json({ tags: tagsOf(doc) });
 }));
 
@@ -1141,6 +1256,70 @@ router.put(
 router.delete("/guilds/:guildId/leveling/background", wrap(async (req, res) => {
   await fs.promises.rm(path.join(RANKCARD_DIR, `${req.params.guildId}-rankcard.png`), { force: true });
   await recordAudit(req, { action: "leveling.background", summary: "Removed the rank card background" });
+  res.json({ ok: true });
+}));
+
+// ---------------------------------------------------------------------------
+// Welcome and goodbye cards
+// ---------------------------------------------------------------------------
+
+function cardKind(req) {
+  if (!greetingCard.KINDS.includes(req.params.kind)) throw new ApiError(404, "There's no such card.");
+  return req.params.kind;
+}
+
+// Previews are drawn one at a time per person, so holding a key down can't pile them up.
+const previewing = new Set();
+
+/**
+ * A preview of the card with the logged-in person as the member. The query string
+ * holds the unsaved text from the form (title, subtitle, footer, overlay).
+ */
+router.get("/guilds/:guildId/greeting-card/:kind", wrap(async (req, res) => {
+  const kind = cardKind(req);
+  const who = `${req.session.user.id}:${kind}`;
+  if (previewing.has(who)) throw new ApiError(429, "Still drawing the last preview.");
+  previewing.add(who);
+  try {
+    const text = (name, max) => (typeof req.query[name] === "string" ? req.query[name].slice(0, max) : undefined);
+    const overlay = req.query.overlay === undefined || req.query.overlay === "" ? undefined : Number(req.query.overlay);
+    const card = { title: text("title", 80), subtitle: text("subtitle", 120), footer: text("footer", 80), overlay: Number.isFinite(overlay) ? overlay : undefined };
+    const user = req.session.user;
+    const ctx = contextFrom({ user: { id: user.id, username: user.username, global_name: user.globalName, avatar: user.avatar }, guild: req.guild });
+    const png = await greetingCard.renderCard({ kind, guildId: req.params.guildId, ctx, card });
+    res.set("Cache-Control", "no-store").type("png").send(png);
+  }
+  finally {
+    previewing.delete(who);
+  }
+}));
+
+router.put(
+  "/guilds/:guildId/greeting-card/:kind/background",
+  express.raw({ type: ["image/png", "image/jpeg"], limit: MAX_BACKGROUND }),
+  wrap(async (req, res) => {
+    const kind = cardKind(req);
+    const buffer = req.body;
+    const type = req.get("content-type");
+    if (!Buffer.isBuffer(buffer) || buffer.length === 0 || !looksLikeImage(buffer, type)) {
+      throw new ApiError(400, "The background has to be a PNG or JPEG image.");
+    }
+    // Make sure it really decodes before keeping it.
+    const { loadImage } = require("@napi-rs/canvas");
+    await loadImage(buffer).catch(() => {
+      throw new ApiError(400, "That image couldn't be read. Try saving it again as a PNG.");
+    });
+    await fs.promises.mkdir(greetingCard.CARD_DIR, { recursive: true });
+    await fs.promises.writeFile(greetingCard.backgroundPath(req.params.guildId, kind), buffer);
+    await recordAudit(req, { action: "welcome.background", summary: `Changed the ${kind} card background` });
+    res.json({ ok: true });
+  }),
+);
+
+router.delete("/guilds/:guildId/greeting-card/:kind/background", wrap(async (req, res) => {
+  const kind = cardKind(req);
+  await fs.promises.rm(greetingCard.backgroundPath(req.params.guildId, kind), { force: true });
+  await recordAudit(req, { action: "welcome.background", summary: `Removed the ${kind} card background` });
   res.json({ ok: true });
 }));
 

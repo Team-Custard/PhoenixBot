@@ -15,10 +15,10 @@ export function PlaceholderHelp({ data, only }) {
     if (!open && el.open) el.close();
   }, [open]);
 
-  function copy(name) {
+  function copy(name, insert) {
     // The clipboard only works on https (or localhost), and people can block it.
     if (!navigator.clipboard) return setCopied(`${name}:no`);
-    navigator.clipboard.writeText(`{{${name}}}`).then(
+    navigator.clipboard.writeText(insert ?? `{{${name}}}`).then(
       () => setCopied(name),
       () => setCopied(`${name}:no`),
     );
@@ -42,8 +42,8 @@ export function PlaceholderHelp({ data, only }) {
             <ul>
               {list.filter((p) => p.group === group).map((p) => (
                 <li key={p.name}>
-                  <button type="button" onClick={() => copy(p.name)} aria-label={`Copy {{${p.name}}}`}>
-                    <code>{`{{${p.name}}}`}</code>
+                  <button type="button" onClick={() => copy(p.name, p.insert)} aria-label={`Copy ${p.insert ?? `{{${p.name}}}`}`}>
+                    <code>{p.insert ?? `{{${p.name}}}`}</code>
                     <span>{p.description}{p.image ? " (image)" : ""}</span>
                     <em aria-live="polite">{copied === p.name ? "Copied" : copied === `${p.name}:no` ? "Copy it by hand" : ""}</em>
                   </button>

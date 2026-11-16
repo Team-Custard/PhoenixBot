@@ -16,7 +16,7 @@ class UnmuteCommand extends PhoenixCommand {
       examples: ["unmute sylveondev Love ya"],
       args: [
         { name: "member", type: "member", required: true, description: "The member to unmute" },
-        common.reason(),
+        common.reason(undefined, { enforce: false }),
         common.silent,
         common.hidden,
       ],
@@ -66,7 +66,7 @@ class UnmuteCommand extends PhoenixCommand {
       });
 
     await mod.sendModlog(ctx.guild, settings, caseDoc, { moderator: `${ctx.user}` });
-    return ctx.reply(`${emoji("success")} Unmuted **${member.user.tag}**. ${!silent && notified ? "" : "User was not notified."}`);
+    return mod.replySuccess(ctx, settings, { action: "Unmuted", member, caseDoc, text: `Unmuted **${member.user.tag}**.`, notes: [!silent && notified ? "" : "User was not notified."] });
   }
 }
 

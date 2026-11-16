@@ -117,7 +117,8 @@ const compiled = new Map();
  * @param {string} guildId
  * @param {object[]} autoresponses settings.autoresponses
  * @param {{ content: string, channelId: string, parentId?: string|null }} message
- * @returns {Promise<{ entry: object, index: number }|null>}
+ * @returns {Promise<{ entry: object, index: number, rest: string }|null>} rest is the
+ *   text after the trigger (the whole message for regex triggers), for {{args}}.
  */
 async function findMatch(guildId, autoresponses, message) {
   if (!autoresponses?.length || !message.content) return null;
@@ -136,11 +137,12 @@ async function findMatch(guildId, autoresponses, message) {
     const channels = entry.channels ?? [];
     if (channels.length && !channels.includes(message.channelId) && !channels.includes(message.parentId)) continue;
     if (test.worker) {
-      if (await safeTest(test.pattern, test.flags, text)) return { entry, index };
+      if (await safeTest(test.pattern, test.flags, text)) return { entry, index, rest: text };
       continue;
     }
     test.lastIndex = 0;
-    if (test.test(text)) return { entry, index };
+    const match = test.exec(text);
+    if (match) return { entry, index, rest: text.slice(match.index + match[0].length).trim() };
   }
   return null;
 }

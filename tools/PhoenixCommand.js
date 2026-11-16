@@ -1,7 +1,7 @@
 const { Command, CommandOptionsRunTypeEnum } = require("@sapphire/framework");
 const { PermissionsBitField, PermissionFlagsBits, InteractionContextType } = require("discord.js");
 const { CommandContext } = require("./CommandContext");
-const { emoji } = require("./errorReporter");
+const { emoji, withServerEmojis } = require("./errorReporter");
 const { parseDuration } = require("./moderation");
 
 // What replying needs. Interaction replies don't need any of these.
@@ -174,7 +174,11 @@ class PhoenixCommand extends Command {
   }
 
   /** Runs the handler of the context menu (right click → Apps) that was used. */
-  async contextMenuRun(interaction) {
+  contextMenuRun(interaction) {
+    return withServerEmojis(interaction.guildId, () => this.runContextMenu(interaction));
+  }
+
+  async runContextMenu(interaction) {
     const menu = this.contextMenus.find((m) => m.name === interaction.commandName);
     if (!menu) return undefined;
     const handler = typeof menu.run === "function" ? menu.run : this[menu.run];
@@ -300,7 +304,16 @@ class PhoenixCommand extends Command {
   // Running
   // ---------------------------------------------------------------------------
 
-  async chatInputRun(interaction) {
+  // Everything a command says uses the server's own status emojis, if it picked any.
+  chatInputRun(interaction) {
+    return withServerEmojis(interaction.guildId, () => this.runSlash(interaction));
+  }
+
+  messageRun(message, args, context) {
+    return withServerEmojis(message.guildId, () => this.runPrefix(message, args, context));
+  }
+
+  async runSlash(interaction) {
     let sub = null;
     let defs = this.args;
     if (this.subcommandDefs) {
@@ -324,7 +337,7 @@ class PhoenixCommand extends Command {
     return this.dispatch(ctx, values, sub);
   }
 
-  async messageRun(message, args, context) {
+  async runPrefix(message, args, context) {
     let sub = null;
     let defs = this.args;
     const prefix = context?.commandPrefix ?? "";
@@ -363,7 +376,15 @@ class PhoenixCommand extends Command {
     return this.dispatch(ctx, values, sub);
   }
 
-  dispatch(ctx, values, sub) {
+  async dispatch(ctx, values, sub) {
+    // Servers can require one of their own reasons for moderation actions.
+    const reasonArg = (sub ? sub.args ?? [] : this.args ?? []).find((a) => a.predefinedReasons);
+    if (reasonArg && ctx.guild) {
+      const { peekSettings } = require("./guildSettings");
+      const { reasonProblem } = require("./moderation");
+      const problem = reasonProblem(await peekSettings(ctx.guild.id), values[reasonArg.name]);
+      if (problem) return ctx.error(problem);
+    }
     if (sub) {
       const handler = typeof sub.run === "function" ? sub.run : this[sub.run];
       if (typeof handler !== "function") throw new Error(`Subcommand ${this.name} ${sub.name} has no handler`);
@@ -394,7 +415,7 @@ async function readOption(interaction, arg) {
     case "duration": {
       const raw = opts.getString(name);
       if (raw) {
-        value = parseDuration(raw);
+        value = /[a-z]/i.test(raw) ? parseDuration(raw) : null;
         if (value === null) return { error: `\`${raw}\` isn't a valid duration. Try something like \`10m\`, \`2h\` or \`7d\`.` };
       }
       break;
@@ -446,7 +467,10 @@ async function readPrefixArg(message, args, arg) {
 
   if (arg.type === "duration") {
     const peek = await args.peekResult("string");
-    const duration = peek.isOk() ? parseDuration(peek.unwrap()) : null;
+    // Only words with a unit ("10m", "7d") are durations, so "=warn bob 3 strikes"
+    // keeps "3 strikes" as the reason instead of a 3 millisecond warning.
+    const token = peek.isOk() ? peek.unwrap() : "";
+    const duration = /[a-z]/i.test(token) ? parseDuration(token) : null;
     if (duration === null) return missing();
     args.next();
     return { value: duration };

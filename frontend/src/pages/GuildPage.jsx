@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { api } from "../api.js";
 import { Link, useRouter } from "../router.jsx";
 import { SectionForm } from "../components/SectionForm.jsx";
 import { ServerIcon } from "./ServerPicker.jsx";
 import { VerificationPanel } from "./VerificationPanel.jsx";
 import { RankCardBackground } from "./LevelingExtras.jsx";
+import { GreetingCardEditor } from "./WelcomeCards.jsx";
+import { ModerationRoles } from "./ModerationRoles.jsx";
+import { CountingPanel } from "./CountingPanel.jsx";
+import { NotificationsStatus } from "./NotificationsStatus.jsx";
 import { Levels } from "./Levels.jsx";
 import { BotProfile } from "./BotProfile.jsx";
 import { EmbedBuilder } from "./EmbedBuilder.jsx";
@@ -32,8 +37,8 @@ const CUSTOM_PAGES = {
 const NAV = [
   { name: "Setup", pages: ["general", "profile", "plus", "audit"] },
   { name: "Moderation", pages: ["moderation", "cases", "logging", "joins", "automod", "discord-automod"] },
-  { name: "Messages", pages: ["welcome", "embeds", "autoresponses", "timed", "sticky", "tags"] },
-  { name: "Community", pages: ["verification", "rolemenus", "starboard", "leveling", "levels", "afk"] },
+  { name: "Messages", pages: ["welcome", "embeds", "autoresponses", "timed", "sticky", "tags", "notifications", "autopublish"] },
+  { name: "Community", pages: ["verification", "rolemenus", "starboard", "leveling", "levels", "afk", "counting"] },
 ];
 const ORDER = NAV.flatMap((group) => group.pages);
 
@@ -57,6 +62,25 @@ export function GuildPage({ me, guildId, sectionId }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  // After Phoenix made a role: pick up the new role and its setting, keeping any
+  // unsaved changes on the page.
+  const refreshRoles = useCallback(async () => {
+    const next = await api.get(`/guilds/${guildId}`).catch(() => null);
+    if (!next) return;
+    setData((d) => (d ? {
+      ...d,
+      roles: next.roles,
+      channels: next.channels,
+      settings: { ...d.settings, "moderation.muteRole": next.settings["moderation.muteRole"], "moderation.shadowBannedRole": next.settings["moderation.shadowBannedRole"] },
+    } : next));
+  }, [guildId]);
+
+  // The settings search lives in the top bar (App.jsx leaves a spot for it).
+  const [searchSlot, setSearchSlot] = useState(null);
+  useEffect(() => {
+    setSearchSlot(document.getElementById("topbar-search"));
+  }, []);
 
   // The emoji picker's server section: this server's emojis Phoenix can use.
   const emojiContext = useMemo(
@@ -91,6 +115,18 @@ export function GuildPage({ me, guildId, sectionId }) {
   const current = pages.find((p) => p.id === sectionId) ?? pages[0];
 
   const setSettings = (settings) => setData((d) => ({ ...d, settings }));
+  // Extras drawn under some settings, with the form's unsaved values.
+  const renderExtra = (field, draft) => {
+    if (!field.cardPreview) return null;
+    return (
+      <GreetingCardEditor
+        kind={field.cardPreview}
+        draft={draft}
+        data={data}
+        onBackgroundChange={(kind, has) => setData((d) => ({ ...d, stats: { ...d.stats, greetingCards: { ...d.stats.greetingCards, [kind]: has } } }))}
+      />
+    );
+  };
 
   const fromSearch = (pageId, key) => {
     if (pageId !== current.id && window.__phoenixDirty && !window.confirm("You have unsaved changes. Leave this page without saving?")) return;
@@ -132,7 +168,7 @@ export function GuildPage({ me, guildId, sectionId }) {
       </aside>
 
       <main className={`guild-main${current.wide ? " wide" : ""}`}>
-        <SettingsSearch pages={pages} onPick={fromSearch} />
+        {searchSlot && createPortal(<SettingsSearch pages={pages} onPick={fromSearch} />, searchSlot)}
         <div className="guild-title">
           <ServerIcon guild={data.guild} />
           <h1>
@@ -147,8 +183,11 @@ export function GuildPage({ me, guildId, sectionId }) {
         </div>
 
         {current.section && (
-          <SectionForm key={current.id} section={current.section} data={data} me={me} onSaved={setSettings} focus={focus}>
+          <SectionForm key={current.id} section={current.section} data={data} me={me} onSaved={setSettings} focus={focus} renderExtra={renderExtra}>
             {current.id === "automod" && <HoneypotPanel data={data} />}
+            {current.id === "moderation" && <ModerationRoles data={data} onDone={refreshRoles} />}
+            {current.id === "counting" && <CountingPanel data={data} />}
+            {current.id === "notifications" && <NotificationsStatus data={data} />}
             {current.id === "verification" && <VerificationPanel data={data} />}
             {current.id === "leveling" && (
               <>

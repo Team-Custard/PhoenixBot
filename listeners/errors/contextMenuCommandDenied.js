@@ -1,5 +1,5 @@
 const { Listener } = require("@sapphire/framework");
-const { emoji, replyToInteraction } = require("../../tools/errorReporter");
+const { emoji, replyToInteraction, withServerEmojis } = require("../../tools/errorReporter");
 
 class ContextMenuCommandDenied extends Listener {
   constructor(context, options) {
@@ -7,7 +7,7 @@ class ContextMenuCommandDenied extends Listener {
   }
 
   run(error, { interaction }) {
-    return replyToInteraction(interaction, `${emoji("error")} ${error}`);
+    return withServerEmojis(interaction.guildId, () => replyToInteraction(interaction, `${emoji("error")} ${error}`));
   }
 }
 module.exports = { ContextMenuCommandDenied };

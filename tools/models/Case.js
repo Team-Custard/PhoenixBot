@@ -63,10 +63,17 @@ caseSchema.statics.findCase = function(guildId, caseId) {
   return this.findOne({ guildId, caseId });
 };
 
-/** Number of active (not pardoned) warnings a member has. */
+/** Matches warnings that haven't expired (temporary warnings have an expiretime). */
+function activeWarning(now = Math.round(Date.now() / 1000)) {
+  return { punishment: "Warn", $or: [{ expiretime: 0 }, { expiretime: null }, { expiretime: { $gt: now } }] };
+}
+
+/** Number of active warnings a member has (not pardoned, not expired). */
 caseSchema.statics.countWarnings = function(guildId, memberId) {
-  return this.countDocuments({ guildId, member: memberId, punishment: "Warn" });
+  return this.countDocuments({ guildId, member: memberId, ...activeWarning() });
 };
+
+caseSchema.statics.activeWarning = activeWarning;
 
 const collection = require("../config").usesProdCollections ? "cases" : "casesStaging";
 module.exports = model(collection, caseSchema);

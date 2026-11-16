@@ -66,7 +66,7 @@ class ShadowbanCommand extends PhoenixCommand {
       moderator: `${ctx.user}`,
       extra: [`**Previous roles:** ${previousRoles.map((r) => `${r}`).join(" ").slice(0, 3000) || "None"}`],
     });
-    return ctx.reply(`${emoji("success")} Shadowbanned **${member.user.tag}**. ${!silent && notified ? "" : "User was not notified."}`);
+    return mod.replySuccess(ctx, settings, { action: "Shadowbanned", member, caseDoc, text: `Shadowbanned **${member.user.tag}**.`, notes: [!silent && notified ? "" : "User was not notified."] });
   }
 }
 

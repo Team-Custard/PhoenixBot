@@ -49,6 +49,29 @@ const FILTER_ACTIONS = [
 ];
 
 /** The fields for one automod filter: on/off, its options, what to do and for how long. */
+/** The settings of a welcome or goodbye card (see tools/greetingCard.js for the defaults). */
+function cardFields(base, group, kind) {
+  const enabled = `${base}.card.enabled`;
+  const { DEFAULTS } = require("../tools/greetingCard");
+  return [
+    { key: enabled, type: "toggle", label: "Card on", group, groupToggle: true },
+    { key: `${base}.card.title`, type: "text", max: 80, label: "Title", group, showIf: enabled, placeholder: DEFAULTS[kind].title },
+    { key: `${base}.card.subtitle`, type: "text", max: 120, label: "Subtitle", group, showIf: enabled, placeholder: DEFAULTS[kind].subtitle },
+    { key: `${base}.card.footer`, type: "text", max: 80, label: "Bottom line", group, showIf: enabled, placeholder: DEFAULTS[kind].footer, help: "Leave a line empty for the default shown in it." },
+    {
+      key: `${base}.card.overlay`,
+      type: "number",
+      min: 0,
+      max: 90,
+      label: "Background darkness (%)",
+      group,
+      showIf: enabled,
+      cardPreview: kind,
+      help: "Darkens the background so the text is easy to read. Leave empty for the default.",
+    },
+  ];
+}
+
 function filterFields(name, options) {
   const base = `automod.filters.${name}`;
   const enabled = `${base}.enabled`;
@@ -73,7 +96,10 @@ const sections = [
   {
     id: "general",
     name: "General",
-    description: "Prefix commands and who can use which command.",
+    description: "Prefix commands, who can use which command, and the emojis Phoenix uses.",
+    groups: {
+      emojis: { label: "Phoenix's emojis", help: "The emojis at the start of Phoenix's replies here, like the ✅ in “✅ Banned someone”. Leave one empty to use Phoenix's own." },
+    },
     fields: [
       { key: "enablePrefix", type: "toggle", label: "Prefix commands", help: "Slash commands always work. Prefix commands are being phased out, so you can turn them off early." },
       { key: "prefix", type: "text", label: "Prefix", min: 1, max: 5, noSpaces: true, help: "What prefix commands start with, like = or !." },
@@ -89,15 +115,34 @@ const sections = [
           { key: "grant", type: "commands", label: "Commands" },
         ],
       },
+      { key: "statusEmojis.success", type: "emoji", label: "Success", group: "emojis", placeholder: "✅" },
+      { key: "statusEmojis.error", type: "emoji", label: "Error", group: "emojis", placeholder: "❌" },
+      { key: "statusEmojis.warning", type: "emoji", label: "Warning", group: "emojis", placeholder: "⚠️" },
+      { key: "statusEmojis.info", type: "emoji", label: "Info", group: "emojis", placeholder: "❔" },
     ],
   },
   {
     id: "moderation",
     name: "Moderation",
     description: "Roles and rules used by the moderation commands.",
+    placeholders: true,
+    groups: {
+      reasons: { label: "Reasons", help: "Reasons your moderators pick from. They're suggested as moderators type in the mod commands' reason box." },
+      reply: { label: "Reply after an action", help: "What Phoenix says after a moderation command works. Member placeholders are about the member who was actioned." },
+    },
     fields: [
-      { key: "moderation.muteRole", type: "role", label: "Mute role", assignable: true, help: "Used for mutes longer than 28 days or without a duration." },
-      { key: "moderation.shadowBannedRole", type: "role", label: "Shadowban role", assignable: true, help: "The only role a shadowbanned member keeps." },
+      { key: "moderation.muteRole", type: "role", label: "Mute role", assignable: true, help: "Used for mutes longer than 28 days or without a duration. Phoenix can make one for you below." },
+      { key: "moderation.shadowBannedRole", type: "role", label: "Shadowban role", assignable: true, help: "The only role a shadowbanned member keeps. Phoenix can make one for you below." },
+      {
+        key: "moderation.warningExpiry",
+        type: "duration",
+        label: "Warnings expire after",
+        min: 0,
+        minNonZero: 60 * 60_000,
+        max: 365 * 86_400_000,
+        units: ["hour", "day"],
+        help: "Expired warnings stop counting toward the punishment system. Leave at 0 to keep them forever. Moderators can also give a length with /mod warn.",
+      },
       { key: "moderation.appealLink", type: "url", label: "Ban appeal link", help: "Shown as a button in the DM people get when they're banned." },
       { key: "whitelistedRoles", type: "roles", label: "Role command whitelist", assignable: true, help: "If set, the role command can only hand out these roles." },
       {
@@ -124,6 +169,19 @@ const sections = [
           { key: "duration", type: "duration", label: "For", min: 0, max: 365 * 86_400_000, help: "Required for mutes. Leave at 0 for a permanent ban." },
         ],
       },
+      { key: "moderation.reasons", type: "strings", label: "Your reasons", group: "reasons", max: 25, itemMax: 100, allowCommas: true, placeholder: "Type a reason and press Enter" },
+      { key: "moderation.enforceReasons", type: "toggle", label: "Only allow these reasons", group: "reasons", help: "Moderators have to pick one of the reasons above. When it's off, they can also write their own." },
+      {
+        key: "moderation.successMessage",
+        type: "textarea",
+        max: 2000,
+        label: "Message",
+        group: "reply",
+        preview: true,
+        embedKey: "moderation.successEmbed",
+        help: "Leave empty for Phoenix's usual reply. {{action}} is what happened (like Banned), plus {{reason}}, {{duration}}, {{case}}, {{moderator}}, {{warnings}} and {{emoji}}.",
+      },
+      { key: "moderation.successEmbed", type: "embed", label: "Embed", group: "reply", help: "Optional. Sent with (or instead of) the message." },
     ],
   },
   {
@@ -245,17 +303,23 @@ const sections = [
   {
     id: "welcome",
     name: "Welcome & goodbye",
-    description: "Messages for people joining and leaving.",
+    description: "Messages and image cards for people joining and leaving.",
     placeholders: true,
+    groups: {
+      welcomeCard: { label: "Welcome card", help: "An image with the new member's avatar, sent with the welcome message. Placeholders work in its text." },
+      goodbyeCard: { label: "Goodbye card", help: "An image with the member's avatar, sent with the goodbye message." },
+    },
     fields: [
       { key: "welcomer.channel", type: "channel", channelTypes: TEXT_CHANNELS, label: "Welcome channel" },
       { key: "welcomer.message", type: "textarea", max: 2000, label: "Welcome message", preview: true, embedKey: "welcomer.embed" },
       { key: "welcomer.embed", type: "embed", label: "Welcome embed", help: "Optional. A saved embed sent with (or instead of) the welcome message. Placeholders work in it too." },
+      ...cardFields("welcomer", "welcomeCard", "welcome"),
       { key: "welcomer.dmtext", type: "textarea", max: 2000, label: "Welcome DM", preview: true, embedKey: "welcomer.dmEmbed", help: "Sent privately to new members. Leave this and the DM embed empty to not send one." },
       { key: "welcomer.dmEmbed", type: "embed", label: "Welcome DM embed", help: "Optional. Sent in the DM with (or instead of) the text." },
       { key: "goodbyes.channel", type: "channel", channelTypes: TEXT_CHANNELS, label: "Goodbye channel" },
       { key: "goodbyes.message", type: "textarea", max: 2000, label: "Goodbye message", preview: true, embedKey: "goodbyes.embed" },
       { key: "goodbyes.embed", type: "embed", label: "Goodbye embed", help: "Optional. Sent with (or instead of) the goodbye message." },
+      ...cardFields("goodbyes", "goodbyeCard", "goodbye"),
     ],
   },
   {
@@ -347,6 +411,85 @@ const sections = [
       { key: "afk.embed", type: "embed", label: "AFK embed", showIf: "afk.enabled", help: "Optional. Placeholders work in the embed too." },
       { key: "afk.welcomeBack", type: "toggle", label: "Welcome people back", help: "When an AFK member talks again, their status is cleared either way. This says so." },
       { key: "afk.welcomeBackMessage", type: "textarea", max: 2000, label: "Welcome back message", preview: true, showIf: "afk.welcomeBack", help: "Leave empty for the default." },
+      { key: "afk.showMentions", type: "toggle", label: "Show where they were mentioned", help: "When someone's back, Phoenix lists the messages that mentioned them here while they were away, with links." },
+    ],
+  },
+  {
+    id: "notifications",
+    name: "Notifications",
+    description: "Posts in a channel when someone goes live or posts on YouTube, Twitch, Bluesky, X, Reddit or any RSS feed.",
+    placeholders: true,
+    fields: [
+      {
+        key: "notifications",
+        type: "list",
+        label: "Accounts",
+        help: "Phoenix checks every few minutes (Twitch every 2, X every 15). Servers can follow 5 accounts, or 25 with Phoenix Plus. Leave the message empty for Phoenix's default.",
+        limit: "notifications",
+        addLabel: "Add account",
+        fields: [
+          {
+            key: "platform",
+            type: "select",
+            label: "Platform",
+            required: true,
+            default: "youtube",
+            options: [
+              { value: "youtube", label: "YouTube" },
+              { value: "twitch", label: "Twitch" },
+              { value: "bluesky", label: "Bluesky" },
+              { value: "x", label: "X (Twitter)" },
+              { value: "reddit", label: "Reddit" },
+              { value: "rss", label: "RSS feed" },
+            ],
+          },
+          { key: "account", type: "text", label: "Account", required: true, min: 1, max: 300, placeholder: "@handle, username or link" },
+          { key: "channel", type: "channel", channelTypes: TEXT_CHANNELS, label: "Post in", required: true },
+          {
+            key: "events",
+            type: "select",
+            label: "Announce",
+            required: true,
+            default: "all",
+            options: [
+              { value: "all", label: "Everything" },
+              { value: "live", label: "Only live streams" },
+              { value: "posts", label: "Only videos and posts" },
+            ],
+          },
+          { key: "role", type: "role", label: "Ping role" },
+          { key: "enabled", type: "toggle", label: "On", default: true },
+          { key: "content", type: "textarea", label: "Message", max: 2000, wide: true },
+          { key: "embed", type: "embed", label: "Embed" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "counting",
+    name: "Counting",
+    description: "A channel where members count up together, one number at a time. Phoenix deletes anything that isn't the next number.",
+    groups: {
+      mistakes: { label: "Too many mistakes", help: "Give people who keep getting it wrong a role for a while, like one that can't see the counting channel." },
+    },
+    fields: [
+      { key: "counting.channel", type: "channel", channelTypes: TEXT_CHANNELS, label: "Counting channel", help: "Leave empty to turn counting off. Picking another channel starts the count over." },
+      { key: "counting.react", type: "toggle", label: "React to correct numbers", showIf: "counting.channel" },
+      { key: "counting.reactEmoji", type: "emoji", label: "Reaction", placeholder: "✅", showIf: ["counting.channel", "counting.react"] },
+      { key: "counting.allowTwiceInRow", type: "toggle", label: "Let people count twice in a row", showIf: "counting.channel", help: "Off: someone else has to say the next number." },
+      { key: "counting.resetOnMistake", type: "toggle", label: "Start over after a wrong number", showIf: "counting.channel", help: "Off: the wrong number is just deleted and the count carries on." },
+      { key: "counting.mistakeRole", type: "role", label: "Role to give", assignable: true, group: "mistakes", help: "Leave empty to not give one." },
+      { key: "counting.mistakeLimit", type: "number", min: 1, max: 50, label: "After this many mistakes in a day", group: "mistakes", showIf: "counting.mistakeRole" },
+      { key: "counting.mistakeRoleDuration", type: "duration", label: "For", min: 60_000, max: 30 * 86_400_000, units: ["minute", "hour", "day"], group: "mistakes", showIf: "counting.mistakeRole" },
+    ],
+  },
+  {
+    id: "autopublish",
+    name: "Autopublish",
+    description: "Publishes new messages in announcement channels for you, so they reach every server that follows the channel.",
+    fields: [
+      { key: "autopublish.channels", type: "channels", channelTypes: [5], label: "Announcement channels", help: "Only announcement channels can be published. Discord allows 10 published messages per channel per hour." },
+      { key: "autopublish.includeBots", type: "toggle", label: "Publish bot and webhook messages too", help: "Handy for feeds other bots post into the channel." },
     ],
   },
   {

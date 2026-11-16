@@ -74,6 +74,72 @@ function expiryFromNow(duration) {
   return duration ? Math.round(Date.now() / 1000) + Math.round(duration / 1000) : 0;
 }
 
+/**
+ * How long a new warning lasts: the duration given, or the server's default
+ * (Moderation page), or forever. Expired warnings stop counting.
+ */
+function warningDuration(settings, duration) {
+  return duration || settings?.moderation?.warningExpiry || null;
+}
+
+/**
+ * Whether a reason is allowed. Servers can list their own reasons (they show up as
+ * suggestions in the mod commands) and require that one of them is used.
+ * @returns {string|null} An error message, or null when allowed.
+ */
+function reasonProblem(settings, reason) {
+  const list = (settings?.moderation?.reasons ?? []).filter(Boolean);
+  if (!settings?.moderation?.enforceReasons || !list.length) return null;
+  const given = String(reason ?? "").trim().toLowerCase();
+  if (list.some((r) => r.trim().toLowerCase() === given)) return null;
+  const shown = list.slice(0, 15).map((r) => `\`${r.replace(/`/g, "'")}\``).join(", ");
+  return `${emoji("error")} This server only allows its own reasons. Pick one: ${shown}${list.length > 15 ? ", ..." : ""}`.slice(0, 1900);
+}
+
+/**
+ * The reply after a moderation action. Servers can swap Phoenix's own wording for
+ * their text and/or a saved embed (Moderation page), with placeholders: the member
+ * placeholders are about the member, plus {{action}}, {{reason}}, {{duration}},
+ * {{case}}, {{moderator}}, {{warnings}} and {{emoji}}.
+ * @param {import("./CommandContext").CommandContext} ctx
+ * @param {object} settings
+ * @param {object} info
+ * @param {string} info.action Like "Banned".
+ * @param {string} info.text Phoenix's own wording (without the emoji).
+ * @param {string[]} [info.notes] Short notes added under a custom message, like "User was not notified."
+ */
+async function replySuccess(ctx, settings, { action, user, member, caseDoc, duration, text, notes = [], warnings }) {
+  const notesText = notes.filter(Boolean).join(" ");
+  const own = settings?.moderation?.successMessage;
+  const ownEmbed = settings?.moderation?.successEmbed;
+  if (own || ownEmbed) {
+    const { buildMessage, contextFrom } = require("./placeholders");
+    const values = contextFrom({
+      member: member ?? undefined,
+      user: member ? undefined : user,
+      guild: ctx.guild,
+      channel: ctx.channel,
+      extra: {
+        action,
+        reason: caseDoc?.reason ?? "",
+        duration: duration ? await formatDuration(duration) : "",
+        case: caseDoc?.caseId != null ? String(caseDoc.caseId) : "",
+        moderator: { rich: `<@${ctx.user.id}>`, plain: ctx.user.username },
+        warnings: warnings != null ? String(warnings) : "",
+        emoji: emoji("success"),
+      },
+    });
+    const payload = buildMessage(settings, { content: own ?? "", embed: ownEmbed }, values);
+    if (payload) {
+      if (notesText) payload.content = `${payload.content ?? ""}\n-# ${notesText}`.trim().slice(0, 2000);
+      // The reply is for the moderator; nobody gets pinged by it.
+      payload.allowedMentions = { parse: [] };
+      return ctx.reply(payload);
+    }
+  }
+  return ctx.reply({ content: `${emoji("success")} ${text}${notesText ? ` ${notesText}` : ""}`, allowedMentions: { parse: [] } });
+}
+
 async function fetchModlogChannel(guild, settings) {
   const channelId = settings?.logging?.infractions;
   if (!channelId) return undefined;
@@ -222,6 +288,9 @@ module.exports = {
   checkHierarchy,
   openCase,
   expiryFromNow,
+  warningDuration,
+  reasonProblem,
+  replySuccess,
   buildModlogEmbed,
   sendModlog,
   updateModlog,
