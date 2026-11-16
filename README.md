@@ -36,7 +36,7 @@ commands/          Slash + prefix commands, one file each (see "Writing a comman
 listeners/         Event listeners (logging, automod, welcomer, starboard, leveling...)
 interaction-handlers/  Buttons, select menus, modals, autocomplete
 preconditions/     Permission checks (module = per-server disable/override rules)
-scheduled-tasks/   Temp-ban expiry, autokick and reminders (BullMQ)
+scheduled-tasks/   Temp-ban expiry, autokick, reminders and counting roles (BullMQ)
 tools/             Shared code
   PhoenixCommand.js    Base class for commands that work as slash and prefix
   CommandContext.js    One reply/defer API over messages and interactions
@@ -47,6 +47,9 @@ tools/             Shared code
   queue.js             Send queue for everything Phoenix posts on its own
   limits.js            Free and Phoenix Plus limits
   reminders.js         Reminder scheduling and delivery
+  counting.js          The counting channel
+  greetingCard.js      Welcome and goodbye card images
+  notifications/       YouTube, Twitch, Bluesky, X, Reddit and RSS notifications
   autoresponse.js      Autoresponse matching (regexes run in regexWorker.js)
   timedMessages.js     Timed message scheduler
   automod.js           Automod filters; automodRun.js acts on them

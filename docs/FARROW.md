@@ -469,6 +469,105 @@ up to Emoji 15.1.
 
 `npm install` isn't needed. Run `npm test` and `npm run build:web`, then restart.
 
+## Part six: cards, counting, notifications and more moderation
+
+### Welcome and goodbye cards
+
+The Welcome & goodbye page has a **Welcome card** and a **Goodbye card**: an image with
+the member's avatar and three lines of text (title, subtitle, bottom line), sent with
+the message. Placeholders work in the text. Servers can upload their own background
+(PNG or JPEG, up to 8 MB, cropped to 1100 × 500) like rank cards, and set how much
+it's darkened. The page shows a live preview with you as the member. With a saved
+embed that has no image, the card goes inside the embed.
+
+Cards use the Geist font (SIL Open Font License, `static/fonts`), so they look the
+same on every machine. Uploaded backgrounds go in `static/greetingcards` (ignored by
+git, like rank cards).
+
+### Moderation
+
+- **Make the roles for me:** buttons on the Moderation page create the mute role or
+  the shadowban role (with its #shadowbanned channel and pinned notice) and set its
+  permissions in every channel, like the old `muterole --create` and `shadowbanrole
+  --create`. It runs in the background with a progress bar, and saves the new role.
+- **Temporary warnings:** `/mod warn` takes an optional length (`=warn user 7d
+  reason`), and servers can set how long warnings last by default. Expired warnings
+  stop counting toward the punishment system; the Cases page and `/mod infractions`
+  show when each one runs out. Automod warnings use the default too.
+- **Reasons:** servers can list their own reasons. They're suggested as moderators
+  type in the reason box of every `/mod` command. With **Only allow these reasons**
+  on, a moderation command with any other reason (or none) is refused, for slash and
+  prefix commands alike.
+- **Reply after an action:** servers can replace "✅ Banned so-and-so" with their own
+  text and/or a saved embed. Member placeholders are about the member, plus
+  `{{action}}`, `{{reason}}`, `{{duration}}`, `{{case}}`, `{{moderator}}`,
+  `{{warnings}}` and `{{emoji}}`. Notes like "User was not notified." are added
+  underneath. The reply never pings anyone.
+
+### Counting
+
+**Community > Counting**: pick a channel and members count up one number at a time.
+Anything that isn't the next number is deleted (and by default nobody can count twice
+in a row). Options: react to correct numbers (with any emoji), start over after a
+wrong number, and give a role for a while to people who make too many mistakes in a
+day. The page shows the count, the next number and the best score, and lets you set
+the count. Counting is safe against two people posting the same number at once.
+
+### Autopublish
+
+**Messages > Autopublish**: pick announcement channels and Phoenix publishes every new
+message in them (optionally only people's, not bots'). Discord allows 10 published
+messages per channel per hour.
+
+### Notifications
+
+**Messages > Notifications**: post in a channel when someone goes live or posts.
+
+| Platform | What's announced | Needs |
+|---|---|---|
+| YouTube | New videos; live streams too with a Google API key | `googlekey` (already used by `/youtube`) for live streams |
+| Twitch | Going live | `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET` |
+| Bluesky | New posts (not replies or reposts) | nothing |
+| X | New posts (not replies or reposts) | `X_BEARER_TOKEN` (X's paid API) |
+| Reddit | New posts in a subreddit or by a user | nothing |
+| RSS feed | New items in any RSS or Atom feed (blogs, Mastodon...) | nothing |
+
+People can paste a link or a handle; Phoenix tidies it up when saving. Each account
+can ping a role, has its own message and embed, and can announce everything, only
+live streams or only posts. Placeholders: `{{creator}}`, `{{title}}`, `{{link}}`,
+`{{platform}}`, `{{game}}` and `{{thumbnail}}`, plus the server ones.
+
+Each account is checked once no matter how many servers follow it (YouTube, Bluesky
+every 5 minutes, Twitch every 2, Reddit and RSS every 10, X every 15), on cluster 0.
+The first check only learns what's already there, so adding an account doesn't post
+its old videos. Accounts that keep failing are checked less often. The page shows
+each account's status (found, last checked, or what went wrong). RSS feeds on the
+bot's own machine or private network are refused. Servers can follow 5 accounts, or
+25 with Phoenix Plus.
+
+### Smaller things
+
+- **AFK:** when someone comes back, Phoenix lists where they were mentioned while
+  they were away, with links (mentions in other servers are only counted). Servers
+  can turn the list off.
+- **New placeholders:** `{{random: one | two | three}}` picks one at random each
+  time (choices can hold other placeholders), and in tags and autoresponses `{{args}}`
+  is what was typed after the tag's name (or after the trigger), with `{{args.1}}`,
+  `{{args.2}}`... for single words. `/tag` has a new optional `args` box.
+- **Tags:** a tag can delete the command that showed it. The `=tag name` message is
+  deleted, and with `/tag` only the tag is posted.
+- **Phoenix's emojis:** the General page can swap Phoenix's success, error, warning and
+  info emojis for any emoji. Everything said while running that server's commands
+  uses them.
+- **Dashboard:** the settings search is now in the top bar, centered (on its own row
+  on phones).
+
+### Deploying part six
+
+No new packages. Run `npm test` and `npm run build:web`, then restart. New
+collections (`countingstates`, `notificationfeeds`) are created automatically. For
+Twitch and X notifications, add the keys above to `.env` (see `example.env`).
+
 ## Things to check after deploying
 
 - **Logging:** log a message edit and delete, a ban and a role change, and check
@@ -505,4 +604,14 @@ up to Emoji 15.1.
   channel message and the DM. Post the verification panel with an embed.
 - **Emoji picker:** add a server emoji to a welcome message with the emoji button and
   check it shows in Discord; pick a starboard reaction from the picker.
+- **Cards:** turn on the welcome card, upload a background, and join with a test
+  account.
+- **Mute and shadowban roles:** on a test server, use "Make the mute role" and check a
+  few channels' permissions.
+- **Warnings and reasons:** add two reasons, turn on "Only allow these reasons", and
+  try `/mod warn` with one of them, with your own reason, and with `7d`.
+- **Counting:** count to 3 with two accounts, then post a wrong number.
+- **Notifications:** follow a YouTube channel and a Bluesky account, and check the
+  status panel says they were found.
+- **Status emojis:** pick a success emoji on the General page and run a command.
 - **Startup:** look for the "[commands]" line saying which unused commands were removed.
